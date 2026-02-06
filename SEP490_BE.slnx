@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="EduVi.Contracts/EduVi.Contracts.csproj" />
+  <Project Path="EduVi.Repositories/EduVi.Repositories.csproj" />
+  <Project Path="EduVi.Services/EduVi.Services.csproj" />
+  <Project Path="EduVi.WebAPI/EduVi.WebAPI.csproj" />
+</Solution>

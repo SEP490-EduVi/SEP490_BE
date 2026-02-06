@@ -1,0 +1,19 @@
+namespace EduVi.Services.Email;
+
+public interface IEmailService
+{
+    /// <summary>
+    /// Send password reset email with token
+    /// </summary>
+    Task<bool> SendPasswordResetEmailAsync(string email, string resetToken, string fullName);
+    
+    /// <summary>
+    /// Send email verification for new registration
+    /// </summary>
+    Task<bool> SendEmailVerificationAsync(string email, string verificationToken, string fullName);
+    
+    /// <summary>
+    /// Send welcome email after successful registration
+    /// </summary>
+    Task<bool> SendWelcomeEmailAsync(string email, string fullName);
+}
