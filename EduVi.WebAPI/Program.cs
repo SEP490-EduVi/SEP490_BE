@@ -6,6 +6,7 @@ using EduVi.Services.Authentication;
 using EduVi.Services.Email;
 using EduVi.Services.RateLimit;
 using EduVi.Services.Otp;
+using EduVi.Services.Payment;
 using EduVi.WebAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -61,11 +62,17 @@ builder.Services.AddAuthorization();
 // Register UnitOfWork
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+// PayOS Configuration (v1 via IPayOSService wrapper)
+builder.Services.AddSingleton<IPayOSService, PayOSService>();
+
+Console.WriteLine("\u2713 PayOS configured");
+
 // Register Services
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 // CORS Configuration (customize theo nhu cầu)
 builder.Services.AddCors(options =>

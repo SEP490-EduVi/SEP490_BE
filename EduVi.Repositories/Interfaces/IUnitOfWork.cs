@@ -1,4 +1,5 @@
 using EduVi.Contracts.Repositories;
+using EduVi.Repositories.Interfaces;
 
 namespace EduVi.Repositories.Interfaces;
 
@@ -13,20 +14,44 @@ public interface IUnitOfWork
     /// </summary>
     IAuthenticationRepository AuthenticationRepository { get; }
 
-    // TODO: Thêm các repositories khác ở đây khi cần
-    // IUserRepository UserRepository { get; }
-    // IMaterialRepository MaterialRepository { get; }
-    // IOrderRepository OrderRepository { get; }
+    /// <summary>
+    /// Repository xử lý Payment: Wallet, Transactions, Orders, Subscriptions
+    /// </summary>
+    IPaymentRepository PaymentRepository { get; }
+
+    // ============ Transaction Management ============
+
+    /// <summary>
+    /// Bắt đầu DB transaction. Dùng khi cần nhiều thao tác atomic.
+    /// PHẢI gọi CommitTransactionAsync() hoặc RollbackTransactionAsync() sau đó.
+    /// </summary>
+    Task BeginTransactionAsync();
+
+    /// <summary>
+    /// Commit transaction: SaveChanges + Commit.
+    /// </summary>
+    Task CommitTransactionAsync();
+
+    /// <summary>
+    /// Rollback transaction khi có lỗi.
+    /// </summary>
+    Task RollbackTransactionAsync();
+
+    /// <summary>
+    /// Lưu thay đổi NGAY (không cần transaction wrapper).
+    /// Dùng cho các thao tác đơn lẻ như tạo PENDING record.
+    /// </summary>
+    Task<int> SaveChangesAsync();
+
+    // ============ Legacy (giữ lại cho code cũ) ============
 
     /// <summary>
     /// Lưu tất cả thay đổi với transaction (đồng bộ)
     /// </summary>
-    /// <returns>Số bản ghi bị ảnh hưởng, -1 nếu có lỗi</returns>
     int SaveChangesWithTransaction();
 
     /// <summary>
     /// Lưu tất cả thay đổi với transaction (bất đồng bộ)
     /// </summary>
-    /// <returns>Số bản ghi bị ảnh hưởng, -1 nếu có lỗi</returns>
     Task<int> SaveChangesWithTransactionAsync();
 }

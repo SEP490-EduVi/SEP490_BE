@@ -59,6 +59,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<Wallets> Wallets { get; set; }
 
+    public virtual DbSet<WalletTransactions> WalletTransactions { get; set; }
+
     public static string GetConnectionString(string connectionStringName)
     {
         var config = new ConfigurationBuilder()
@@ -490,6 +492,38 @@ public partial class EduViContext : DbContext
             entity.HasOne(d => d.User).WithOne(p => p.Wallets)
                 .HasForeignKey<Wallets>(d => d.UserId)
                 .HasConstraintName("FK__Wallets__UserID__797309D9");
+        });
+
+        modelBuilder.Entity<WalletTransactions>(entity =>
+        {
+            entity.HasKey(e => e.TransactionId).HasName("PK__WalletTransactions__TransactionId");
+
+            entity.HasIndex(e => e.OrderCode, "UQ__WalletTransactions__OrderCode").IsUnique();
+
+            entity.Property(e => e.TransactionId).HasColumnName("TransactionID");
+            entity.Property(e => e.WalletId).HasColumnName("WalletID");
+            entity.Property(e => e.OrderCode).HasColumnName("OrderCode");
+            entity.Property(e => e.TransactionType)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.BalanceBefore).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.BalanceAfter).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Status).HasDefaultValue(0);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.PlanId).HasColumnName("PlanID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Wallet).WithMany()
+                .HasForeignKey(d => d.WalletId)
+                .HasConstraintName("FK__WalletTrans__WalletID");
+
+            entity.HasOne(d => d.Plan).WithMany()
+                .HasForeignKey(d => d.PlanId)
+                .HasConstraintName("FK__WalletTrans__PlanID");
         });
 
         OnModelCreatingPartial(modelBuilder);
