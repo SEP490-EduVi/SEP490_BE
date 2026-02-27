@@ -15,6 +15,8 @@ public partial class Materials
 
     public int? GradeId { get; set; }
 
+    public string MaterialCode { get; set; }
+
     public string Title { get; set; }
 
     public string Description { get; set; }

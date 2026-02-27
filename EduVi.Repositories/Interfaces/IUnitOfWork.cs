@@ -24,6 +24,16 @@ public interface IUnitOfWork
     /// </summary>
     IAdminRepository AdminRepository { get; }
 
+    /// <summary>
+    /// Repository xử lý Pipeline: Products, InputDocuments cho AI evaluation
+    /// </summary>
+    IPipelineRepository PipelineRepository { get; }
+
+    /// <summary>
+    /// Repository xử lý Curriculum: Subjects, Grades, Lessons
+    /// </summary>
+    ICurriculumRepository CurriculumRepository { get; }
+
     // ============ Transaction Management ============
 
     /// <summary>

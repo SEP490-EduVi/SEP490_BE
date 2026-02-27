@@ -15,7 +15,11 @@ public partial class InputDocuments
 
     public int? GradeId { get; set; }
 
-    public int? ChapterId { get; set; }
+    public int? LessonId { get; set; }
+
+    public int? ProjectId { get; set; }
+
+    public string DocumentCode { get; set; }
 
     public string Raw { get; set; }
 
@@ -25,11 +29,11 @@ public partial class InputDocuments
 
     public DateTime? UploadDate { get; set; }
 
-    public virtual Chapters Chapter { get; set; }
+    public virtual Lessons Lesson { get; set; }
 
     public virtual Grades Grade { get; set; }
 
-    public virtual ICollection<Projects> Projects { get; set; } = new List<Projects>();
+    public virtual Projects Project { get; set; }
 
     public virtual Subjects Subject { get; set; }
 

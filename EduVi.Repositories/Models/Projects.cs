@@ -11,17 +11,13 @@ public partial class Projects
 
     public int? TeacherId { get; set; }
 
-    public int? InputDocumentId { get; set; }
+    public string ProjectCode { get; set; }
 
     public string ProjectName { get; set; }
 
     public int? Status { get; set; }
 
-    public DateTime? StartDate { get; set; }
-
-    public DateTime? Deadline { get; set; }
-
-    public virtual InputDocuments InputDocument { get; set; }
+    public virtual ICollection<InputDocuments> InputDocuments { get; set; } = new List<InputDocuments>();
 
     public virtual ICollection<Products> Products { get; set; } = new List<Products>();
 

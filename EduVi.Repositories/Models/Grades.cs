@@ -9,6 +9,8 @@ public partial class Grades
 {
     public int GradeId { get; set; }
 
+    public string GradeCode { get; set; }
+
     public string GradeName { get; set; }
 
     public virtual ICollection<InputDocuments> InputDocuments { get; set; } = new List<InputDocuments>();

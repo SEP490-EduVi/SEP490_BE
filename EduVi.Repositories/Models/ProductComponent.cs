@@ -13,6 +13,8 @@ public partial class ProductComponent
 
     public int TeacherId { get; set; }
 
+    public string ComponentCode { get; set; }
+
     public virtual Products Products { get; set; }
 
     public virtual TeacherMaterials TeacherMaterials { get; set; }

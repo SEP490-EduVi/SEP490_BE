@@ -1,4 +1,3 @@
-using EduVi.Contracts.Repositories;
 using EduVi.Repositories;
 using EduVi.Repositories.DBContext;
 using EduVi.Repositories.Interfaces;
@@ -8,6 +7,10 @@ using EduVi.Services.RateLimit;
 using EduVi.Services.Otp;
 using EduVi.Services.Payment;
 using EduVi.Services.Admin;
+using EduVi.Services.Curriculum;
+using EduVi.Services.Pipeline;
+using EduVi.WebAPI.BackgroundServices;
+using EduVi.WebAPI.Hubs;
 using EduVi.WebAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -75,8 +78,25 @@ builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IPipelineService, PipelineService>();
+builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 
-// CORS Configuration (customize theo nhu cầu)
+// RabbitMQ Publisher
+builder.Services.AddSingleton<IRabbitMqPublisherService, RabbitMqPublisherService>();
+
+// Pipeline Result Consumer (BackgroundService)
+builder.Services.AddHostedService<PipelineResultConsumerService>();
+
+// SignalR with Redis backplane
+builder.Services.AddSignalR()
+    .AddStackExchangeRedis(redisConnection!, options =>
+    {
+        options.Configuration.ChannelPrefix = RedisChannel.Literal("EduVi");
+    });
+
+Console.WriteLine("\u2713 SignalR + Pipeline configured");
+
+// CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -145,5 +165,6 @@ app.UseSessionValidation(); // Middleware xác thực session với Redis
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<PipelineHub>("/hubs/pipeline");
 
 app.Run();

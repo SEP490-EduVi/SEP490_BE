@@ -13,6 +13,8 @@ public partial class Products
 
     public int TeacherId { get; set; }
 
+    public string ProductCode { get; set; }
+
     public string ProductName { get; set; }
 
     public string Description { get; set; }
@@ -24,6 +26,10 @@ public partial class Products
     public bool? IsFreeForSubscribers { get; set; }
 
     public int? Status { get; set; }
+
+    public string EvaluationResult { get; set; }
+
+    public DateTime? EvaluatedAt { get; set; }
 
     public virtual ICollection<ProductComponent> ProductComponent { get; set; } = new List<ProductComponent>();
 

@@ -3,6 +3,9 @@
 [Rr]elease/
 x64/
 x86/
+
+# GCP credentials (NEVER commit)
+private/
 [Bb]in/
 [Oo]bj/
 

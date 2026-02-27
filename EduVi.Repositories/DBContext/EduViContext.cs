@@ -21,7 +21,7 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<Admins> Admins { get; set; }
 
-    public virtual DbSet<Chapters> Chapters { get; set; }
+    public virtual DbSet<Lessons> Lessons { get; set; }
 
     public virtual DbSet<Experts> Experts { get; set; }
 
@@ -92,15 +92,21 @@ public partial class EduViContext : DbContext
                 .HasConstraintName("FK_Admins_Users");
         });
 
-        modelBuilder.Entity<Chapters>(entity =>
+        modelBuilder.Entity<Lessons>(entity =>
         {
-            entity.HasKey(e => e.ChapterId).HasName("PK__Chapters__0893A34ABEF40482");
+            entity.HasKey(e => e.LessonId).HasName("PK__Chapters__0893A34ABEF40482");
 
-            entity.Property(e => e.ChapterId).HasColumnName("ChapterID");
-            entity.Property(e => e.ChapterName).HasMaxLength(100);
+            entity.ToTable("Lessons");
+
+            entity.Property(e => e.LessonId).HasColumnName("LessonID");
+            entity.Property(e => e.LessonCode)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("LessonCode");
+            entity.Property(e => e.LessonName).HasMaxLength(100);
             entity.Property(e => e.SubjectId).HasColumnName("SubjectID");
 
-            entity.HasOne(d => d.Subject).WithMany(p => p.Chapters)
+            entity.HasOne(d => d.Subject).WithMany(p => p.Lessons)
                 .HasForeignKey(d => d.SubjectId)
                 .HasConstraintName("FK_Chapters_Subjects");
         });
@@ -135,6 +141,10 @@ public partial class EduViContext : DbContext
             entity.HasKey(e => e.GradeId).HasName("PK__Grades__54F87A37628EAD42");
 
             entity.Property(e => e.GradeId).HasColumnName("GradeID");
+            entity.Property(e => e.GradeCode)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("GradeCode");
             entity.Property(e => e.GradeName).HasMaxLength(50);
         });
 
@@ -143,7 +153,11 @@ public partial class EduViContext : DbContext
             entity.HasKey(e => e.DocumentId).HasName("PK__InputDoc__1ABEEF6FB9B9B79B");
 
             entity.Property(e => e.DocumentId).HasColumnName("DocumentID");
-            entity.Property(e => e.ChapterId).HasColumnName("ChapterID");
+            entity.Property(e => e.LessonId).HasColumnName("LessonID");
+            entity.Property(e => e.DocumentCode)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("DocumentCode");
             entity.Property(e => e.FilePath)
                 .HasMaxLength(500)
                 .IsUnicode(false);
@@ -151,13 +165,14 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.Raw).HasMaxLength(500);
             entity.Property(e => e.SubjectId).HasColumnName("SubjectID");
             entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
+            entity.Property(e => e.ProjectId).HasColumnName("ProjectID");
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.UploadDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
 
-            entity.HasOne(d => d.Chapter).WithMany(p => p.InputDocuments)
-                .HasForeignKey(d => d.ChapterId)
+            entity.HasOne(d => d.Lesson).WithMany(p => p.InputDocuments)
+                .HasForeignKey(d => d.LessonId)
                 .HasConstraintName("FK__InputDocu__Chapt__5812160E");
 
             entity.HasOne(d => d.Grade).WithMany(p => p.InputDocuments)
@@ -171,6 +186,10 @@ public partial class EduViContext : DbContext
             entity.HasOne(d => d.Teacher).WithMany(p => p.InputDocuments)
                 .HasForeignKey(d => d.TeacherId)
                 .HasConstraintName("FK__InputDocu__Teach__5535A963");
+
+            entity.HasOne(d => d.Project).WithMany(p => p.InputDocuments)
+                .HasForeignKey(d => d.ProjectId)
+                .HasConstraintName("FK__InputDocu__Proje__ProjectID");
         });
 
         modelBuilder.Entity<Materials>(entity =>
@@ -180,6 +199,10 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.MaterialId).HasColumnName("MaterialID");
             entity.Property(e => e.ApprovalStatus).HasDefaultValue(0);
             entity.Property(e => e.ApproverId).HasColumnName("ApproverID");
+            entity.Property(e => e.MaterialCode)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("MaterialCode");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -242,6 +265,10 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.ProductId).HasColumnName("ProductID");
             entity.Property(e => e.MaterialId).HasColumnName("MaterialID");
             entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
+            entity.Property(e => e.ComponentCode)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("ComponentCode");
 
             entity.HasOne(d => d.Products).WithMany(p => p.ProductComponent)
                 .HasPrincipalKey(p => new { p.ProductId, p.TeacherId })
@@ -262,6 +289,10 @@ public partial class EduViContext : DbContext
             entity.HasIndex(e => new { e.ProductId, e.TeacherId }, "UQ_Products_Teacher").IsUnique();
 
             entity.Property(e => e.ProductId).HasColumnName("ProductID");
+            entity.Property(e => e.ProductCode)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("ProductCode");
             entity.Property(e => e.IsFreeForSubscribers).HasDefaultValue(false);
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ProductName).HasMaxLength(200);
@@ -269,6 +300,8 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.SourceInputId).HasColumnName("SourceInputID");
             entity.Property(e => e.Status).HasDefaultValue(1);
             entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
+            entity.Property(e => e.EvaluationResult).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.EvaluatedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Products)
                 .HasForeignKey(d => d.ProjectId)
@@ -286,16 +319,13 @@ public partial class EduViContext : DbContext
             entity.HasKey(e => e.ProjectId).HasName("PK__Projects__761ABED03237E04E");
 
             entity.Property(e => e.ProjectId).HasColumnName("ProjectID");
-            entity.Property(e => e.Deadline).HasColumnType("datetime");
-            entity.Property(e => e.InputDocumentId).HasColumnName("InputDocumentID");
+            entity.Property(e => e.ProjectCode)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("ProjectCode");
             entity.Property(e => e.ProjectName).HasMaxLength(200);
-            entity.Property(e => e.StartDate).HasColumnType("datetime");
             entity.Property(e => e.Status).HasDefaultValue(0);
             entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
-
-            entity.HasOne(d => d.InputDocument).WithMany(p => p.Projects)
-                .HasForeignKey(d => d.InputDocumentId)
-                .HasConstraintName("FK__Projects__InputD__693CA210");
 
             entity.HasOne(d => d.Teacher).WithMany(p => p.Projects)
                 .HasForeignKey(d => d.TeacherId)
@@ -338,9 +368,10 @@ public partial class EduViContext : DbContext
             entity.HasKey(e => e.SubjectId).HasName("PK__Subjects__AC1BA38865AA8D90");
 
             entity.Property(e => e.SubjectId).HasColumnName("SubjectID");
-            entity.Property(e => e.Code)
+            entity.Property(e => e.SubjectCode)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(false)
+                .HasColumnName("SubjectCode");
             entity.Property(e => e.SubjectName).HasMaxLength(100);
         });
 

@@ -11,9 +11,9 @@ public partial class Subjects
 
     public string SubjectName { get; set; }
 
-    public string Code { get; set; }
+    public string SubjectCode { get; set; }
 
-    public virtual ICollection<Chapters> Chapters { get; set; } = new List<Chapters>();
+    public virtual ICollection<Lessons> Lessons { get; set; } = new List<Lessons>();
 
     public virtual ICollection<InputDocuments> InputDocuments { get; set; } = new List<InputDocuments>();
 
