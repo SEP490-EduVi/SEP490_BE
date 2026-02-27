@@ -19,6 +19,11 @@ public interface IUnitOfWork
     /// </summary>
     IPaymentRepository PaymentRepository { get; }
 
+    /// <summary>
+    /// Repository xử lý Admin: User Management, Financial, Plans
+    /// </summary>
+    IAdminRepository AdminRepository { get; }
+
     // ============ Transaction Management ============
 
     /// <summary>

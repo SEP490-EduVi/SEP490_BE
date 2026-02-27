@@ -7,6 +7,7 @@ using EduVi.Services.Email;
 using EduVi.Services.RateLimit;
 using EduVi.Services.Otp;
 using EduVi.Services.Payment;
+using EduVi.Services.Admin;
 using EduVi.WebAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +74,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // CORS Configuration (customize theo nhu cầu)
 builder.Services.AddCors(options =>

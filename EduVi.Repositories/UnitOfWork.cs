@@ -11,6 +11,7 @@ public class UnitOfWork : IUnitOfWork
     private readonly EduViContext _context;
     private AuthenticationRepository? _authenticationRepository;
     private PaymentRepository? _paymentRepository;
+    private AdminRepository? _adminRepository;
     private IDbContextTransaction? _currentTransaction;
 
     public UnitOfWork(EduViContext context)
@@ -30,6 +31,11 @@ public class UnitOfWork : IUnitOfWork
     public IPaymentRepository PaymentRepository
     {
         get => _paymentRepository ??= new PaymentRepository(_context);
+    }
+
+    public IAdminRepository AdminRepository
+    {
+        get => _adminRepository ??= new AdminRepository(_context);
     }
 
     // ============ Transaction Management ============
