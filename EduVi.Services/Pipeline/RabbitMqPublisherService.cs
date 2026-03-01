@@ -49,7 +49,7 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
         _logger.LogInformation("RabbitMQ publisher connected and queue '{Queue}' declared", QueueName);
     }
 
-    public async Task PublishLessonAnalysisTaskAsync(Guid taskId, string userId, string gcsUri, string subjectCode, string gradeCode, string lessonCode)
+    public async Task PublishLessonAnalysisTaskAsync(Guid taskId, string userId, int productId, string gcsUri, string subjectCode, string gradeCode, string lessonCode)
     {
         await _semaphore.WaitAsync();
         try
@@ -60,6 +60,7 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
             {
                 taskId = taskId.ToString(),
                 userId,
+                productId,
                 gcsUri,
                 subjectCode,
                 gradeCode,

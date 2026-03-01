@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR Pipeline Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+        #log { white-space: pre-wrap; margin-top: 10px; padding: 10px; background: #2d2d2d; border-radius: 4px; max-height: 500px; overflow-y: auto; }
+        input, button { padding: 6px 12px; margin: 4px; font-family: monospace; }
+        .success { color: #6a9955; }
+        .error { color: #f44747; }
+        .message { color: #569cd6; }
+    </style>
+</head>
+<body>
+    <h3>SignalR Pipeline Test Client</h3>
+    <div>
+        <label>Hub URL:</label>
+        <input id="hubUrl" value="/hubs/pipeline" size="50" />
+    </div>
+    <div>
+        <label>User ID:</label>
+        <input id="userId" value="5" size="10" />
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    <div id="log"></div>
+
+    <script>
+        let connection = null;
+
+        function log(message, className = '') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function connect() {
+            const hubUrl = document.getElementById('hubUrl').value;
+            const userId = document.getElementById('userId').value;
+
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl(hubUrl)
+                .withAutomaticReconnect()
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            connection.on("PipelineProgress", (progress) => {
+                log(`PipelineProgress:\n${JSON.stringify(progress, null, 2)}`, 'message');
+            });
+
+            connection.onclose(() => log("Connection closed", 'error'));
+            connection.onreconnecting(() => log("Reconnecting...", 'error'));
+            connection.onreconnected(() => log("Reconnected", 'success'));
+
+            try {
+                await connection.start();
+                log(`Connected to ${hubUrl}`, 'success');
+
+                await connection.invoke("JoinUserGroup", userId);
+                log(`Joined group user_${userId}`, 'success');
+
+                log("Waiting for PipelineProgress messages...", 'success');
+            } catch (err) {
+                log(`Connection failed: ${err}`, 'error');
+            }
+        }
+
+        async function disconnect() {
+            if (connection) {
+                await connection.stop();
+                log("Disconnected", 'error');
+            }
+        }
+    </script>
+</body>
+</html>

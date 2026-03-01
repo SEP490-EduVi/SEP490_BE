@@ -6,6 +6,7 @@ using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace EduVi.Services.Pipeline;
@@ -69,8 +70,10 @@ public class PipelineService : IPipelineService
                 .Replace($"gs://{bucketName}/", "");
             try
             {
+                var deleteStart = Stopwatch.GetTimestamp();
                 await storageClient.DeleteObjectAsync(bucketName, oldObjectName);
-                _logger.LogInformation("Deleted old GCS file: {OldPath}", existing.FilePath);
+                var deleteElapsed = Stopwatch.GetElapsedTime(deleteStart);
+                _logger.LogInformation("GCS delete completed in {ElapsedMs}ms: {OldPath}", deleteElapsed.TotalMilliseconds, existing.FilePath);
             }
             catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -84,15 +87,17 @@ public class PipelineService : IPipelineService
         var objectName = $"user_inputs/{teacherId}/{fileName}";
 
         using var stream = request.File.OpenReadStream();
+        var uploadStart = Stopwatch.GetTimestamp();
         await storageClient.UploadObjectAsync(
             bucketName,
             objectName,
             request.File.ContentType,
             stream);
+        var uploadElapsed = Stopwatch.GetElapsedTime(uploadStart);
 
         var gcsPath = $"gs://{bucketName}/{objectName}";
 
-        _logger.LogInformation("Uploaded file to GCS: {GcsPath}", gcsPath);
+        _logger.LogInformation("GCS upload completed in {ElapsedMs}ms: {GcsPath}", uploadElapsed.TotalMilliseconds, gcsPath);
 
         // 4. Update existing or create new InputDocument in DB
         var documentCode = $"doc_{request.SubjectCode}_{request.GradeCode}{lessonPart}_{timestamp}";
@@ -124,9 +129,6 @@ public class PipelineService : IPipelineService
         }
 
         await _unitOfWork.SaveChangesAsync();
-
-        _logger.LogInformation("Saved InputDocument {DocumentId} for teacher {TeacherId}",
-            document.DocumentId, teacherId);
 
         // 5. Reload with navigation properties for response
         var saved = await _unitOfWork.PipelineRepository
@@ -178,9 +180,6 @@ public class PipelineService : IPipelineService
         await _unitOfWork.PipelineRepository.CreateProjectAsync(project);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Created Project: {ProjectCode} for teacher {TeacherId}",
-            project.ProjectCode, teacherId);
-
         var saved = await _unitOfWork.PipelineRepository.GetProjectByCodeAsync(project.ProjectCode, includeRelations: true);
         return MapToProjectResponse(saved!);
     }
@@ -207,8 +206,6 @@ public class PipelineService : IPipelineService
         _unitOfWork.PipelineRepository.UpdateProject(project);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Updated Project: {ProjectCode}", project.ProjectCode);
-
         var saved = await _unitOfWork.PipelineRepository.GetProjectByCodeAsync(project.ProjectCode, includeRelations: true);
         return MapToProjectResponse(saved!);
     }
@@ -226,8 +223,6 @@ public class PipelineService : IPipelineService
 
         _unitOfWork.PipelineRepository.DeleteProject(project);
         await _unitOfWork.SaveChangesAsync();
-
-        _logger.LogInformation("Deleted Project: {ProjectCode}", projectCode);
     }
 
     #endregion
@@ -259,24 +254,39 @@ public class PipelineService : IPipelineService
         var subjectCode = document.Subject?.SubjectCode ?? "Unknown";
         var gradeCode = document.Grade?.GradeCode ?? "Unknown";
 
-        // 4. Create Product with status NEW
-        var product = new Products
+        // 4. Reuse existing Product for same project + document, or create new
+        var product = await _unitOfWork.PipelineRepository
+            .GetExistingProductAsync(project.ProjectId, document.DocumentId);
+
+        var productCode = $"prod_{request.ProjectCode}_{request.DocumentCode}";
+
+        if (product is not null)
         {
-            ProjectId = project.ProjectId,
-            TeacherId = teacherId,
-            ProductName = request.ProductName ?? $"Phân tích: {document.Title}",
-            Description = $"AI evaluation cho document: {document.Title}",
-            SourceInputId = document.DocumentId,
-            Status = ProductStatusConstants.New,
-            Price = 0
-        };
+            product.ProductName = request.ProductName ?? $"Phân tích: {document.Title}";
+            product.Description = $"AI evaluation cho document: {document.Title}";
+            product.ProductCode = productCode;
+            product.Status = ProductStatusConstants.New;
+            product.EvaluationResult = null;
+            product.EvaluatedAt = null;
+            _unitOfWork.PipelineRepository.UpdateProduct(product);
+        }
+        else
+        {
+            product = new Products
+            {
+                ProjectId = project.ProjectId,
+                TeacherId = teacherId,
+                ProductCode = productCode,
+                ProductName = request.ProductName ?? $"Phân tích: {document.Title}",
+                Description = $"AI evaluation cho document: {document.Title}",
+                SourceInputId = document.DocumentId,
+                Status = ProductStatusConstants.New,
+                Price = 0
+            };
+            await _unitOfWork.PipelineRepository.CreateProductAsync(product);
+        }
 
-        await _unitOfWork.PipelineRepository.CreateProductAsync(product);
         await _unitOfWork.SaveChangesAsync();
-
-        _logger.LogInformation(
-            "Created Product {ProductId} (NEW) for document {DocumentCode} in project {ProjectCode}",
-            product.ProductId, request.DocumentCode, request.ProjectCode);
 
         // 5. Store task metadata in Redis (TTL 1 hour)
         var db = _redis.GetDatabase();
@@ -291,21 +301,29 @@ public class PipelineService : IPipelineService
             gcsUri = document.FilePath,
             createdAt = DateTime.UtcNow.ToString("o")
         });
+        var redisStart = Stopwatch.GetTimestamp();
         await db.StringSetAsync($"pipeline:status:{taskId}", taskMeta, TimeSpan.FromHours(1));
+        var redisElapsed = Stopwatch.GetElapsedTime(redisStart);
+        _logger.LogInformation("Redis task metadata stored in {ElapsedMs}ms for task {TaskId}", redisElapsed.TotalMilliseconds, taskId);
 
         // 6. Publish task to RabbitMQ (matches Python format)
+        var publishStart = Stopwatch.GetTimestamp();
         await _publisher.PublishLessonAnalysisTaskAsync(
             taskId,
             teacherId.ToString(),
+            product.ProductId,
             document.FilePath,
             subjectCode,
             gradeCode,
             lessonCode);
+        var publishElapsed = Stopwatch.GetElapsedTime(publishStart);
+        _logger.LogInformation("RabbitMQ lesson analysis task published in {ElapsedMs}ms for task {TaskId}, product {ProductCode}",
+            publishElapsed.TotalMilliseconds, taskId, productCode);
 
         return new PipelineTaskResponseDto
         {
             TaskId = taskId,
-            ProductCode = product.ProductCode ?? product.ProductId.ToString(),
+            ProductCode = product.ProductCode,
             Status = "queued"
         };
     }

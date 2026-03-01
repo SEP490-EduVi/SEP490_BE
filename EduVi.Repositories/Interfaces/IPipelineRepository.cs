@@ -71,6 +71,11 @@ public interface IPipelineRepository
     // ============ Products ============
 
     /// <summary>
+    /// Tìm Product đã tồn tại theo ProjectId + SourceInputId
+    /// </summary>
+    Task<Products?> GetExistingProductAsync(int projectId, int sourceInputId);
+
+    /// <summary>
     /// Tạo Product mới với status NEW
     /// </summary>
     Task<Products> CreateProductAsync(Products product);

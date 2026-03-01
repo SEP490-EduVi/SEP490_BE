@@ -94,16 +94,32 @@ public class PipelineResultConsumerService : BackgroundService
 
                     if (progress is not null)
                     {
+                        var redisDb = _redis.GetDatabase();
+
+                        // Resolve productId from Redis if worker didn't include it
+                        if (progress.ProductId == 0 && progress.TaskId != Guid.Empty)
+                        {
+                            var existingMeta = await redisDb.StringGetAsync($"pipeline:status:{progress.TaskId}");
+                            if (!existingMeta.IsNullOrEmpty)
+                            {
+                                var originalTask = JsonSerializer.Deserialize<PipelineProgressDto>(existingMeta!, new JsonSerializerOptions
+                                {
+                                    PropertyNameCaseInsensitive = true
+                                });
+                                if (originalTask?.ProductId > 0)
+                                    progress.ProductId = originalTask.ProductId;
+                            }
+                        }
+
                         // Push to user's SignalR group
                         await _hubContext.Clients
                             .Group($"user_{progress.UserId}")
                             .SendAsync("PipelineProgress", progress, stoppingToken);
 
                         // Update status in Redis
-                        var redisDb = _redis.GetDatabase();
                         await redisDb.StringSetAsync(
                             $"pipeline:status:{progress.TaskId}",
-                            json,
+                            JsonSerializer.Serialize(progress),
                             TimeSpan.FromHours(1));
 
                         // Persist to DB when completed or failed

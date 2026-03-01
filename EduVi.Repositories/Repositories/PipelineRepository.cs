@@ -107,6 +107,12 @@ public class PipelineRepository : IPipelineRepository
         _context.Projects.Remove(project);
     }
 
+    public async Task<Products?> GetExistingProductAsync(int projectId, int sourceInputId)
+    {
+        return await _context.Products
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId && p.SourceInputId == sourceInputId);
+    }
+
     public async Task<Products> CreateProductAsync(Products product)
     {
         var entry = await _context.Products.AddAsync(product);
