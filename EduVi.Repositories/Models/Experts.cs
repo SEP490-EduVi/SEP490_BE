@@ -9,6 +9,8 @@ public partial class Experts
 {
     public int ExpertId { get; set; }
 
+    public string ExpertCode { get; set; }
+
     public string Bio { get; set; }
 
     public string IdentityCardNumber { get; set; }

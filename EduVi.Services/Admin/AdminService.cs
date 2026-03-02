@@ -38,18 +38,18 @@ public class AdminService : IAdminService
         };
     }
 
-    public async Task<AdminUserResponse> GetUserByIdAsync(int userId)
+    public async Task<AdminUserResponse> GetUserByCodeAsync(string userCode)
     {
-        var user = await _unitOfWork.AdminRepository.GetUserByIdAsync(userId)
-            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với ID {userId}.");
+        var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
         return MapToUserResponse(user);
     }
 
-    public async Task<AdminUserResponse> UpdateUserAsync(int userId, UpdateUserRequest request)
+    public async Task<AdminUserResponse> UpdateUserAsync(string userCode, UpdateUserRequest request)
     {
-        var user = await _unitOfWork.AdminRepository.GetUserByIdAsync(userId)
-            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với ID {userId}.");
+        var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
         // Chỉ cập nhật field được gửi lên (non-null)
         if (request.FullName != null) user.FullName = request.FullName;
@@ -59,71 +59,83 @@ public class AdminService : IAdminService
         await _unitOfWork.AdminRepository.UpdateUserAsync(user);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Admin updated user {UserId}", userId);
+        _logger.LogInformation("Admin updated user {UserCode} (UserId: {UserId})", userCode, user.UserId);
 
         // Re-fetch để trả về data mới nhất
-        var updated = await _unitOfWork.AdminRepository.GetUserByIdAsync(userId);
+        var updated = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode);
         return MapToUserResponse(updated!);
     }
 
-    public async Task<bool> BanUserAsync(int userId)
+    public async Task<bool> BanUserAsync(string userCode)
     {
-        var success = await _unitOfWork.AdminRepository.UpdateUserStatusAsync(userId, 0);
+        var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
+
+        var success = await _unitOfWork.AdminRepository.UpdateUserStatusAsync(user.UserId, 0);
         if (!success)
-            throw new KeyNotFoundException($"Không tìm thấy người dùng với ID {userId}.");
+            throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
         await _unitOfWork.SaveChangesAsync();
 
         // CRITICAL: Revoke Token ngay lập tức → user bị đẩy ra khỏi hệ thống
-        await _authService.RevokeTokenAsync(userId);
+        await _authService.RevokeTokenAsync(user.UserId);
 
-        _logger.LogWarning("Admin BANNED user {UserId} and revoked token", userId);
+        _logger.LogWarning("Admin BANNED user {UserCode} (UserId: {UserId}) and revoked token", userCode, user.UserId);
         return true;
     }
 
-    public async Task<bool> UnbanUserAsync(int userId)
+    public async Task<bool> UnbanUserAsync(string userCode)
     {
-        var success = await _unitOfWork.AdminRepository.UpdateUserStatusAsync(userId, 1);
+        var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
+
+        var success = await _unitOfWork.AdminRepository.UpdateUserStatusAsync(user.UserId, 1);
         if (!success)
-            throw new KeyNotFoundException($"Không tìm thấy người dùng với ID {userId}.");
+            throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Admin UNBANNED user {UserId}", userId);
+        _logger.LogInformation("Admin UNBANNED user {UserCode} (UserId: {UserId})", userCode, user.UserId);
         return true;
     }
 
-    public async Task<bool> ChangeUserRoleAsync(int userId, ChangeUserRoleRequest request)
+    public async Task<bool> ChangeUserRoleAsync(string userCode, ChangeUserRoleRequest request)
     {
         // Validate role tồn tại
         if (!await _unitOfWork.AdminRepository.RoleExistsAsync(request.RoleId))
             throw new InvalidOperationException($"Role ID {request.RoleId} không tồn tại.");
 
-        var success = await _unitOfWork.AdminRepository.ChangeUserRoleAsync(userId, request.RoleId);
+        var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
+
+        var success = await _unitOfWork.AdminRepository.ChangeUserRoleAsync(user.UserId, request.RoleId);
         if (!success)
-            throw new KeyNotFoundException($"Không tìm thấy người dùng với ID {userId}.");
+            throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
         await _unitOfWork.SaveChangesAsync();
 
         // Revoke Token → user phải login lại để nhận token mới với role mới
-        await _authService.RevokeTokenAsync(userId);
+        await _authService.RevokeTokenAsync(user.UserId);
 
-        _logger.LogWarning("Admin changed role of user {UserId} to RoleId={RoleId}, token revoked", userId, request.RoleId);
+        _logger.LogWarning("Admin changed role of user {UserCode} (UserId: {UserId}) to RoleId={RoleId}, token revoked", userCode, user.UserId, request.RoleId);
         return true;
     }
 
-    public async Task<bool> DeleteUserAsync(int userId)
+    public async Task<bool> DeleteUserAsync(string userCode)
     {
-        var success = await _unitOfWork.AdminRepository.DeleteUserAsync(userId);
+        var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
+
+        var success = await _unitOfWork.AdminRepository.DeleteUserAsync(user.UserId);
         if (!success)
-            throw new KeyNotFoundException($"Không tìm thấy người dùng với ID {userId}.");
+            throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
         await _unitOfWork.SaveChangesAsync();
 
         // Revoke token khi xóa user
-        await _authService.RevokeTokenAsync(userId);
+        await _authService.RevokeTokenAsync(user.UserId);
 
-        _logger.LogWarning("Admin DELETED user {UserId}", userId);
+        _logger.LogWarning("Admin DELETED user {UserCode} (UserId: {UserId})", userCode, user.UserId);
         return true;
     }
 
@@ -297,6 +309,7 @@ public class AdminService : IAdminService
     private static AdminUserResponse MapToUserResponse(Users u) => new()
     {
         UserId = u.UserId,
+        UserCode = u.UserCode ?? "",
         Username = u.Username ?? "",
         Email = u.Email ?? "",
         FullName = u.FullName,

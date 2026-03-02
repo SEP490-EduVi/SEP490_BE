@@ -9,6 +9,8 @@ public partial class Teachers
 {
     public int TeacherId { get; set; }
 
+    public string TeacherCode { get; set; }
+
     public string SchoolName { get; set; }
 
     public string Degree { get; set; }

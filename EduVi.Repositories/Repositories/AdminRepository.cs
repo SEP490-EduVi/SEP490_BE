@@ -74,6 +74,18 @@ public class AdminRepository : IAdminRepository
             .FirstOrDefaultAsync(u => u.UserId == userId);
     }
 
+    public async Task<Users?> GetUserByCodeAsync(string userCode)
+    {
+        return await _context.Users
+            .Include(u => u.Role)
+            .Include(u => u.Admins)
+            .Include(u => u.Experts)
+            .Include(u => u.Staffs)
+            .Include(u => u.Teachers)
+            .Include(u => u.Wallets)
+            .FirstOrDefaultAsync(u => u.UserCode == userCode);
+    }
+
     public async Task UpdateUserAsync(Users user)
     {
         _context.Users.Update(user);

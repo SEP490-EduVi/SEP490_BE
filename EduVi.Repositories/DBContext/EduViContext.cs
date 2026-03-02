@@ -82,9 +82,14 @@ public partial class EduViContext : DbContext
         {
             entity.HasKey(e => e.AdminId).HasName("PK__Admins__719FE4E8D1BDB6CF");
 
+            entity.HasIndex(e => e.AdminCode, "UQ__Admins__AdminCode").IsUnique();
+
             entity.Property(e => e.AdminId)
                 .ValueGeneratedNever()
                 .HasColumnName("AdminID");
+            entity.Property(e => e.AdminCode)
+                .HasMaxLength(20)
+                .IsUnicode(false);
 
             entity.HasOne(d => d.Admin).WithOne(p => p.Admins)
                 .HasForeignKey<Admins>(d => d.AdminId)
@@ -115,9 +120,14 @@ public partial class EduViContext : DbContext
         {
             entity.HasKey(e => e.ExpertId).HasName("PK__Experts__7EDB3A38A6FA8802");
 
+            entity.HasIndex(e => e.ExpertCode, "UQ__Experts__ExpertCode").IsUnique();
+
             entity.Property(e => e.ExpertId)
                 .ValueGeneratedNever()
                 .HasColumnName("ExpertID");
+            entity.Property(e => e.ExpertCode)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.BankAccount)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -430,9 +440,14 @@ public partial class EduViContext : DbContext
         {
             entity.HasKey(e => e.TeacherId).HasName("PK__Teachers__EDF25944C8B89D82");
 
+            entity.HasIndex(e => e.TeacherCode, "UQ__Teachers__TeacherCode").IsUnique();
+
             entity.Property(e => e.TeacherId)
                 .ValueGeneratedNever()
                 .HasColumnName("TeacherID");
+            entity.Property(e => e.TeacherCode)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.Degree).HasMaxLength(100);
             entity.Property(e => e.SchoolName).HasMaxLength(100);
 
@@ -472,7 +487,12 @@ public partial class EduViContext : DbContext
 
             entity.HasIndex(e => e.Email, "UQ__Users__A9D10534C19D49D1").IsUnique();
 
+            entity.HasIndex(e => e.UserCode, "UQ__Users__UserCode").IsUnique();
+
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.UserCode)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(255)
                 .IsUnicode(false)

@@ -15,32 +15,32 @@ public interface IAdminService
     /// <summary>
     /// Xem chi tiết 1 user
     /// </summary>
-    Task<AdminUserResponse> GetUserByIdAsync(int userId);
+    Task<AdminUserResponse> GetUserByCodeAsync(string userCode);
 
     /// <summary>
     /// Cập nhật thông tin cơ bản user
     /// </summary>
-    Task<AdminUserResponse> UpdateUserAsync(int userId, UpdateUserRequest request);
+    Task<AdminUserResponse> UpdateUserAsync(string userCode, UpdateUserRequest request);
 
     /// <summary>
     /// Ban user (Status=0) + Revoke Token ngay lập tức
     /// </summary>
-    Task<bool> BanUserAsync(int userId);
+    Task<bool> BanUserAsync(string userCode);
 
     /// <summary>
     /// Unban user (Status=1)
     /// </summary>
-    Task<bool> UnbanUserAsync(int userId);
+    Task<bool> UnbanUserAsync(string userCode);
 
     /// <summary>
     /// Thay đổi role + Revoke Token (user phải login lại với quyền mới)
     /// </summary>
-    Task<bool> ChangeUserRoleAsync(int userId, ChangeUserRoleRequest request);
+    Task<bool> ChangeUserRoleAsync(string userCode, ChangeUserRoleRequest request);
 
     /// <summary>
     /// Xóa user (hard delete)
     /// </summary>
-    Task<bool> DeleteUserAsync(int userId);
+    Task<bool> DeleteUserAsync(string userCode);
 
     /// <summary>
     /// Lấy danh sách tất cả roles

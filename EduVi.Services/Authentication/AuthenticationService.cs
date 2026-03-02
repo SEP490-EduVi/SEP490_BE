@@ -118,10 +118,23 @@ public class AuthenticationService : IAuthenticationService
                     PasswordHash = HashPassword(Guid.NewGuid().ToString()), // Random password
                     RoleId = 5, // Default: Teacher role (customize theo nhu cầu)
                     Status = 1, // Active
+                    IsEmailVerified = true, // Google email đã được verify
                     CreatedAt = DateTime.UtcNow
                 };
 
                 user = await _unitOfWork.AuthenticationRepository.CreateUserAsync(user);
+
+                // Tự động tạo role-specific record (default Teacher)
+                try
+                {
+                    await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
+                    Console.WriteLine($"[GoogleLogin] ✓ Teacher record created for userId {user.UserId}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[GoogleLogin] ✗ Failed to create Teacher record: {ex.Message}");
+                    // Continue - user still logged in, can create record later
+                }
             }
 
             // 3. Kiểm tra trạng thái
@@ -176,6 +189,46 @@ public class AuthenticationService : IAuthenticationService
         };
 
         user = await _unitOfWork.AuthenticationRepository.CreateUserAsync(user);
+
+        // 3.1. Tự động tạo role-specific record với auto-generated Code
+        // TODO: Verify RoleId mapping với database Roles table
+        try
+        {
+            switch (request.RoleId)
+            {
+                case 1: // Admin
+                    await _unitOfWork.AuthenticationRepository.CreateAdminAsync(user.UserId);
+                    Console.WriteLine($"[Registration] ✓ Admin record created for userId {user.UserId}");
+                    break;
+
+                case 2: // Staff
+                    await _unitOfWork.AuthenticationRepository.CreateStaffAsync(user.UserId);
+                    Console.WriteLine($"[Registration] ✓ Staff record created for userId {user.UserId}");
+                    break;
+
+                case 3: // Expert
+                    await _unitOfWork.AuthenticationRepository.CreateExpertAsync(user.UserId);
+                    Console.WriteLine($"[Registration] ✓ Expert record created for userId {user.UserId}");
+                    break;
+
+                case 4: // Teacher
+                    await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
+                    Console.WriteLine($"[Registration] ✓ Teacher record created for userId {user.UserId}");
+                    break;
+
+                default:
+                    Console.WriteLine($"[Registration] ⚠ No role-specific table for RoleId {request.RoleId}");
+                    Console.WriteLine($"[Registration] ⚠ Check Roles table: SELECT * FROM Roles");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Registration] ✗ Failed to create role-specific record: {ex.Message}");
+            Console.WriteLine($"[Registration] ✗ Stack trace: {ex.StackTrace}");
+            // Rollback user creation if role record fails
+            throw new InvalidOperationException($"Failed to create role-specific record: {ex.Message}", ex);
+        }
 
         // 4. Generate OTP (6 digits)
         var otp = _otpService.GenerateOtp();

@@ -48,4 +48,29 @@ public interface IAuthenticationRepository
     /// Kiểm tra username đã tồn tại chưa
     /// </summary>
     Task<bool> UsernameExistsAsync(string username);
+
+    /// <summary>
+    /// Tạo Admin record với auto-generated AdminCode
+    /// </summary>
+    Task<Admins> CreateAdminAsync(int userId);
+
+    /// <summary>
+    /// Tạo Expert record với auto-generated ExpertCode
+    /// </summary>
+    Task<Experts> CreateExpertAsync(int userId);
+
+    /// <summary>
+    /// Tạo Teacher record với auto-generated TeacherCode
+    /// </summary>
+    Task<Teachers> CreateTeacherAsync(int userId);
+
+    /// <summary>
+    /// Tạo Staff record với auto-generated StaffCode
+    /// </summary>
+    Task<Staffs> CreateStaffAsync(int userId);
+
+    /// <summary>
+    /// Generate unique code for role-specific table
+    /// </summary>
+    Task<string> GenerateUniqueCodeAsync(string prefix);
 }

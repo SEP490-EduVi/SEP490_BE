@@ -51,12 +51,12 @@ public class AdminController : ControllerBase
     /// <summary>
     /// Xem chi tiết 1 user
     /// </summary>
-    [HttpGet("users/{userId}")]
-    public async Task<ActionResult<ApiResponse<AdminUserResponse>>> GetUserById(int userId)
+    [HttpGet("users/{userCode}")]
+    public async Task<ActionResult<ApiResponse<AdminUserResponse>>> GetUserByCode(string userCode)
     {
         try
         {
-            var result = await _adminService.GetUserByIdAsync(userId);
+            var result = await _adminService.GetUserByCodeAsync(userCode);
             return Ok(ApiResponse<AdminUserResponse>.Success(result));
         }
         catch (KeyNotFoundException ex)
@@ -65,7 +65,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user {UserId}", userId);
+            _logger.LogError(ex, "Error getting user {UserCode}", userCode);
             return StatusCode(500, ApiResponse<AdminUserResponse>.Fail("Lỗi hệ thống", 500));
         }
     }
@@ -73,13 +73,13 @@ public class AdminController : ControllerBase
     /// <summary>
     /// Cập nhật thông tin cơ bản user (FullName, Phone, Avatar)
     /// </summary>
-    [HttpPut("users/{userId}")]
+    [HttpPut("users/{userCode}")]
     public async Task<ActionResult<ApiResponse<AdminUserResponse>>> UpdateUser(
-        int userId, [FromBody] UpdateUserRequest request)
+        string userCode, [FromBody] UpdateUserRequest request)
     {
         try
         {
-            var result = await _adminService.UpdateUserAsync(userId, request);
+            var result = await _adminService.UpdateUserAsync(userCode, request);
             return Ok(ApiResponse<AdminUserResponse>.Success(result, "Cập nhật thành công"));
         }
         catch (KeyNotFoundException ex)
@@ -88,7 +88,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating user {UserId}", userId);
+            _logger.LogError(ex, "Error updating user {UserCode}", userCode);
             return StatusCode(500, ApiResponse<AdminUserResponse>.Fail("Lỗi hệ thống", 500));
         }
     }
@@ -96,12 +96,12 @@ public class AdminController : ControllerBase
     /// <summary>
     /// Khóa tài khoản (Ban) + Revoke Token ngay lập tức
     /// </summary>
-    [HttpPost("users/{userId}/ban")]
-    public async Task<ActionResult<ApiResponse<string>>> BanUser(int userId)
+    [HttpPost("users/{userCode}/ban")]
+    public async Task<ActionResult<ApiResponse<string>>> BanUser(string userCode)
     {
         try
         {
-            await _adminService.BanUserAsync(userId);
+            await _adminService.BanUserAsync(userCode);
             return Ok(ApiResponse<string>.Success("", "Đã khóa tài khoản và thu hồi token"));
         }
         catch (KeyNotFoundException ex)
@@ -110,7 +110,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error banning user {UserId}", userId);
+            _logger.LogError(ex, "Error banning user {UserCode}", userCode);
             return StatusCode(500, ApiResponse<string>.Fail("Lỗi hệ thống", 500));
         }
     }
@@ -118,12 +118,12 @@ public class AdminController : ControllerBase
     /// <summary>
     /// Mở khóa tài khoản (Unban)
     /// </summary>
-    [HttpPost("users/{userId}/unban")]
-    public async Task<ActionResult<ApiResponse<string>>> UnbanUser(int userId)
+    [HttpPost("users/{userCode}/unban")]
+    public async Task<ActionResult<ApiResponse<string>>> UnbanUser(string userCode)
     {
         try
         {
-            await _adminService.UnbanUserAsync(userId);
+            await _adminService.UnbanUserAsync(userCode);
             return Ok(ApiResponse<string>.Success("", "Đã mở khóa tài khoản"));
         }
         catch (KeyNotFoundException ex)
@@ -132,7 +132,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error unbanning user {UserId}", userId);
+            _logger.LogError(ex, "Error unbanning user {UserCode}", userCode);
             return StatusCode(500, ApiResponse<string>.Fail("Lỗi hệ thống", 500));
         }
     }
@@ -140,13 +140,13 @@ public class AdminController : ControllerBase
     /// <summary>
     /// Phân quyền: thay đổi role của user + tự động revoke token
     /// </summary>
-    [HttpPut("users/{userId}/role")]
+    [HttpPut("users/{userCode}/role")]
     public async Task<ActionResult<ApiResponse<string>>> ChangeUserRole(
-        int userId, [FromBody] ChangeUserRoleRequest request)
+        string userCode, [FromBody] ChangeUserRoleRequest request)
     {
         try
         {
-            await _adminService.ChangeUserRoleAsync(userId, request);
+            await _adminService.ChangeUserRoleAsync(userCode, request);
             return Ok(ApiResponse<string>.Success("", "Đã thay đổi vai trò và thu hồi token"));
         }
         catch (KeyNotFoundException ex)
@@ -159,7 +159,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error changing role for user {UserId}", userId);
+            _logger.LogError(ex, "Error changing role for user {UserCode}", userCode);
             return StatusCode(500, ApiResponse<string>.Fail("Lỗi hệ thống", 500));
         }
     }
@@ -167,12 +167,12 @@ public class AdminController : ControllerBase
     /// <summary>
     /// Xóa user (hard delete)
     /// </summary>
-    [HttpDelete("users/{userId}")]
-    public async Task<ActionResult<ApiResponse<string>>> DeleteUser(int userId)
+    [HttpDelete("users/{userCode}")]
+    public async Task<ActionResult<ApiResponse<string>>> DeleteUser(string userCode)
     {
         try
         {
-            await _adminService.DeleteUserAsync(userId);
+            await _adminService.DeleteUserAsync(userCode);
             return Ok(ApiResponse<string>.Success("", "Đã xóa người dùng"));
         }
         catch (KeyNotFoundException ex)
@@ -181,7 +181,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting user {UserId}", userId);
+            _logger.LogError(ex, "Error deleting user {UserCode}", userCode);
             return StatusCode(500, ApiResponse<string>.Fail("Lỗi hệ thống", 500));
         }
     }

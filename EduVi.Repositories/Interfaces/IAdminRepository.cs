@@ -20,6 +20,11 @@ public interface IAdminRepository
     Task<Users?> GetUserByIdAsync(int userId);
 
     /// <summary>
+    /// Lấy user theo UserCode kèm Role + sub-entities. Dùng cho Admin API.
+    /// </summary>
+    Task<Users?> GetUserByCodeAsync(string userCode);
+
+    /// <summary>
     /// Cập nhật thông tin cơ bản user (FullName, Email, Phone, Avatar).
     /// </summary>
     Task UpdateUserAsync(Users user);

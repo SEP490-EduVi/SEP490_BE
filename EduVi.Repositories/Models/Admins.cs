@@ -9,5 +9,7 @@ public partial class Admins
 {
     public int AdminId { get; set; }
 
+    public string AdminCode { get; set; }
+
     public virtual Users Admin { get; set; }
 }
