@@ -34,6 +34,16 @@ public interface IUnitOfWork
     /// </summary>
     ICurriculumRepository CurriculumRepository { get; }
 
+    /// <summary>
+    /// Repository xử lý Expert: upload hồ sơ, xem trạng thái, xóa hồ sơ
+    /// </summary>
+    IExpertRepository ExpertRepository { get; }
+
+    /// <summary>
+    /// Repository xử lý Staff: kiểm duyệt hồ sơ Expert, cập nhật IsVerified
+    /// </summary>
+    IStaffRepository StaffRepository { get; }
+
     // ============ Transaction Management ============
 
     /// <summary>

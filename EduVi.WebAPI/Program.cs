@@ -8,6 +8,7 @@ using EduVi.Services.Otp;
 using EduVi.Services.Payment;
 using EduVi.Services.Admin;
 using EduVi.Services.Curriculum;
+using EduVi.Services.Expert;
 using EduVi.Services.Pipeline;
 using EduVi.WebAPI.BackgroundServices;
 using EduVi.WebAPI.Hubs;
@@ -61,7 +62,19 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Policy cho Expert đã được Staff duyệt hồ sơ
+    // Dùng trong các endpoint chỉ Expert verified mới được thực hiện (upload material, xem doanh thu,...)
+    // Expert chưa verified vẫn đăng nhập được nhưng sẽ nhận 403 khi gọi các endpoint này
+    options.AddPolicy("VerifiedExpert", policy =>
+        policy.RequireRole("Expert")
+              .RequireClaim("expert_is_verified", "true"));
+
+    // Policy cho Expert bất kỳ (kể cả chưa verify) - dùng cho endpoint nộp hồ sơ
+    options.AddPolicy("AnyExpert", policy =>
+        policy.RequireRole("Expert"));
+});
 
 // Register UnitOfWork
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -80,6 +93,7 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IPipelineService, PipelineService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
+builder.Services.AddScoped<IExpertService, ExpertService>();
 
 // RabbitMQ Publisher
 builder.Services.AddSingleton<IRabbitMqPublisherService, RabbitMqPublisherService>();

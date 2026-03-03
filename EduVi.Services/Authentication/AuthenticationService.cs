@@ -663,7 +663,15 @@ public class AuthenticationService : IAuthenticationService
         if (user.Admins != null)
             claims.Add(new Claim("AdminId", user.Admins.AdminId.ToString()));
         if (user.Experts != null)
+        {
             claims.Add(new Claim("ExpertId", user.Experts.ExpertId.ToString()));
+            // expert_is_verified giúp API gate các endpoint Expert chỉ cho phép khi đã được Staff duyệt
+            // null → "pending", true → "true", false → "false"
+            var verifiedValue = user.Experts.IsVerified.HasValue
+                ? user.Experts.IsVerified.Value.ToString().ToLower()
+                : "pending";
+            claims.Add(new Claim("expert_is_verified", verifiedValue));
+        }
         if (user.Staffs != null)
             claims.Add(new Claim("StaffId", user.Staffs.StaffId.ToString()));
         if (user.Teachers != null)
@@ -715,7 +723,8 @@ public class AuthenticationService : IAuthenticationService
             AdminId = user.Admins?.AdminId,
             ExpertId = user.Experts?.ExpertId,
             StaffId = user.Staffs?.StaffId,
-            TeacherId = user.Teachers?.TeacherId
+            TeacherId = user.Teachers?.TeacherId,
+            ExpertIsVerified = user.Experts?.IsVerified
         };
     }
 

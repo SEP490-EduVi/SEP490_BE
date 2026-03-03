@@ -24,6 +24,15 @@ public class UserInfo
     public int? ExpertId { get; set; }
     public int? StaffId { get; set; }
     public int? TeacherId { get; set; }
+
+    /// <summary>
+    /// Trạng thái xác thực của Expert.
+    /// null = chưa nộp hồ sơ hoặc đang chờ duyệt
+    /// true = đã được Staff duyệt → full Expert access
+    /// false = bị từ chối → cần nộp lại
+    /// Chỉ có giá trị khi Role = Expert, các role khác luôn null.
+    /// </summary>
+    public bool? ExpertIsVerified { get; set; }
 }
 
 public class RoleInfo

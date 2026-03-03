@@ -14,6 +14,8 @@ public class UnitOfWork : IUnitOfWork
     private AdminRepository? _adminRepository;
     private PipelineRepository? _pipelineRepository;
     private CurriculumRepository? _curriculumRepository;
+    private ExpertRepository? _expertRepository;
+    private StaffRepository? _staffRepository;
     private IDbContextTransaction? _currentTransaction;
 
     public UnitOfWork(EduViContext context)
@@ -48,6 +50,16 @@ public class UnitOfWork : IUnitOfWork
     public ICurriculumRepository CurriculumRepository
     {
         get => _curriculumRepository ??= new CurriculumRepository(_context);
+    }
+
+    public IExpertRepository ExpertRepository
+    {
+        get => _expertRepository ??= new ExpertRepository(_context);
+    }
+
+    public IStaffRepository StaffRepository
+    {
+        get => _staffRepository ??= new StaffRepository(_context);
     }
 
     // ============ Transaction Management ============

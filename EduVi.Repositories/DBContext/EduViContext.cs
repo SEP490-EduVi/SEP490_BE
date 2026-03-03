@@ -25,6 +25,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<Experts> Experts { get; set; }
 
+    public virtual DbSet<ExpertVerifications> ExpertVerifications { get; set; }
+
     public virtual DbSet<Grades> Grades { get; set; }
 
     public virtual DbSet<InputDocuments> InputDocuments { get; set; }
@@ -144,6 +146,40 @@ public partial class EduViContext : DbContext
                 .HasForeignKey<Experts>(d => d.ExpertId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Experts_Users");
+        });
+
+        modelBuilder.Entity<ExpertVerifications>(entity =>
+        {
+            entity.HasKey(e => e.VerificationId).HasName("PK_ExpertVerifications");
+
+            entity.HasIndex(e => e.VerificationCode, "UQ_ExpertVerifications_Code").IsUnique();
+            entity.HasIndex(e => e.ExpertId, "IX_ExpertVerifications_ExpertId");
+            entity.HasIndex(e => e.Status, "IX_ExpertVerifications_Status");
+
+            entity.Property(e => e.VerificationCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.FileUrl).HasMaxLength(500);
+            entity.Property(e => e.FileType).HasMaxLength(50);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("pending");
+            entity.Property(e => e.RejectionReason).HasMaxLength(500);
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasOne(d => d.Expert)
+                .WithMany()
+                .HasForeignKey(d => d.ExpertId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ExpertVerifications_Expert");
+
+            entity.HasOne(d => d.ReviewedByStaff)
+                .WithMany()
+                .HasForeignKey(d => d.ReviewedByStaffId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ExpertVerifications_Staff");
         });
 
         modelBuilder.Entity<Grades>(entity =>
