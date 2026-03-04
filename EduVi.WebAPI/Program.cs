@@ -10,6 +10,7 @@ using EduVi.Services.Admin;
 using EduVi.Services.Curriculum;
 using EduVi.Services.Expert;
 using EduVi.Services.Pipeline;
+using EduVi.Services.Project;
 using EduVi.WebAPI.BackgroundServices;
 using EduVi.WebAPI.Hubs;
 using EduVi.WebAPI.Middleware;
@@ -92,6 +93,8 @@ builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IPipelineService, PipelineService>();
+builder.Services.AddScoped<IInputDocumentService, InputDocumentService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddScoped<IExpertService, ExpertService>();
 

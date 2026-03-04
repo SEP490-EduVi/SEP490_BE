@@ -1,6 +1,6 @@
 using EduVi.Contracts.Common;
 using EduVi.Contracts.DTOs.Project;
-using EduVi.Services.Pipeline;
+using EduVi.Services.Project;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -11,12 +11,12 @@ namespace EduVi.WebAPI.Controllers;
 [Route("api/[controller]")]
 public class ProjectController : ControllerBase
 {
-    private readonly IPipelineService _pipelineService;
+    private readonly IProjectService _projectService;
     private readonly ILogger<ProjectController> _logger;
 
-    public ProjectController(IPipelineService pipelineService, ILogger<ProjectController> logger)
+    public ProjectController(IProjectService projectService, ILogger<ProjectController> logger)
     {
-        _pipelineService = pipelineService;
+        _projectService = projectService;
         _logger = logger;
     }
 
@@ -27,7 +27,7 @@ public class ProjectController : ControllerBase
         try
         {
             var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var result = await _pipelineService.GetProjectsByTeacherAsync(teacherId);
+            var result = await _projectService.GetProjectsByTeacherAsync(teacherId);
             return Ok(ApiResponse<List<ProjectResponseDto>>.Success(result));
         }
         catch (Exception ex)
@@ -43,7 +43,7 @@ public class ProjectController : ControllerBase
     {
         try
         {
-            var result = await _pipelineService.GetProjectByCodeAsync(projectCode);
+            var result = await _projectService.GetProjectByCodeAsync(projectCode);
             return Ok(ApiResponse<ProjectResponseDto>.Success(result));
         }
         catch (KeyNotFoundException ex)
@@ -65,7 +65,7 @@ public class ProjectController : ControllerBase
         try
         {
             var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var result = await _pipelineService.CreateProjectAsync(teacherId, request);
+            var result = await _projectService.CreateProjectAsync(teacherId, request);
             return Ok(ApiResponse<ProjectResponseDto>.Success(result, "Tạo project thành công"));
         }
         catch (InvalidOperationException ex)
@@ -87,7 +87,7 @@ public class ProjectController : ControllerBase
         try
         {
             var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var result = await _pipelineService.UpdateProjectAsync(teacherId, projectCode, request);
+            var result = await _projectService.UpdateProjectAsync(teacherId, projectCode, request);
             return Ok(ApiResponse<ProjectResponseDto>.Success(result, "Cập nhật project thành công"));
         }
         catch (KeyNotFoundException ex)
@@ -112,7 +112,7 @@ public class ProjectController : ControllerBase
         try
         {
             var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            await _pipelineService.DeleteProjectAsync(teacherId, projectCode);
+            await _projectService.DeleteProjectAsync(teacherId, projectCode);
             return Ok(ApiResponse<string>.Success("Đã xóa", "Xóa project thành công"));
         }
         catch (KeyNotFoundException ex)

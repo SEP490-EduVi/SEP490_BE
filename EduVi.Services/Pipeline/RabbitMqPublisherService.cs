@@ -14,7 +14,8 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
     private IChannel? _channel;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    private const string QueueName = "lesson.analysis.requests";
+    private const string LessonAnalysisQueue = "lesson.analysis.requests";
+    private const string SlideGenerationQueue = "slide.generation.requests";
 
     public RabbitMqPublisherService(IConfiguration configuration, ILogger<RabbitMqPublisherService> logger)
     {
@@ -40,13 +41,21 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
         _channel = await _connection.CreateChannelAsync();
 
         await _channel.QueueDeclareAsync(
-            queue: QueueName,
+            queue: LessonAnalysisQueue,
             durable: true,
             exclusive: false,
             autoDelete: false,
             arguments: null);
 
-        _logger.LogInformation("RabbitMQ publisher connected and queue '{Queue}' declared", QueueName);
+        await _channel.QueueDeclareAsync(
+            queue: SlideGenerationQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
+
+        _logger.LogInformation("RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}'",
+            LessonAnalysisQueue, SlideGenerationQueue);
     }
 
     public async Task PublishLessonAnalysisTaskAsync(Guid taskId, string userId, int productId, string gcsUri, string subjectCode, string gradeCode, string lessonCode)
@@ -77,12 +86,56 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
 
             await _channel!.BasicPublishAsync(
                 exchange: string.Empty,
-                routingKey: QueueName,
+                routingKey: LessonAnalysisQueue,
                 mandatory: false,
                 basicProperties: properties,
                 body: body);
 
             _logger.LogInformation("Published lesson analysis task {TaskId} for user {UserId}", taskId, userId);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task PublishSlideGenerationTaskAsync(Guid taskId, string userId, int productId, object evaluationResult, string lessonPlanText, object textbookSections, string slideRange)
+    {
+        await _semaphore.WaitAsync();
+        try
+        {
+            await EnsureConnectedAsync();
+
+            var message = new
+            {
+                taskId = taskId.ToString(),
+                userId,
+                productId,
+                evaluationResult,
+                lessonPlanText,
+                textbookSections,
+                preferences = new
+                {
+                    slideRange
+                }
+            };
+
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                ContentType = "application/json"
+            };
+
+            await _channel!.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: SlideGenerationQueue,
+                mandatory: false,
+                basicProperties: properties,
+                body: body);
+
+            _logger.LogInformation("Published slide generation task {TaskId} for user {UserId}", taskId, userId);
         }
         finally
         {

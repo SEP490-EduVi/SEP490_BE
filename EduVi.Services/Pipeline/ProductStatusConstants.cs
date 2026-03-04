@@ -25,12 +25,30 @@ public static class ProductStatusConstants
     /// </summary>
     public const int Failed = 3;
 
+    /// <summary>
+    /// Đang tạo slide presentation
+    /// </summary>
+    public const int GeneratingSlides = 4;
+
+    /// <summary>
+    /// Slide presentation đã được tạo xong
+    /// </summary>
+    public const int SlidesGenerated = 5;
+
+    /// <summary>
+    /// Quá trình tạo slide thất bại
+    /// </summary>
+    public const int SlidesFailed = 6;
+
     public static string GetStatusName(int? status) => status switch
     {
         New => "NEW",
         Processing => "PROCESSING",
         Evaluated => "EVALUATED",
         Failed => "FAILED",
+        GeneratingSlides => "GENERATING_SLIDES",
+        SlidesGenerated => "SLIDES_GENERATED",
+        SlidesFailed => "SLIDES_FAILED",
         _ => "UNKNOWN"
     };
 }

@@ -125,6 +125,12 @@ public class PipelineRepository : IPipelineRepository
             .FirstOrDefaultAsync(p => p.ProductId == productId);
     }
 
+    public async Task<Products?> GetProductByCodeAndTeacherAsync(string productCode, int teacherId)
+    {
+        return await _context.Products
+            .FirstOrDefaultAsync(p => p.ProductCode == productCode && p.TeacherId == teacherId);
+    }
+
     public void UpdateProduct(Products product)
     {
         _context.Products.Update(product);

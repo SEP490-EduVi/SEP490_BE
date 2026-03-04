@@ -111,10 +111,10 @@ public class PipelineResultConsumerService : BackgroundService
                             }
                         }
 
-                        // Push to user's SignalR group
+                        // Push to user's SignalR group (strip heavy storage-only fields from lesson analysis result)
                         await _hubContext.Clients
                             .Group($"user_{progress.UserId}")
-                            .SendAsync("PipelineProgress", progress, stoppingToken);
+                            .SendAsync("PipelineProgress", BuildSignalRPayload(progress), stoppingToken);
 
                         // Update status in Redis
                         await redisDb.StringSetAsync(
@@ -214,25 +214,65 @@ public class PipelineResultConsumerService : BackgroundService
 
             if (progress.Status == "completed")
             {
-                product.Status = ProductStatusConstants.Evaluated;
-                product.EvaluationResult = progress.Result is not null
+                var resultJson = progress.Result is not null
                     ? JsonSerializer.Serialize(progress.Result)
                     : null;
-                product.EvaluatedAt = DateTime.UtcNow;
 
-                _logger.LogInformation("Product {ProductId} marked as EVALUATED", product.ProductId);
+                // Determine which pipeline step completed based on the step field
+                if (progress.Step == "slides_completed")
+                {
+                    // Slide generation completed — store SlideDocument
+                    product.Status = ProductStatusConstants.SlidesGenerated;
+                    product.SlideDocument = resultJson;
+                    product.SlideGeneratedAt = DateTime.UtcNow;
+
+                    _logger.LogInformation("Product {ProductId} slides generated successfully", product.ProductId);
+                }
+                else
+                {
+                    // Lesson analysis completed — store EvaluationResult + extracted text + textbook sections
+                    product.Status = ProductStatusConstants.Evaluated;
+                    product.EvaluationResult = resultJson;
+                    product.EvaluatedAt = DateTime.UtcNow;
+
+                    // Extract and store lesson_plan_text and textbook_sections from the result
+                    if (progress.Result is JsonElement resultElement)
+                    {
+                        if (resultElement.TryGetProperty("lesson_plan_text", out var lessonPlanTextElement))
+                        {
+                            product.LessonPlanText = lessonPlanTextElement.GetString();
+                        }
+
+                        if (resultElement.TryGetProperty("textbook_sections", out var textbookSectionsElement))
+                        {
+                            product.TextbookSections = textbookSectionsElement.GetRawText();
+                        }
+                    }
+
+                    _logger.LogInformation("Product {ProductId} marked as EVALUATED", product.ProductId);
+                }
             }
             else if (progress.Status == "failed")
             {
-                product.Status = ProductStatusConstants.Failed;
-                product.EvaluationResult = JsonSerializer.Serialize(new
-                {
-                    error = progress.Error,
-                    failedAt = DateTime.UtcNow.ToString("o")
-                });
-                product.EvaluatedAt = DateTime.UtcNow;
+                // Check Redis to determine which pipeline this task belongs to
+                var isSlideGeneration = await IsSlideGenerationTaskAsync(progress.TaskId);
 
-                _logger.LogWarning("Product {ProductId} marked as FAILED: {Error}", product.ProductId, progress.Error);
+                if (isSlideGeneration)
+                {
+                    product.Status = ProductStatusConstants.SlidesFailed;
+                    _logger.LogWarning("Product {ProductId} slide generation FAILED: {Error}", product.ProductId, progress.Error);
+                }
+                else
+                {
+                    product.Status = ProductStatusConstants.Failed;
+                    product.EvaluationResult = JsonSerializer.Serialize(new
+                    {
+                        error = progress.Error,
+                        failedAt = DateTime.UtcNow.ToString("o")
+                    });
+                    product.EvaluatedAt = DateTime.UtcNow;
+                    _logger.LogWarning("Product {ProductId} marked as FAILED: {Error}", product.ProductId, progress.Error);
+                }
             }
 
             unitOfWork.PipelineRepository.UpdateProduct(product);
@@ -242,6 +282,68 @@ public class PipelineResultConsumerService : BackgroundService
         {
             _logger.LogError(ex, "Failed to update Product {ProductId} in database for task {TaskId}",
                 progress.ProductId, progress.TaskId);
+        }
+    }
+
+    /// <summary>
+    /// Strips lesson_plan_text and textbook_sections from lesson analysis completed results
+    /// before pushing to SignalR — those fields are storage-only and too large for FE progress events.
+    /// </summary>
+    private static PipelineProgressDto BuildSignalRPayload(PipelineProgressDto progress)
+    {
+        if (progress.Status != "completed"
+            || progress.Step == "slides_completed"
+            || progress.Result is not JsonElement resultElement
+            || resultElement.ValueKind != JsonValueKind.Object)
+            return progress;
+
+        var strippedResult = resultElement.EnumerateObject()
+            .Where(p => p.Name is not "lesson_plan_text" and not "textbook_sections")
+            .ToDictionary(p => p.Name, p => (object?)p.Value.Clone());
+
+        return new PipelineProgressDto
+        {
+            TaskId = progress.TaskId,
+            UserId = progress.UserId,
+            ProductId = progress.ProductId,
+            Status = progress.Status,
+            Step = progress.Step,
+            Progress = progress.Progress,
+            Detail = progress.Detail,
+            Result = strippedResult,
+            Error = progress.Error
+        };
+    }
+
+    /// <summary>
+    /// Kiểm tra task có phải slide generation không dựa trên Redis metadata
+    /// (PipelineService lưu step = "slide_generation" khi tạo task)
+    /// </summary>
+    private async Task<bool> IsSlideGenerationTaskAsync(Guid taskId)
+    {
+        try
+        {
+            var redisDb = _redis.GetDatabase();
+            var data = await redisDb.StringGetAsync($"pipeline:status:{taskId}");
+            if (data.IsNullOrEmpty)
+                return false;
+
+            using var doc = JsonDocument.Parse((string)data!);
+            if (doc.RootElement.TryGetProperty("step", out var stepElement))
+            {
+                var step = stepElement.GetString();
+                return step == "slide_generation"
+                    || step == "planning"
+                    || step == "generating_slides"
+                    || step == "assembling"
+                    || step == "slides_completed";
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
         }
     }
 }

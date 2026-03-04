@@ -348,6 +348,10 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
             entity.Property(e => e.EvaluationResult).HasColumnType("nvarchar(max)");
             entity.Property(e => e.EvaluatedAt).HasColumnType("datetime");
+            entity.Property(e => e.LessonPlanText).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.TextbookSections).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.SlideDocument).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.SlideGeneratedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Products)
                 .HasForeignKey(d => d.ProjectId)

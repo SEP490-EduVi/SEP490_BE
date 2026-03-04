@@ -86,6 +86,11 @@ public interface IPipelineRepository
     Task<Products?> GetProductByIdAsync(int productId);
 
     /// <summary>
+    /// Lấy Product theo ProductCode + TeacherId
+    /// </summary>
+    Task<Products?> GetProductByCodeAndTeacherAsync(string productCode, int teacherId);
+
+    /// <summary>
     /// Cập nhật Product (status, evaluation result)
     /// </summary>
     void UpdateProduct(Products product);

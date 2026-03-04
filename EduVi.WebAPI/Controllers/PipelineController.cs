@@ -12,11 +12,16 @@ namespace EduVi.WebAPI.Controllers;
 public class PipelineController : ControllerBase
 {
     private readonly IPipelineService _pipelineService;
+    private readonly IInputDocumentService _inputDocumentService;
     private readonly ILogger<PipelineController> _logger;
 
-    public PipelineController(IPipelineService pipelineService, ILogger<PipelineController> logger)
+    public PipelineController(
+        IPipelineService pipelineService,
+        IInputDocumentService inputDocumentService,
+        ILogger<PipelineController> logger)
     {
         _pipelineService = pipelineService;
+        _inputDocumentService = inputDocumentService;
         _logger = logger;
     }
 
@@ -35,7 +40,7 @@ public class PipelineController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
-            var result = await _pipelineService.UploadInputDocumentAsync(userId, request);
+            var result = await _inputDocumentService.UploadInputDocumentAsync(userId, request);
             return Ok(ApiResponse<InputDocumentResponseDto>.Success(result, "Upload tài liệu thành công"));
         }
         catch (InvalidOperationException ex)
@@ -59,7 +64,7 @@ public class PipelineController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
-            var result = await _pipelineService.GetInputDocumentsByTeacherAsync(userId);
+            var result = await _inputDocumentService.GetInputDocumentsByTeacherAsync(userId);
             return Ok(ApiResponse<List<InputDocumentResponseDto>>.Success(result));
         }
         catch (Exception ex)
@@ -95,6 +100,35 @@ public class PipelineController : ControllerBase
         {
             _logger.LogError(ex, "Error creating lesson analysis task");
             return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo task phân tích bài giảng", 500));
+        }
+    }
+
+    // =====================================================================
+    // SLIDE GENERATION
+    // =====================================================================
+
+    /// <summary>
+    /// Trigger tạo slide presentation từ Product đã được evaluate → gửi RabbitMQ → Python worker xử lý
+    /// </summary>
+    [HttpPost("generate-slides")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<PipelineTaskResponseDto>>> GenerateSlides(
+        [FromBody] SlideGenerationRequestDto request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _pipelineService.CreateSlideGenerationTaskAsync(userId, request);
+            return Ok(ApiResponse<PipelineTaskResponseDto>.Success(result, "Task tạo slide đã được đưa vào hàng đợi xử lý"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<PipelineTaskResponseDto>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating slide generation task");
+            return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo task tạo slide", 500));
         }
     }
 
