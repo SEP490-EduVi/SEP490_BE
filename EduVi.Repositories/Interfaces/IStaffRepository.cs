@@ -38,4 +38,21 @@ public interface IStaffRepository
     /// Dùng khi reject để quyết định có set IsVerified = false hay không.
     /// </summary>
     Task<bool> HasOtherApprovedVerificationAsync(int expertId, string excludeVerificationCode);
+
+    // ── Kiểm duyệt Materials ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Lấy danh sách materials đang chờ duyệt (ApprovalStatus = 0), kèm Expert → Users, Subject, Grade.
+    /// </summary>
+    Task<List<Materials>> GetPendingMaterialsAsync();
+
+    /// <summary>
+    /// Lấy chi tiết 1 material theo code, kèm đầy đủ navigation (Expert → Users, Subject, Grade).
+    /// </summary>
+    Task<Materials?> GetMaterialByCodeWithDetailsAsync(string materialCode);
+
+    /// <summary>
+    /// Cập nhật trạng thái duyệt material (approve/reject).
+    /// </summary>
+    void UpdateMaterial(Materials material);
 }

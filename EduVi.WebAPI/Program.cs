@@ -1,16 +1,17 @@
 using EduVi.Repositories;
 using EduVi.Repositories.DBContext;
 using EduVi.Repositories.Interfaces;
+using EduVi.Services.Admin;
 using EduVi.Services.Authentication;
+using EduVi.Services.Curriculum;
 using EduVi.Services.Email;
-using EduVi.Services.RateLimit;
+using EduVi.Services.Expert;
+using EduVi.Services.Material;
 using EduVi.Services.Otp;
 using EduVi.Services.Payment;
-using EduVi.Services.Admin;
-using EduVi.Services.Curriculum;
-using EduVi.Services.Expert;
 using EduVi.Services.Pipeline;
 using EduVi.Services.Project;
+using EduVi.Services.RateLimit;
 using EduVi.WebAPI.BackgroundServices;
 using EduVi.WebAPI.Hubs;
 using EduVi.WebAPI.Middleware;
@@ -19,6 +20,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -97,6 +99,7 @@ builder.Services.AddScoped<IInputDocumentService, InputDocumentService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddScoped<IExpertService, ExpertService>();
+builder.Services.AddScoped<IMaterialService, MaterialService>();
 
 // RabbitMQ Publisher
 builder.Services.AddSingleton<IRabbitMqPublisherService, RabbitMqPublisherService>();
@@ -137,6 +140,11 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1",
         Description = "EduVi Education Platform API"
     });
+
+    // đọc XML comment để hiện summary trên swagger
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+
 
     // JWT Authentication in Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

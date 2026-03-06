@@ -46,4 +46,51 @@ public class ExpertRepository : IExpertRepository
         return await _context.Experts
             .FirstOrDefaultAsync(e => e.ExpertId == expertId);
     }
+
+    // ── Materials ───────────────────────────────────────────────────────────────
+
+    public async Task CreateMaterialAsync(Materials material)
+    {
+        await _context.Materials.AddAsync(material);
+    }
+
+    public async Task<List<Materials>> GetMaterialsByExpertIdAsync(int expertId)
+    {
+        return await _context.Materials
+            .Include(m => m.Subject)
+            .Include(m => m.Grade)
+            .Where(m => m.ExpertId == expertId)
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<Materials?> GetMaterialByCodeAsync(string materialCode)
+    {
+        return await _context.Materials
+            .Include(m => m.Subject)
+            .Include(m => m.Grade)
+            .FirstOrDefaultAsync(m => m.MaterialCode == materialCode);
+    }
+
+    public void UpdateMaterial(Materials material)
+    {
+        _context.Materials.Update(material);
+    }
+
+    public void DeleteMaterial(Materials material)
+    {
+        _context.Materials.Remove(material);
+    }
+
+    public async Task<Subjects?> GetSubjectByCodeAsync(string subjectCode)
+    {
+        return await _context.Subjects
+            .FirstOrDefaultAsync(s => s.SubjectCode == subjectCode);
+    }
+
+    public async Task<Grades?> GetGradeByCodeAsync(string gradeCode)
+    {
+        return await _context.Grades
+            .FirstOrDefaultAsync(g => g.GradeCode == gradeCode);
+    }
 }

@@ -56,4 +56,33 @@ public class StaffRepository : IStaffRepository
                         && v.VerificationCode != excludeVerificationCode
                         && v.Status == "approved");
     }
+
+    // ── Kiểm duyệt Materials ──────────────────────────────────────────────────
+
+    public async Task<List<Materials>> GetPendingMaterialsAsync()
+    {
+        return await _context.Materials
+            .Include(m => m.Expert)
+                .ThenInclude(e => e.Expert) // Users navigation
+            .Include(m => m.Subject)
+            .Include(m => m.Grade)
+            .Where(m => m.ApprovalStatus == 0)
+            .OrderBy(m => m.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<Materials?> GetMaterialByCodeWithDetailsAsync(string materialCode)
+    {
+        return await _context.Materials
+            .Include(m => m.Expert)
+                .ThenInclude(e => e.Expert) // Users navigation
+            .Include(m => m.Subject)
+            .Include(m => m.Grade)
+            .FirstOrDefaultAsync(m => m.MaterialCode == materialCode);
+    }
+
+    public void UpdateMaterial(Materials material)
+    {
+        _context.Materials.Update(material);
+    }
 }

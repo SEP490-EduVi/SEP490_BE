@@ -32,4 +32,41 @@ public interface IExpertRepository
     /// Lấy Expert record để kiểm tra IsVerified trước khi cho phép upload hồ sơ mới.
     /// </summary>
     Task<Experts?> GetExpertByIdAsync(int expertId);
+
+    // ── Materials ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tạo material mới (ApprovalStatus = 0 pending).
+    /// </summary>
+    Task CreateMaterialAsync(Materials material);
+
+    /// <summary>
+    /// Lấy danh sách materials của Expert theo ExpertId, kèm Subject/Grade navigation.
+    /// </summary>
+    Task<List<Materials>> GetMaterialsByExpertIdAsync(int expertId);
+
+    /// <summary>
+    /// Lấy 1 material theo code — Expert dùng để sửa/xóa (kiểm tra ownership bằng ExpertId).
+    /// </summary>
+    Task<Materials?> GetMaterialByCodeAsync(string materialCode);
+
+    /// <summary>
+    /// Cập nhật material (chỉ được khi chưa approve).
+    /// </summary>
+    void UpdateMaterial(Materials material);
+
+    /// <summary>
+    /// Xóa material (chỉ được khi chưa approve).
+    /// </summary>
+    void DeleteMaterial(Materials material);
+
+    /// <summary>
+    /// Lấy Subject theo SubjectCode — resolve FK khi Expert tạo/sửa material.
+    /// </summary>
+    Task<Subjects?> GetSubjectByCodeAsync(string subjectCode);
+
+    /// <summary>
+    /// Lấy Grade theo GradeCode — resolve FK khi Expert tạo/sửa material.
+    /// </summary>
+    Task<Grades?> GetGradeByCodeAsync(string gradeCode);
 }

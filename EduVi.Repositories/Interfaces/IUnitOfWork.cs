@@ -40,9 +40,14 @@ public interface IUnitOfWork
     IExpertRepository ExpertRepository { get; }
 
     /// <summary>
-    /// Repository xử lý Staff: kiểm duyệt hồ sơ Expert, cập nhật IsVerified
+    /// Repository xử lý Staff: kiểm duyệt hồ sơ Expert, kiểm duyệt Materials
     /// </summary>
     IStaffRepository StaffRepository { get; }
+
+    /// <summary>
+    /// Repository xử lý Teacher: browse/mua materials, xem materials đã mua
+    /// </summary>
+    ITeacherRepository TeacherRepository { get; }
 
     // ============ Transaction Management ============
 
