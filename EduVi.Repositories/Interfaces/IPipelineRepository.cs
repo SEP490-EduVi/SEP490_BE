@@ -94,4 +94,33 @@ public interface IPipelineRepository
     /// Cập nhật Product (status, evaluation result)
     /// </summary>
     void UpdateProduct(Products product);
+
+    // ============ ProductComponents ============
+
+    /// <summary>
+    /// Lấy danh sách components hiện tại của một Product
+    /// </summary>
+    Task<List<ProductComponent>> GetProductComponentsAsync(int productId);
+
+    /// <summary>
+    /// Xóa toàn bộ components của một Product (để upsert lại)
+    /// </summary>
+    void DeleteProductComponents(List<ProductComponent> components);
+
+    /// <summary>
+    /// Thêm danh sách ProductComponent mới
+    /// </summary>
+    Task AddProductComponentsAsync(List<ProductComponent> components);
+
+    // ============ Materials ============
+
+    /// <summary>
+    /// Lấy MaterialId theo MaterialCode (để map từ Code → ID nội bộ)
+    /// </summary>
+    Task<int?> GetMaterialIdByCodeAsync(string materialCode);
+
+    /// <summary>
+    /// Kiểm tra Teacher đã mua Material này chưa
+    /// </summary>
+    Task<bool> IsTeacherOwnsMaterialAsync(int teacherId, int materialId);
 }

@@ -15,6 +15,23 @@ public partial class ProductComponent
 
     public string ComponentCode { get; set; }
 
+    /// <summary>
+    /// ID của Card trong SlideEditedDocument JSON mà material này được chèn vào.
+    /// e.g. "card-acf4c8be". Null nếu chưa xác định vị trí.
+    /// </summary>
+    public string CardId { get; set; }
+
+    /// <summary>
+    /// ID của Block trong Card mà material này được chèn vào.
+    /// e.g. "block-media-001". Null nếu chưa xác định vị trí.
+    /// </summary>
+    public string BlockId { get; set; }
+
+    /// <summary>
+    /// Thời điểm Teacher thêm material này vào slide.
+    /// </summary>
+    public DateTime AddedAt { get; set; }
+
     public virtual Products Products { get; set; }
 
     public virtual TeacherMaterials TeacherMaterials { get; set; }

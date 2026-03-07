@@ -219,14 +219,60 @@ public class PipelineService : IPipelineService
         if (string.IsNullOrEmpty(product.SlideDocument))
             throw new InvalidOperationException("Product chưa có slide. Hãy tạo slide trước khi chỉnh sửa");
 
+        // Validate và upsert ProductComponent nếu có materials
+        if (request.UsedMaterials?.Count > 0)
+        {
+            var newComponents = new List<ProductComponent>();
+
+            foreach (var usedMaterial in request.UsedMaterials)
+            {
+                // Resolve MaterialCode → MaterialId
+                var materialId = await _unitOfWork.PipelineRepository
+                    .GetMaterialIdByCodeAsync(usedMaterial.MaterialCode)
+                    ?? throw new InvalidOperationException($"Không tìm thấy material với mã '{usedMaterial.MaterialCode}'");
+
+                // Kiểm tra Teacher đã mua material này chưa
+                var isOwned = await _unitOfWork.PipelineRepository
+                    .IsTeacherOwnsMaterialAsync(teacherId, materialId);
+                if (!isOwned)
+                    throw new InvalidOperationException($"Bạn chưa sở hữu material '{usedMaterial.MaterialCode}'");
+
+                newComponents.Add(new ProductComponent
+                {
+                    ProductId = product.ProductId,
+                    MaterialId = materialId,
+                    TeacherId = teacherId,
+                    ComponentCode = $"COMP_{product.ProductCode}_{usedMaterial.BlockId}",
+                    CardId = usedMaterial.CardId,
+                    BlockId = usedMaterial.BlockId,
+                    AddedAt = DateTime.UtcNow
+                });
+            }
+
+            // Upsert: xóa cũ, thêm mới
+            var existingComponents = await _unitOfWork.PipelineRepository
+                .GetProductComponentsAsync(product.ProductId);
+            _unitOfWork.PipelineRepository.DeleteProductComponents(existingComponents);
+            await _unitOfWork.PipelineRepository.AddProductComponentsAsync(newComponents);
+        }
+        else
+        {
+            // Không còn material nào → xóa hết components cũ
+            var existingComponents = await _unitOfWork.PipelineRepository
+                .GetProductComponentsAsync(product.ProductId);
+            if (existingComponents.Count > 0)
+                _unitOfWork.PipelineRepository.DeleteProductComponents(existingComponents);
+        }
+
+        // Lưu slide đã edit — bản gốc SlideDocument giữ nguyên
         product.SlideEditedDocument = request.SlideDocument;
         product.SlideEditedAt = DateTime.UtcNow;
 
         _unitOfWork.PipelineRepository.UpdateProduct(product);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Teacher {TeacherId} saved edited slide for product {ProductCode} at {EditedAt}",
-            teacherId, productCode, product.SlideEditedAt);
+        _logger.LogInformation("Teacher {TeacherId} saved edited slide for product {ProductCode} with {MaterialCount} material(s) at {EditedAt}",
+            teacherId, productCode, request.UsedMaterials?.Count ?? 0, product.SlideEditedAt);
     }
 
     #endregion

@@ -119,6 +119,36 @@ public class PipelineRepository : IPipelineRepository
         return entry.Entity;
     }
 
+    public async Task<List<ProductComponent>> GetProductComponentsAsync(int productId)
+    {
+        return await _context.ProductComponent
+            .Where(pc => pc.ProductId == productId)
+            .ToListAsync();
+    }
+
+    public void DeleteProductComponents(List<ProductComponent> components)
+    {
+        _context.ProductComponent.RemoveRange(components);
+    }
+
+    public async Task AddProductComponentsAsync(List<ProductComponent> components)
+    {
+        await _context.ProductComponent.AddRangeAsync(components);
+    }
+
+    public async Task<int?> GetMaterialIdByCodeAsync(string materialCode)
+    {
+        var material = await _context.Materials
+            .FirstOrDefaultAsync(m => m.MaterialCode == materialCode);
+        return material?.MaterialId;
+    }
+
+    public async Task<bool> IsTeacherOwnsMaterialAsync(int teacherId, int materialId)
+    {
+        return await _context.TeacherMaterials
+            .AnyAsync(tm => tm.TeacherId == teacherId && tm.MaterialId == materialId);
+    }
+
     public async Task<Products?> GetProductByIdAsync(int productId)
     {
         return await _context.Products

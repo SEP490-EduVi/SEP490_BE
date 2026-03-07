@@ -315,6 +315,15 @@ public partial class EduViContext : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("ComponentCode");
+            entity.Property(e => e.CardId)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.BlockId)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.AddedAt)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
 
             entity.HasOne(d => d.Products).WithMany(p => p.ProductComponent)
                 .HasPrincipalKey(p => new { p.ProductId, p.TeacherId })
