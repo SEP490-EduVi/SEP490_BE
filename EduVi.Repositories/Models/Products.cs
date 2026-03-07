@@ -39,6 +39,13 @@ public partial class Products
 
     public DateTime? SlideGeneratedAt { get; set; }
 
+    /// <summary>
+    /// Slide JSON sau khi Teacher chỉnh sửa (bản cuối cùng). Null nếu chưa edit.
+    /// </summary>
+    public string SlideEditedDocument { get; set; }
+
+    public DateTime? SlideEditedAt { get; set; }
+
     public virtual ICollection<ProductComponent> ProductComponent { get; set; } = new List<ProductComponent>();
 
     public virtual Projects Project { get; set; }

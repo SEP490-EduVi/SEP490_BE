@@ -18,4 +18,9 @@ public interface IPipelineService
     /// Lấy trạng thái task từ Redis (fallback khi SignalR bị ngắt)
     /// </summary>
     Task<PipelineProgressDto?> GetTaskStatusAsync(Guid taskId);
+
+    /// <summary>
+    /// Teacher lưu slide đã chỉnh sửa vào SlideEditedDocument
+    /// </summary>
+    Task SaveEditedSlideAsync(int teacherId, string productCode, SaveEditedSlideRequestDto request);
 }

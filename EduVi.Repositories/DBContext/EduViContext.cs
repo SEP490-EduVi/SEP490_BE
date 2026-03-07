@@ -352,6 +352,8 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.TextbookSections).HasColumnType("nvarchar(max)");
             entity.Property(e => e.SlideDocument).HasColumnType("nvarchar(max)");
             entity.Property(e => e.SlideGeneratedAt).HasColumnType("datetime");
+            entity.Property(e => e.SlideEditedDocument).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.SlideEditedAt).HasColumnType("datetime2");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Products)
                 .HasForeignKey(d => d.ProjectId)

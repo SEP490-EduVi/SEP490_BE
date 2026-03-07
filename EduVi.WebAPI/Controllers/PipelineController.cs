@@ -133,6 +133,41 @@ public class PipelineController : ControllerBase
     }
 
     // =====================================================================
+    // SLIDE EDIT
+    // =====================================================================
+
+    /// <summary>
+    /// [Teacher] Lưu bản slide đã chỉnh sửa cuối cùng vào SlideEditedDocument.
+    /// Bản gốc AI generate (SlideDocument) được giữ nguyên để tham chiếu.
+    /// </summary>
+    [HttpPut("products/{productCode}/slide")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<object>>> SaveEditedSlide(
+        string productCode,
+        [FromBody] SaveEditedSlideRequestDto request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            await _pipelineService.SaveEditedSlideAsync(userId, productCode, request);
+            return Ok(ApiResponse<object>.Success(null, "Slide đã được lưu thành công"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving edited slide for product {ProductCode}", productCode);
+            return StatusCode(500, ApiResponse<object>.Fail("Lỗi khi lưu slide đã chỉnh sửa", 500));
+        }
+    }
+
+    // =====================================================================
     // TASK STATUS
     // =====================================================================
 

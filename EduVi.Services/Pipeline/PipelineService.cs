@@ -207,4 +207,27 @@ public class PipelineService : IPipelineService
     }
 
     #endregion
+
+    #region Slide Edit
+
+    public async Task SaveEditedSlideAsync(int teacherId, string productCode, SaveEditedSlideRequestDto request)
+    {
+        var product = await _unitOfWork.PipelineRepository
+            .GetProductByCodeAndTeacherAsync(productCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+
+        if (string.IsNullOrEmpty(product.SlideDocument))
+            throw new InvalidOperationException("Product chưa có slide. Hãy tạo slide trước khi chỉnh sửa");
+
+        product.SlideEditedDocument = request.SlideDocument;
+        product.SlideEditedAt = DateTime.UtcNow;
+
+        _unitOfWork.PipelineRepository.UpdateProduct(product);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Teacher {TeacherId} saved edited slide for product {ProductCode} at {EditedAt}",
+            teacherId, productCode, product.SlideEditedAt);
+    }
+
+    #endregion
 }
