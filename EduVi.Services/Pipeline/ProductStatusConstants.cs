@@ -40,6 +40,11 @@ public static class ProductStatusConstants
     /// </summary>
     public const int SlidesFailed = 6;
 
+    /// <summary>
+    /// Teacher đã xóa product (soft delete) — không hiển thị, không xử lý thêm
+    /// </summary>
+    public const int Deleted = 7;
+
     public static string GetStatusName(int? status) => status switch
     {
         New => "NEW",
@@ -49,6 +54,7 @@ public static class ProductStatusConstants
         GeneratingSlides => "GENERATING_SLIDES",
         SlidesGenerated => "SLIDES_GENERATED",
         SlidesFailed => "SLIDES_FAILED",
+        Deleted => "DELETED",
         _ => "UNKNOWN"
     };
 }

@@ -23,4 +23,20 @@ public interface IPipelineService
     /// Teacher lưu slide đã chỉnh sửa vào SlideEditedDocument
     /// </summary>
     Task SaveEditedSlideAsync(int teacherId, string productCode, SaveEditedSlideRequestDto request);
+
+    /// <summary>
+    /// Xóa Product (và toàn bộ ProductComponents liên quan) theo ProductCode.
+    /// Chỉ xóa được khi product không đang trong trạng thái xử lý.
+    /// </summary>
+    Task DeleteProductAsync(int teacherId, string productCode);
+
+    /// <summary>
+    /// Lấy danh sách Products của Teacher (không bao gồm Deleted)
+    /// </summary>
+    Task<List<ProductSummaryDto>> GetProductsByTeacherAsync(int teacherId);
+
+    /// <summary>
+    /// Lấy chi tiết đầy đủ của một Product theo ProductCode
+    /// </summary>
+    Task<ProductDetailDto> GetProductByCodeAsync(int teacherId, string productCode);
 }

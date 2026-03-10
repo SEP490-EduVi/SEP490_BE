@@ -61,12 +61,31 @@ public class PipelineService : IPipelineService
 
         if (product is not null)
         {
+            // Guard: cannot re-run while actively being processed
+            if (product.Status == ProductStatusConstants.Processing ||
+                product.Status == ProductStatusConstants.GeneratingSlides)
+                throw new InvalidOperationException("Product đang được xử lý. Vui lòng chờ hoàn tất trước khi chạy lại");
+
+            // Cascade-clear all downstream data from every subsequent stage
             product.ProductName = request.ProductName ?? $"Phân tích: {document.Title}";
             product.Description = $"AI evaluation cho document: {document.Title}";
             product.ProductCode = productCode;
             product.Status = ProductStatusConstants.New;
             product.EvaluationResult = null;
             product.EvaluatedAt = null;
+            product.LessonPlanText = null;
+            product.TextbookSections = null;
+            product.SlideDocument = null;
+            product.SlideGeneratedAt = null;
+            product.SlideEditedDocument = null;
+            product.SlideEditedAt = null;
+
+            // Remove stale ProductComponents from the old run
+            var staleComponents = await _unitOfWork.PipelineRepository
+                .GetProductComponentsAsync(product.ProductId);
+            if (staleComponents.Count > 0)
+                _unitOfWork.PipelineRepository.DeleteProductComponents(staleComponents);
+
             _unitOfWork.PipelineRepository.UpdateProduct(product);
         }
         else
@@ -148,10 +167,19 @@ public class PipelineService : IPipelineService
             ? JsonSerializer.Deserialize<object>(product.TextbookSections)
             : new object[] { };
 
-        // 3. Update product status to GeneratingSlides
+        // 3. Update product status to GeneratingSlides, cascade-clear slide downstream data
         product.Status = ProductStatusConstants.GeneratingSlides;
         product.SlideDocument = null;
         product.SlideGeneratedAt = null;
+        product.SlideEditedDocument = null;
+        product.SlideEditedAt = null;
+
+        // Remove stale ProductComponents from the previous slide run
+        var staleComponents = await _unitOfWork.PipelineRepository
+            .GetProductComponentsAsync(product.ProductId);
+        if (staleComponents.Count > 0)
+            _unitOfWork.PipelineRepository.DeleteProductComponents(staleComponents);
+
         _unitOfWork.PipelineRepository.UpdateProduct(product);
         await _unitOfWork.SaveChangesAsync();
 
@@ -273,6 +301,87 @@ public class PipelineService : IPipelineService
 
         _logger.LogInformation("Teacher {TeacherId} saved edited slide for product {ProductCode} with {MaterialCount} material(s) at {EditedAt}",
             teacherId, productCode, request.UsedMaterials?.Count ?? 0, product.SlideEditedAt);
+    }
+
+    #endregion
+
+    #region Product Queries
+
+    public async Task<List<ProductSummaryDto>> GetProductsByTeacherAsync(int teacherId)
+    {
+        var products = await _unitOfWork.PipelineRepository.GetProductsByTeacherAsync(teacherId);
+
+        return products.Select(p => new ProductSummaryDto
+        {
+            ProductCode = p.ProductCode,
+            ProductName = p.ProductName,
+            Description = p.Description,
+            Status = p.Status ?? 0,
+            StatusName = ProductStatusConstants.GetStatusName(p.Status),
+            EvaluatedAt = p.EvaluatedAt,
+            SlideGeneratedAt = p.SlideGeneratedAt,
+            SlideEditedAt = p.SlideEditedAt,
+            HasEvaluation = !string.IsNullOrEmpty(p.EvaluationResult),
+            HasSlide = !string.IsNullOrEmpty(p.SlideDocument),
+            HasEditedSlide = !string.IsNullOrEmpty(p.SlideEditedDocument)
+        }).ToList();
+    }
+
+    public async Task<ProductDetailDto> GetProductByCodeAsync(int teacherId, string productCode)
+    {
+        var product = await _unitOfWork.PipelineRepository
+            .GetProductByCodeAndTeacherAsync(productCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+
+        if (product.Status == ProductStatusConstants.Deleted)
+            throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+
+        return new ProductDetailDto
+        {
+            ProductCode = product.ProductCode,
+            ProductName = product.ProductName,
+            Description = product.Description,
+            Status = product.Status ?? 0,
+            StatusName = ProductStatusConstants.GetStatusName(product.Status),
+            EvaluationResult = ParseJson(product.EvaluationResult),
+            EvaluatedAt = product.EvaluatedAt,
+            LessonPlanText = product.LessonPlanText,
+            TextbookSections = ParseJson(product.TextbookSections),
+            SlideDocument = ParseJson(product.SlideDocument),
+            SlideGeneratedAt = product.SlideGeneratedAt,
+            SlideEditedDocument = ParseJson(product.SlideEditedDocument),
+            SlideEditedAt = product.SlideEditedAt
+        };
+    }
+
+    private static JsonElement? ParseJson(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return null;
+        return JsonSerializer.Deserialize<JsonElement>(value);
+    }
+
+    #endregion
+
+    #region Product Delete
+
+    public async Task DeleteProductAsync(int teacherId, string productCode)
+    {
+        var product = await _unitOfWork.PipelineRepository
+            .GetProductByCodeAndTeacherAsync(productCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+
+        if (product.Status == ProductStatusConstants.Deleted)
+            throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+
+        if (product.Status == ProductStatusConstants.Processing ||
+            product.Status == ProductStatusConstants.GeneratingSlides)
+            throw new InvalidOperationException("Không thể xóa product đang được xử lý. Vui lòng chờ hoàn tất");
+
+        product.Status = ProductStatusConstants.Deleted;
+        _unitOfWork.PipelineRepository.UpdateProduct(product);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Teacher {TeacherId} soft-deleted product {ProductCode}", teacherId, productCode);
     }
 
     #endregion

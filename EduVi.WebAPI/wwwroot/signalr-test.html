@@ -19,8 +19,10 @@
         <input id="hubUrl" value="/hubs/pipeline" size="50" />
     </div>
     <div>
-        <label>User ID:</label>
-        <input id="userId" value="5" size="10" />
+        <label>Bearer Token:</label>
+        <input id="accessToken" placeholder="Paste JWT token here" size="80" />
+    </div>
+    <div>
         <button onclick="connect()">Connect</button>
         <button onclick="disconnect()">Disconnect</button>
     </div>
@@ -38,10 +40,15 @@
 
         async function connect() {
             const hubUrl = document.getElementById('hubUrl').value;
-            const userId = document.getElementById('userId').value;
+            const accessToken = document.getElementById('accessToken').value.trim();
+
+            if (!accessToken) {
+                log("Access token is required to connect.", 'error');
+                return;
+            }
 
             connection = new signalR.HubConnectionBuilder()
-                .withUrl(hubUrl)
+                .withUrl(hubUrl, { accessTokenFactory: () => accessToken })
                 .withAutomaticReconnect()
                 .configureLogging(signalR.LogLevel.Information)
                 .build();
@@ -58,8 +65,8 @@
                 await connection.start();
                 log(`Connected to ${hubUrl}`, 'success');
 
-                await connection.invoke("JoinUserGroup", userId);
-                log(`Joined group user_${userId}`, 'success');
+                await connection.invoke("JoinUserGroup");
+                log(`Joined personal group from JWT claims`, 'success');
 
                 log("Waiting for PipelineProgress messages...", 'success');
             } catch (err) {

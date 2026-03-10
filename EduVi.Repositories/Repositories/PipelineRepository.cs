@@ -113,6 +113,14 @@ public class PipelineRepository : IPipelineRepository
             .FirstOrDefaultAsync(p => p.ProjectId == projectId && p.SourceInputId == sourceInputId);
     }
 
+    public async Task<List<Products>> GetProductsByTeacherAsync(int teacherId)
+    {
+        return await _context.Products
+            .Where(p => p.TeacherId == teacherId && p.Status != 7) // exclude Deleted
+            .OrderByDescending(p => p.ProductId)
+            .ToListAsync();
+    }
+
     public async Task<Products> CreateProductAsync(Products product)
     {
         var entry = await _context.Products.AddAsync(product);
@@ -164,5 +172,10 @@ public class PipelineRepository : IPipelineRepository
     public void UpdateProduct(Products product)
     {
         _context.Products.Update(product);
+    }
+
+    public void DeleteProduct(Products product)
+    {
+        _context.Products.Remove(product);
     }
 }

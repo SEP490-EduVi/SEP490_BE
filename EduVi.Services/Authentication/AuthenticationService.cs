@@ -708,6 +708,7 @@ public class AuthenticationService : IAuthenticationService
         return new UserInfo
         {
             UserId = user.UserId,
+            UserCode = user.UserCode ?? string.Empty,
             Username = user.Username,
             Email = user.Email,
             FullName = user.FullName,
