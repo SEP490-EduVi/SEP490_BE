@@ -7,7 +7,6 @@ namespace EduVi.WebAPI.Hubs;
 /// <summary>
 /// SignalR Hub cho pipeline progress.
 /// Client kết nối để nhận cập nhật real-time từ Python worker.
-/// Tất cả pushing được thực hiện từ BackgroundService qua IHubContext, không từ Hub.
 /// </summary>
 [Authorize]
 public class PipelineHub : Hub
