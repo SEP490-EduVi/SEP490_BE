@@ -54,10 +54,13 @@ public class PipelineService : IPipelineService
         var subjectCode = document.Subject?.SubjectCode ?? "Unknown";
         var gradeCode = document.Grade?.GradeCode ?? "Unknown";
 
-        // 4. Reuse existing Product by ProductCode (deterministic key for this project+document pair)
+        // 4. Reuse existing Product by the true FK key (ProjectId + SourceInputId).
+        // Ownership is already guaranteed by step 1 (project belongs to this teacher).
+        // NOTE: Do NOT look up by ProductCode — legacy products may have a NULL ProductCode
+        //       and would be missed, causing a duplicate row to be inserted every call.
         var productCode = $"prod_{request.ProjectCode}_{request.DocumentCode}";
         var product = await _unitOfWork.PipelineRepository
-            .GetProductByCodeAndTeacherAsync(productCode, teacherId);
+            .GetExistingProductAsync(project.ProjectId, document.DocumentId);
 
         if (product is not null)
         {
