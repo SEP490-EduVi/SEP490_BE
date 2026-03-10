@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+.git/
+*.md
+*.user
+*.suo
+private/
+appsettings.Development.json
+appsettings.Production.json
+nginx/
+.github/

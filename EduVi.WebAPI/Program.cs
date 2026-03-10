@@ -191,15 +191,22 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// When behind a reverse proxy (Nginx), forward headers so HTTPS redirect
+// and auth schemes work correctly with the original client request.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                     | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
     app.UseStaticFiles(); // Serve signalr-test.html from wwwroot
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 
