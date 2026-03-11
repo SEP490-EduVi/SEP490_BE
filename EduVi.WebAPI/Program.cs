@@ -199,15 +199,14 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
                      | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
 });
 
-// Swagger — enabled in all environments for API testing.
-// In production, Nginx is the only internet-facing service,
-// so Swagger is accessible but not directly exposed to the public internet.
+// Swagger and static files — enabled in all environments for testing/debugging.
+// Nginx is the only internet-facing service, so these are not directly public.
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseStaticFiles(); // Serve signalr-test.html from wwwroot
     app.UseHttpsRedirection();
 }
 
