@@ -29,6 +29,11 @@ public class PipelineResultConsumerService : BackgroundService
 
     private const string QueueName = "pipeline.results";
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public PipelineResultConsumerService(
         ILogger<PipelineResultConsumerService> logger,
         IHubContext<PipelineHub> hubContext,
@@ -81,95 +86,96 @@ public class PipelineResultConsumerService : BackgroundService
                         var body = ea.Body.ToArray();
                         var json = Encoding.UTF8.GetString(body);
 
-                    _logger.LogDebug("Received pipeline result: {Json}", json);
+                        _logger.LogDebug("Received pipeline result: {Json}", json);
 
-                    var progress = JsonSerializer.Deserialize<PipelineProgressDto>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        var progress = JsonSerializer.Deserialize<PipelineProgressDto>(json, JsonOptions);
 
-                    if (progress is not null)
-                    {
-                        var redisDb = _redis.GetDatabase();
-
-                        // Resolve productId from Redis if worker didn't include it
-                        if (progress.ProductId == 0 && progress.TaskId != Guid.Empty)
+                        if (progress is not null)
                         {
-                            var existingMeta = await redisDb.StringGetAsync($"pipeline:status:{progress.TaskId}");
-                            if (!existingMeta.IsNullOrEmpty)
+                            var redisDb = _redis.GetDatabase();
+
+                            // Resolve productId from Redis if worker didn't include it
+                            if (progress.ProductId == 0 && progress.TaskId != Guid.Empty)
                             {
-                                var originalTask = JsonSerializer.Deserialize<PipelineProgressDto>(existingMeta!, new JsonSerializerOptions
+                                var existingMeta = await redisDb.StringGetAsync($"pipeline:status:{progress.TaskId}");
+                                if (!existingMeta.IsNullOrEmpty)
                                 {
-                                    PropertyNameCaseInsensitive = true
-                                });
-                                if (originalTask?.ProductId > 0)
-                                    progress.ProductId = originalTask.ProductId;
+                                    var originalTask = JsonSerializer.Deserialize<PipelineProgressDto>(existingMeta!, JsonOptions);
+                                    if (originalTask?.ProductId > 0)
+                                        progress.ProductId = originalTask.ProductId;
+                                }
                             }
+
+                            // Push to user's SignalR group (strip heavy storage-only fields from lesson analysis result)
+                            await _hubContext.Clients
+                                .Group($"user_{progress.UserId}")
+                                .SendAsync("PipelineProgress", BuildSignalRPayload(progress), stoppingToken);
+
+                            // Update status in Redis
+                            await redisDb.StringSetAsync(
+                                $"pipeline:status:{progress.TaskId}",
+                                JsonSerializer.Serialize(progress),
+                                TimeSpan.FromHours(1));
+
+                            // Persist to DB when completed or failed
+                            if (progress.Status is "completed" or "failed" && progress.ProductId > 0)
+                            {
+                                await UpdateProductInDatabaseAsync(progress);
+                            }
+
+                            _logger.LogInformation(
+                                "Pushed progress for task {TaskId} (Product {ProductId}) to user {UserId}: {Status} ({Progress}%)",
+                                progress.TaskId, progress.ProductId, progress.UserId, progress.Status, progress.Progress);
                         }
-
-                        // Push to user's SignalR group (strip heavy storage-only fields from lesson analysis result)
-                        await _hubContext.Clients
-                            .Group($"user_{progress.UserId}")
-                            .SendAsync("PipelineProgress", BuildSignalRPayload(progress), stoppingToken);
-
-                        // Update status in Redis
-                        await redisDb.StringSetAsync(
-                            $"pipeline:status:{progress.TaskId}",
-                            JsonSerializer.Serialize(progress),
-                            TimeSpan.FromHours(1));
-
-                        // Persist to DB when completed or failed
-                        if (progress.Status is "completed" or "failed" && progress.ProductId > 0)
+                        else
                         {
-                            await UpdateProductInDatabaseAsync(progress);
+                            _logger.LogWarning("Received malformed or undeserializable pipeline result message, discarding.");
                         }
 
-                        _logger.LogInformation(
-                            "Pushed progress for task {TaskId} (Product {ProductId}) to user {UserId}: {Status} ({Progress}%)",
-                            progress.TaskId, progress.ProductId, progress.UserId, progress.Status, progress.Progress);
-                    }
-
-                    await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false, stoppingToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error processing pipeline result message");
-                    await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true, cancellationToken: stoppingToken);
-                }
-            };
-
-            await _channel.BasicConsumeAsync(
-                queue: QueueName,
-                autoAck: false,
-                consumer: consumer,
-                cancellationToken: stoppingToken);
-
-                        _logger.LogInformation("PipelineResultConsumer started, listening on queue '{Queue}'", QueueName);
-
-                        // Keep the service running until cancelled or disconnected
-                        await Task.Delay(Timeout.Infinite, stoppingToken);
-                    }
-                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                    {
-                        _logger.LogInformation("PipelineResultConsumer stopping...");
-                        break;
+                        // CancellationToken.None: ack/nack must always complete even during shutdown.
+                        // Passing stoppingToken here would throw OperationCanceledException before the
+                        // ack is sent, leaving the message unacknowledged and causing infinite redelivery.
+                        await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false, CancellationToken.None);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "PipelineResultConsumer connection failed. Retrying in 10 seconds...");
-
-                        // Clean up before retry
-                        if (_channel is not null) { try { await _channel.DisposeAsync(); } catch { } _channel = null; }
-                        if (_connection is not null) { try { await _connection.DisposeAsync(); } catch { } _connection = null; }
-
-                        try
-                        {
-                            await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
-                        }
-                        catch (OperationCanceledException) { break; }
+                        _logger.LogError(ex, "Error processing pipeline result message");
+                        await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: true, cancellationToken: CancellationToken.None);
                     }
-                }
+                };
+
+                await _channel.BasicConsumeAsync(
+                    queue: QueueName,
+                    autoAck: false,
+                    consumer: consumer,
+                    cancellationToken: stoppingToken);
+
+                _logger.LogInformation("PipelineResultConsumer started, listening on queue '{Queue}'", QueueName);
+
+                // Keep the service running until cancelled or disconnected
+                await Task.Delay(Timeout.Infinite, stoppingToken);
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogInformation("PipelineResultConsumer stopping...");
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "PipelineResultConsumer connection failed. Retrying in 10 seconds...");
+
+                // Clean up before retry
+                if (_channel is not null) { try { await _channel.DisposeAsync(); } catch { } _channel = null; }
+                if (_connection is not null) { try { await _connection.DisposeAsync(); } catch { } _connection = null; }
+
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                }
+                catch (OperationCanceledException) { break; }
+            }
+        }
+    }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
