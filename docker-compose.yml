@@ -84,6 +84,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASSWORD: ${RABBITMQ_DEFAULT_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 10s
@@ -165,3 +167,6 @@ services:
 networks:
   eduvi:
     driver: bridge
+
+volumes:
+  rabbitmq_data:

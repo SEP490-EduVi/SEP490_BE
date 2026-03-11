@@ -75,7 +75,16 @@ public partial class EduViContext : DbContext
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    {
+        // OnConfiguring is called even when options are configured via DI (Program.cs).
+        // Only fall back to appsettings.json when no options have been provided —
+        // this covers design-time tools (dotnet ef migrations) on a developer machine.
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
+        }
+        optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
