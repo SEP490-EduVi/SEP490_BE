@@ -20,6 +20,8 @@ services:
   main-system:
     image: ghcr.io/${GITHUB_ORG}/main-system:latest
     container_name: main-system
+    ports:
+      - "127.0.0.1:8081:8080"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -77,6 +79,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
+    ports:
+      - "127.0.0.1:15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASSWORD: ${RABBITMQ_DEFAULT_PASSWORD}
@@ -150,6 +154,8 @@ services:
   dozzle:
     image: amir20/dozzle:latest
     container_name: dozzle
+    ports:
+      - "127.0.0.1:9999:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
