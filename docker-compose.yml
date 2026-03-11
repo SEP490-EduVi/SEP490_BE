@@ -15,6 +15,8 @@ services:
       - eduvi
 
   # ── .NET Backend ────────────────────────────────────────────────────
+  # All config is injected via env vars using ASP.NET's __ convention.
+  # The .env file on the VM must define every variable below.
   main-system:
     image: ghcr.io/${GITHUB_ORG}/main-system:latest
     container_name: main-system
@@ -29,12 +31,12 @@ services:
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
 
       # Database (Google Cloud SQL for MSSQL)
-      ConnectionStrings__DefaultConnection: ${SQL_CONNECTION_STRING}
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
 
-      # Redis (internal container)
+      # Redis (internal container — hardcoded, not from .env)
       ConnectionStrings__RedisConnection: redis:6379,abortConnect=false,connectTimeout=5000,syncTimeout=5000
 
-      # RabbitMQ
+      # RabbitMQ (HostName/VirtualHost are internal, rest from .env)
       RabbitMQ__HostName: rabbitmq
       RabbitMQ__Port: 5672
       RabbitMQ__UserName: ${RABBITMQ_USER}
@@ -42,30 +44,30 @@ services:
       RabbitMQ__VirtualHost: /
 
       # JWT
-      Jwt__SecretKey: ${JWT_SECRET_KEY}
-      Jwt__Issuer: EduViAPI
-      Jwt__Audience: EduViClient
-      Jwt__ExpiresInMinutes: 60
+      Jwt__SecretKey: ${Jwt__SecretKey}
+      Jwt__Issuer: ${Jwt__Issuer}
+      Jwt__Audience: ${Jwt__Audience}
+      Jwt__ExpiresInMinutes: ${Jwt__ExpiresInMinutes}
 
       # Google OAuth
-      Google__ClientId: ${GOOGLE_CLIENT_ID}
+      Google__ClientId: ${Google__ClientId}
 
       # GCS
-      GCS__BucketName: ${GCS_BUCKET_NAME}
-      GCS__Folders__UserInputs: user_inputs
-      GCS__Folders__ExpertVerifications: expert_verifications
+      GCS__BucketName: ${GCS__BucketName}
+      GCS__Folders__UserInputs: ${GCS__Folders__UserInputs}
+      GCS__Folders__ExpertVerifications: ${GCS__Folders__ExpertVerifications}
 
       # Email
-      EmailSettings__SmtpHost: smtp.gmail.com
-      EmailSettings__SmtpPort: 587
-      EmailSettings__SenderEmail: ${EMAIL_SENDER}
-      EmailSettings__SenderPassword: ${EMAIL_PASSWORD}
-      EmailSettings__SenderName: EduVi Platform
+      EmailSettings__SmtpHost: ${EmailSettings__SmtpHost}
+      EmailSettings__SmtpPort: ${EmailSettings__SmtpPort}
+      EmailSettings__SenderEmail: ${EmailSettings__SenderEmail}
+      EmailSettings__SenderPassword: ${EmailSettings__SenderPassword}
+      EmailSettings__SenderName: ${EmailSettings__SenderName}
 
       # PayOS
-      PayOS__ClientId: ${PAYOS_CLIENT_ID}
-      PayOS__ApiKey: ${PAYOS_API_KEY}
-      PayOS__ChecksumKey: ${PAYOS_CHECKSUM_KEY}
+      PayOS__ClientId: ${PayOS__ClientId}
+      PayOS__ApiKey: ${PayOS__ApiKey}
+      PayOS__ChecksumKey: ${PayOS__ChecksumKey}
     restart: unless-stopped
     networks:
       - eduvi
