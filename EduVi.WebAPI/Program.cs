@@ -199,11 +199,14 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
                      | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
 });
 
-// Configure the HTTP request pipeline.
+// Swagger — enabled in all environments for API testing.
+// In production, Nginx is the only internet-facing service,
+// so Swagger is accessible but not directly exposed to the public internet.
+app.UseSwagger();
+app.UseSwaggerUI();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
     app.UseStaticFiles(); // Serve signalr-test.html from wwwroot
     app.UseHttpsRedirection();
 }
