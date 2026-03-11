@@ -3,7 +3,7 @@ name: Deploy main-system
 on:
   push:
     branches:
-      - main
+      - quang_mainflow
 
 jobs:
   build-and-deploy:
