@@ -89,7 +89,7 @@ public class AuthenticationRepository : IAuthenticationRepository
         }
 
         _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(); // needed to get UserId for FK in role record
 
         return user;
     }
@@ -168,7 +168,7 @@ public class AuthenticationRepository : IAuthenticationRepository
         };
 
         _context.Admins.Add(admin);
-        await _context.SaveChangesAsync();
+        // SaveChanges is called by the service via UnitOfWork after all records are staged.
 
         return admin;
     }
@@ -188,7 +188,7 @@ public class AuthenticationRepository : IAuthenticationRepository
         };
 
         _context.Experts.Add(expert);
-        await _context.SaveChangesAsync();
+        // SaveChanges is called by the service via UnitOfWork after all records are staged.
 
         return expert;
     }
@@ -207,7 +207,7 @@ public class AuthenticationRepository : IAuthenticationRepository
         };
 
         _context.Teachers.Add(teacher);
-        await _context.SaveChangesAsync();
+        // SaveChanges is called by the service via UnitOfWork after all records are staged.
 
         return teacher;
     }
@@ -226,7 +226,7 @@ public class AuthenticationRepository : IAuthenticationRepository
         };
 
         _context.Staffs.Add(staff);
-        await _context.SaveChangesAsync();
+        // SaveChanges is called by the service via UnitOfWork after all records are staged.
 
         return staff;
     }

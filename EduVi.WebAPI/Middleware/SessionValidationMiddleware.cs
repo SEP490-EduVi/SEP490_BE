@@ -75,11 +75,24 @@ public class SessionValidationMiddleware
 
     private string? GetTokenFromHeader(HttpContext context)
     {
+        // Standard REST requests: Authorization: Bearer <token>
         var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-        if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
-            return null;
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+            return authHeader.Substring("Bearer ".Length).Trim();
 
-        return authHeader.Substring("Bearer ".Length).Trim();
+        // SignalR (WebSocket / SSE): token arrives as ?access_token= because
+        // browsers cannot set Authorization headers on WebSocket connections.
+        // Program.cs already reads it in JwtBearerEvents.OnMessageReceived,
+        // so we mirror that logic here to enforce session validation for hubs too.
+        var path = context.Request.Path.Value ?? "";
+        if (path.StartsWith("/hubs", StringComparison.OrdinalIgnoreCase))
+        {
+            var queryToken = context.Request.Query["access_token"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(queryToken))
+                return queryToken;
+        }
+
+        return null;
     }
 }
 

@@ -8,6 +8,7 @@ using EduVi.Services.RateLimit;
 using EduVi.Services.Otp;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using System.IdentityModel.Tokens.Jwt;
@@ -26,6 +27,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly IRateLimitService _rateLimitService;
     private readonly IEmailService _emailService;
     private readonly IOtpService _otpService;
+    private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
         IUnitOfWork unitOfWork,
@@ -33,7 +35,8 @@ public class AuthenticationService : IAuthenticationService
         IConnectionMultiplexer redis,
         IRateLimitService rateLimitService,
         IEmailService emailService,
-        IOtpService otpService)
+        IOtpService otpService,
+        ILogger<AuthenticationService> logger)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
@@ -42,6 +45,7 @@ public class AuthenticationService : IAuthenticationService
         _rateLimitService = rateLimitService;
         _emailService = emailService;
         _otpService = otpService;
+        _logger = logger;
     }
 
     #region Login & Register
@@ -165,6 +169,11 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
     {
+        // Defence-in-depth: enforce role whitelist even if DTO annotation is bypassed.
+        // Admin (1) and Staff (2) must be created by an Admin, not via public sign-up.
+        if (request.RoleId is not (3 or 4))
+            throw new InvalidOperationException("Only Teacher or Expert roles can self-register.");
+
         // 1. Kiểm tra email đã tồn tại
         if (await _unitOfWork.AuthenticationRepository.EmailExistsAsync(request.Email))
             throw new InvalidOperationException("Email already exists");
@@ -188,46 +197,32 @@ public class AuthenticationService : IAuthenticationService
             CreatedAt = DateTime.UtcNow
         };
 
-        user = await _unitOfWork.AuthenticationRepository.CreateUserAsync(user);
-
-        // 3.1. Tự động tạo role-specific record với auto-generated Code
-        // TODO: Verify RoleId mapping với database Roles table
+        // Wrap User + role record creation in a single transaction so that a failure
+        // in role record creation rolls back the Users row atomically — no orphaned rows.
+        await _unitOfWork.BeginTransactionAsync();
         try
         {
+            user = await _unitOfWork.AuthenticationRepository.CreateUserAsync(user);
+
             switch (request.RoleId)
             {
-                case 1: // Admin
-                    await _unitOfWork.AuthenticationRepository.CreateAdminAsync(user.UserId);
-                    Console.WriteLine($"[Registration] ✓ Admin record created for userId {user.UserId}");
-                    break;
-
-                case 2: // Staff
-                    await _unitOfWork.AuthenticationRepository.CreateStaffAsync(user.UserId);
-                    Console.WriteLine($"[Registration] ✓ Staff record created for userId {user.UserId}");
-                    break;
-
                 case 3: // Expert
                     await _unitOfWork.AuthenticationRepository.CreateExpertAsync(user.UserId);
-                    Console.WriteLine($"[Registration] ✓ Expert record created for userId {user.UserId}");
                     break;
 
                 case 4: // Teacher
                     await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
-                    Console.WriteLine($"[Registration] ✓ Teacher record created for userId {user.UserId}");
-                    break;
-
-                default:
-                    Console.WriteLine($"[Registration] ⚠ No role-specific table for RoleId {request.RoleId}");
-                    Console.WriteLine($"[Registration] ⚠ Check Roles table: SELECT * FROM Roles");
                     break;
             }
+
+            await _unitOfWork.CommitTransactionAsync();
+            _logger.LogInformation("User registered successfully. UserId={UserId}, RoleId={RoleId}", user.UserId, user.RoleId);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Registration] ✗ Failed to create role-specific record: {ex.Message}");
-            Console.WriteLine($"[Registration] ✗ Stack trace: {ex.StackTrace}");
-            // Rollback user creation if role record fails
-            throw new InvalidOperationException($"Failed to create role-specific record: {ex.Message}", ex);
+            await _unitOfWork.RollbackTransactionAsync();
+            _logger.LogError(ex, "Registration failed for email {Email} — transaction rolled back", request.Email);
+            throw new InvalidOperationException($"Registration failed: {ex.Message}", ex);
         }
 
         // 4. Generate OTP (6 digits)

@@ -25,8 +25,10 @@ public class RegisterRequest
     [Phone(ErrorMessage = "Invalid phone number format")]
     public string? PhoneNumber { get; set; }
 
+    // Only Teacher (4) and Expert (3) may self-register via the public endpoint.
+    // Admin and Staff accounts must be created by an Admin through the back-office.
     [Required(ErrorMessage = "RoleId is required")]
-    [Range(1, int.MaxValue, ErrorMessage = "RoleId must be greater than 0")]
+    [Range(3, 4, ErrorMessage = "Only Teacher (4) or Expert (3) roles can self-register.")]
     public int RoleId { get; set; }
 
     public string? AvatarUrl { get; set; }
