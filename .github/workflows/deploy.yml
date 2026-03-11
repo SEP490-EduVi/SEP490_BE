@@ -35,6 +35,17 @@ jobs:
             ghcr.io/${{ env.OWNER }}/main-system:latest
             ghcr.io/${{ env.OWNER }}/main-system:${{ github.sha }}
 
+      # Copy docker-compose.yml and nginx/ to VM so any change to them
+      # is automatically applied on every deploy — no manual SSH needed.
+      - name: Copy config files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.yml,nginx/"
+          target: /opt/eduvi
+
       - name: Deploy to GCP VM
         uses: appleboy/ssh-action@v1
         with:
@@ -44,4 +55,5 @@ jobs:
           script: |
             cd /opt/eduvi
             docker compose pull main-system
-            docker compose up -d main-system
+            docker compose up -d
+            docker compose exec nginx nginx -s reload 2>/dev/null || true
