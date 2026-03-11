@@ -3,10 +3,6 @@ using EduVi.Repositories.Interfaces;
 using EduVi.Services.Pipeline;
 using EduVi.WebAPI.Hubs;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using StackExchange.Redis;
@@ -163,8 +159,8 @@ public class PipelineResultConsumerService : BackgroundService
                         _logger.LogWarning(ex, "PipelineResultConsumer connection failed. Retrying in 10 seconds...");
 
                         // Clean up before retry
-                        if (_channel is not null) { try { _channel.Dispose(); } catch { } _channel = null; }
-                        if (_connection is not null) { try { _connection.Dispose(); } catch { } _connection = null; }
+                        if (_channel is not null) { try { await _channel.DisposeAsync(); } catch { } _channel = null; }
+                        if (_connection is not null) { try { await _connection.DisposeAsync(); } catch { } _connection = null; }
 
                         try
                         {
@@ -180,12 +176,12 @@ public class PipelineResultConsumerService : BackgroundService
         if (_channel is not null)
         {
             await _channel.CloseAsync(cancellationToken);
-            _channel.Dispose();
+            await _channel.DisposeAsync();
         }
         if (_connection is not null)
         {
             await _connection.CloseAsync(cancellationToken);
-            _connection.Dispose();
+            await _connection.DisposeAsync();
         }
 
         _logger.LogInformation("PipelineResultConsumer stopped");

@@ -148,12 +148,12 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
         if (_channel is not null)
         {
             await _channel.CloseAsync();
-            _channel.Dispose();
+            await _channel.DisposeAsync();
         }
         if (_connection is not null)
         {
             await _connection.CloseAsync();
-            _connection.Dispose();
+            await _connection.DisposeAsync();
         }
         _semaphore.Dispose();
         GC.SuppressFinalize(this);
