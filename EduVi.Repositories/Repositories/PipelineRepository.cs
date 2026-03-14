@@ -14,64 +14,11 @@ public class PipelineRepository : IPipelineRepository
         _context = context;
     }
 
-    public async Task<InputDocuments?> GetInputDocumentByIdAsync(int documentId)
-    {
-        return await _context.InputDocuments
-            .Include(d => d.Subject)
-            .Include(d => d.Grade)
-            .Include(d => d.Lesson)
-            .FirstOrDefaultAsync(d => d.DocumentId == documentId);
-    }
-
-    public async Task<InputDocuments?> GetInputDocumentByCodeAsync(string documentCode)
-    {
-        return await _context.InputDocuments
-            .Include(d => d.Subject)
-            .Include(d => d.Grade)
-            .Include(d => d.Lesson)
-            .FirstOrDefaultAsync(d => d.DocumentCode == documentCode);
-    }
-
-    public async Task<InputDocuments?> GetExistingInputDocumentAsync(int teacherId, int subjectId, int gradeId, int? lessonId)
-    {
-        return await _context.InputDocuments
-            .Include(d => d.Subject)
-            .Include(d => d.Grade)
-            .Include(d => d.Lesson)
-            .FirstOrDefaultAsync(d =>
-                d.TeacherId == teacherId &&
-                d.SubjectId == subjectId &&
-                d.GradeId == gradeId &&
-                d.LessonId == lessonId);
-    }
-
-    public async Task<InputDocuments> CreateInputDocumentAsync(InputDocuments document)
-    {
-        var entry = await _context.InputDocuments.AddAsync(document);
-        return entry.Entity;
-    }
-
-    public void UpdateInputDocument(InputDocuments document)
-    {
-        _context.InputDocuments.Update(document);
-    }
-
-    public async Task<List<InputDocuments>> GetInputDocumentsByTeacherAsync(int teacherId)
-    {
-        return await _context.InputDocuments
-            .Include(d => d.Subject)
-            .Include(d => d.Grade)
-            .Include(d => d.Lesson)
-            .Where(d => d.TeacherId == teacherId)
-            .OrderByDescending(d => d.UploadDate)
-            .ToListAsync();
-    }
-
     public async Task<List<Projects>> GetProjectsByTeacherAsync(int teacherId)
     {
         return await _context.Projects
-            .Where(p => p.TeacherId == teacherId)
-            .OrderByDescending(p => p.ProjectId)
+            .Where(project => project.TeacherId == teacherId)
+            .OrderByDescending(project => project.ProjectId)
             .ToListAsync();
     }
 
@@ -80,15 +27,15 @@ public class PipelineRepository : IPipelineRepository
         var query = _context.Projects.AsQueryable();
 
         if (includeRelations)
-            query = query.Include(p => p.Products);
+            query = query.Include(project => project.Products);
 
-        return await query.FirstOrDefaultAsync(p => p.ProjectCode == projectCode);
+        return await query.FirstOrDefaultAsync(project => project.ProjectCode == projectCode);
     }
 
     public async Task<Projects?> GetProjectByCodeAndTeacherAsync(string projectCode, int teacherId)
     {
         return await _context.Projects
-            .FirstOrDefaultAsync(p => p.ProjectCode == projectCode && p.TeacherId == teacherId);
+            .FirstOrDefaultAsync(project => project.ProjectCode == projectCode && project.TeacherId == teacherId);
     }
 
     public async Task<Projects> CreateProjectAsync(Projects project)
@@ -110,14 +57,14 @@ public class PipelineRepository : IPipelineRepository
     public async Task<Products?> GetExistingProductAsync(int projectId, int sourceInputId)
     {
         return await _context.Products
-            .FirstOrDefaultAsync(p => p.ProjectId == projectId && p.SourceInputId == sourceInputId);
+            .FirstOrDefaultAsync(product => product.ProjectId == projectId && product.SourceInputId == sourceInputId);
     }
 
     public async Task<List<Products>> GetProductsByTeacherAsync(int teacherId)
     {
         return await _context.Products
-            .Where(p => p.TeacherId == teacherId && p.Status != 7) // exclude Deleted
-            .OrderByDescending(p => p.ProductId)
+            .Where(product => product.TeacherId == teacherId && product.Status != 7) // exclude Deleted
+            .OrderByDescending(product => product.ProductId)
             .ToListAsync();
     }
 
@@ -130,7 +77,7 @@ public class PipelineRepository : IPipelineRepository
     public async Task<List<ProductComponent>> GetProductComponentsAsync(int productId)
     {
         return await _context.ProductComponent
-            .Where(pc => pc.ProductId == productId)
+            .Where(productComponent => productComponent.ProductId == productId)
             .ToListAsync();
     }
 
@@ -147,26 +94,26 @@ public class PipelineRepository : IPipelineRepository
     public async Task<int?> GetMaterialIdByCodeAsync(string materialCode)
     {
         var material = await _context.Materials
-            .FirstOrDefaultAsync(m => m.MaterialCode == materialCode);
+            .FirstOrDefaultAsync(material => material.MaterialCode == materialCode);
         return material?.MaterialId;
     }
 
     public async Task<bool> IsTeacherOwnsMaterialAsync(int teacherId, int materialId)
     {
         return await _context.TeacherMaterials
-            .AnyAsync(tm => tm.TeacherId == teacherId && tm.MaterialId == materialId);
+            .AnyAsync(teacherMaterial => teacherMaterial.TeacherId == teacherId && teacherMaterial.MaterialId == materialId);
     }
 
     public async Task<Products?> GetProductByIdAsync(int productId)
     {
         return await _context.Products
-            .FirstOrDefaultAsync(p => p.ProductId == productId);
+            .FirstOrDefaultAsync(product => product.ProductId == productId);
     }
 
     public async Task<Products?> GetProductByCodeAndTeacherAsync(string productCode, int teacherId)
     {
         return await _context.Products
-            .FirstOrDefaultAsync(p => p.ProductCode == productCode && p.TeacherId == teacherId);
+            .FirstOrDefaultAsync(product => product.ProductCode == productCode && product.TeacherId == teacherId);
     }
 
     public void UpdateProduct(Products product)

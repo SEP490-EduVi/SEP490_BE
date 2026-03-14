@@ -13,6 +13,7 @@ public class UnitOfWork : IUnitOfWork
     private PaymentRepository? _paymentRepository;
     private AdminRepository? _adminRepository;
     private PipelineRepository? _pipelineRepository;
+    private InputDocumentRepository? _inputDocumentRepository;
     private CurriculumRepository? _curriculumRepository;
     private ExpertRepository? _expertRepository;
     private StaffRepository? _staffRepository;
@@ -46,6 +47,11 @@ public class UnitOfWork : IUnitOfWork
     public IPipelineRepository PipelineRepository
     {
         get => _pipelineRepository ??= new PipelineRepository(_context);
+    }
+
+    public IInputDocumentRepository InputDocumentRepository
+    {
+        get => _inputDocumentRepository ??= new InputDocumentRepository(_context);
     }
 
     public ICurriculumRepository CurriculumRepository
@@ -121,17 +127,17 @@ public class UnitOfWork : IUnitOfWork
     {
         int result = -1;
 
-        using (var dbContextTransaction = _context.Database.BeginTransaction())
+        using (var databaseContextTransaction = _context.Database.BeginTransaction())
         {
             try
             {
                 result = _context.SaveChanges();
-                dbContextTransaction.Commit();
+                databaseContextTransaction.Commit();
             }
             catch (Exception)
             {
                 result = -1;
-                dbContextTransaction.Rollback();
+                databaseContextTransaction.Rollback();
             }
         }
 
@@ -146,17 +152,17 @@ public class UnitOfWork : IUnitOfWork
     {
         int result = -1;
 
-        using (var dbContextTransaction = await _context.Database.BeginTransactionAsync())
+        using (var databaseContextTransaction = await _context.Database.BeginTransactionAsync())
         {
             try
             {
                 result = await _context.SaveChangesAsync();
-                await dbContextTransaction.CommitAsync();
+                await databaseContextTransaction.CommitAsync();
             }
             catch (Exception)
             {
                 result = -1;
-                await dbContextTransaction.RollbackAsync();
+                await databaseContextTransaction.RollbackAsync();
             }
         }
 

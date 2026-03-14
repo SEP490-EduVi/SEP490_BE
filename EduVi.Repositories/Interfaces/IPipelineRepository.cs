@@ -4,38 +4,6 @@ namespace EduVi.Repositories.Interfaces;
 
 public interface IPipelineRepository
 {
-    // ============ InputDocuments ============
-
-    /// <summary>
-    /// Lấy InputDocument theo ID (kèm Subject, Grade, Lesson info)
-    /// </summary>
-    Task<InputDocuments?> GetInputDocumentByIdAsync(int documentId);
-
-    /// <summary>
-    /// Lấy InputDocument theo Code (kèm Subject, Grade, Lesson info)
-    /// </summary>
-    Task<InputDocuments?> GetInputDocumentByCodeAsync(string documentCode);
-
-    /// <summary>
-    /// Tìm InputDocument đã tồn tại theo Teacher + Subject + Grade + Lesson
-    /// </summary>
-    Task<InputDocuments?> GetExistingInputDocumentAsync(int teacherId, int subjectId, int gradeId, int? lessonId);
-
-    /// <summary>
-    /// Tạo InputDocument mới
-    /// </summary>
-    Task<InputDocuments> CreateInputDocumentAsync(InputDocuments document);
-
-    /// <summary>
-    /// Cập nhật InputDocument đã tồn tại
-    /// </summary>
-    void UpdateInputDocument(InputDocuments document);
-
-    /// <summary>
-    /// Lấy danh sách InputDocuments của một Teacher
-    /// </summary>
-    Task<List<InputDocuments>> GetInputDocumentsByTeacherAsync(int teacherId);
-
     // ============ Projects ============
 
     /// <summary>

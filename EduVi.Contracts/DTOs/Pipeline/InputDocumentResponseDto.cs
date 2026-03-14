@@ -8,6 +8,7 @@ public class InputDocumentResponseDto
     public string? DocumentCode { get; set; }
     public string Title { get; set; } = string.Empty;
     public string FilePath { get; set; } = string.Empty;
+    public string? ProjectCode { get; set; }
     public string? SubjectCode { get; set; }
     public string? SubjectName { get; set; }
     public string? GradeCode { get; set; }

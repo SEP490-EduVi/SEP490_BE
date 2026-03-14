@@ -40,14 +40,13 @@ public class PipelineService : IPipelineService
             throw new InvalidOperationException("Project không tồn tại hoặc không thuộc về bạn");
 
         // 2. Get InputDocument from DB (by Code)
-        var document = await _unitOfWork.PipelineRepository
-            .GetInputDocumentByCodeAsync(request.DocumentCode);
+        var document = await _unitOfWork.InputDocumentRepository
+            .GetInputDocumentByCodeAndTeacherAsync(request.DocumentCode, teacherId);
         if (document is null)
-            throw new InvalidOperationException("InputDocument không tồn tại");
+            throw new InvalidOperationException("InputDocument không tồn tại hoặc không thuộc về bạn");
 
-        // 3. Verify document belongs to this Teacher
-        if (document.TeacherId != teacherId)
-            throw new InvalidOperationException("Document không thuộc về bạn");
+        if (document.ProjectId != project.ProjectId)
+            throw new InvalidOperationException("InputDocument không thuộc Project đã chọn");
 
         var lessonCode = document.Lesson?.LessonCode
             ?? throw new InvalidOperationException("Lesson chưa có LessonCode");

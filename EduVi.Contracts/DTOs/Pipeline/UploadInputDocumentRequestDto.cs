@@ -22,6 +22,13 @@ public class UploadInputDocumentRequestDto
     public string Title { get; set; } = string.Empty;
 
     /// <summary>
+    /// Code project chứa InputDocument
+    /// </summary>
+    [Required(ErrorMessage = "ProjectCode is required")]
+    [MaxLength(100)]
+    public string ProjectCode { get; set; } = string.Empty;
+
+    /// <summary>
     /// Code môn học
     /// </summary>
     [Required(ErrorMessage = "SubjectCode is required")]

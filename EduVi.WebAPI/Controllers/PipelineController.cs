@@ -12,66 +12,14 @@ namespace EduVi.WebAPI.Controllers;
 public class PipelineController : ControllerBase
 {
     private readonly IPipelineService _pipelineService;
-    private readonly IInputDocumentService _inputDocumentService;
     private readonly ILogger<PipelineController> _logger;
 
     public PipelineController(
         IPipelineService pipelineService,
-        IInputDocumentService inputDocumentService,
         ILogger<PipelineController> logger)
     {
         _pipelineService = pipelineService;
-        _inputDocumentService = inputDocumentService;
         _logger = logger;
-    }
-
-    // =====================================================================
-    // INPUT DOCUMENTS
-    // =====================================================================
-
-    /// <summary>
-    /// Upload file bài giảng → lưu vào GCS → lưu metadata vào DB (InputDocuments)
-    /// </summary>
-    [HttpPost("input-documents")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<InputDocumentResponseDto>>> UploadInputDocument(
-        [FromForm] UploadInputDocumentRequestDto request)
-    {
-        try
-        {
-            var userId = GetCurrentUserId();
-            var result = await _inputDocumentService.UploadInputDocumentAsync(userId, request);
-            return Ok(ApiResponse<InputDocumentResponseDto>.Success(result, "Upload tài liệu thành công"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<InputDocumentResponseDto>.Fail(ex.Message, 400));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error uploading input document");
-            return StatusCode(500, ApiResponse<InputDocumentResponseDto>.Fail("Lỗi khi upload tài liệu", 500));
-        }
-    }
-
-    /// <summary>
-    /// Lấy danh sách InputDocuments của Teacher hiện tại
-    /// </summary>
-    [HttpGet("input-documents")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<List<InputDocumentResponseDto>>>> GetMyInputDocuments()
-    {
-        try
-        {
-            var userId = GetCurrentUserId();
-            var result = await _inputDocumentService.GetInputDocumentsByTeacherAsync(userId);
-            return Ok(ApiResponse<List<InputDocumentResponseDto>>.Success(result));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting input documents");
-            return StatusCode(500, ApiResponse<List<InputDocumentResponseDto>>.Fail("Lỗi khi lấy danh sách tài liệu", 500));
-        }
     }
 
     // =====================================================================
