@@ -26,21 +26,25 @@ public class ProductController : ControllerBase
     // =====================================================================
 
     /// <summary>
-    /// Lấy danh sách tất cả Products của Teacher hiện tại (không bao gồm đã xóa)
+    /// Lấy danh sách tất cả Products theo ProjectCode của Teacher hiện tại (không bao gồm đã xóa)
     /// </summary>
-    [HttpGet]
-    public async Task<ActionResult<ApiResponse<List<ProductSummaryDto>>>> GetMyProducts()
+    [HttpGet("project/{projectCode}")]
+    public async Task<ActionResult<ApiResponse<List<ProductSummaryDto>>>> GetProductsByProjectCode(string projectCode)
     {
         try
         {
             var teacherId = GetCurrentUserId();
-            var result = await _pipelineService.GetProductsByTeacherAsync(teacherId);
+            var result = await _pipelineService.GetProductsByProjectCodeAsync(teacherId, projectCode);
             return Ok(ApiResponse<List<ProductSummaryDto>>.Success(result));
         }
-        catch (Exception ex)
+        catch (KeyNotFoundException exception)
         {
-            _logger.LogError(ex, "Error fetching products for teacher");
-            return StatusCode(500, ApiResponse<List<ProductSummaryDto>>.Fail("Lỗi khi lấy danh sách product", 500));
+            return NotFound(ApiResponse<List<ProductSummaryDto>>.Fail(exception.Message, 404));
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Error fetching products for project {ProjectCode}", projectCode);
+            return StatusCode(500, ApiResponse<List<ProductSummaryDto>>.Fail("Lỗi khi lấy danh sách product theo project", 500));
         }
     }
 

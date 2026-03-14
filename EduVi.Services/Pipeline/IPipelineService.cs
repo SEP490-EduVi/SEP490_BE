@@ -36,6 +36,11 @@ public interface IPipelineService
     Task<List<ProductSummaryDto>> GetProductsByTeacherAsync(int teacherId);
 
     /// <summary>
+    /// Lấy danh sách Products của Teacher theo ProjectCode (không bao gồm Deleted)
+    /// </summary>
+    Task<List<ProductSummaryDto>> GetProductsByProjectCodeAsync(int teacherId, string projectCode);
+
+    /// <summary>
     /// Lấy chi tiết đầy đủ của một Product theo ProductCode
     /// </summary>
     Task<ProductDetailDto> GetProductByCodeAsync(int teacherId, string productCode);

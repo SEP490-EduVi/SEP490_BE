@@ -49,6 +49,11 @@ public interface IPipelineRepository
     Task<List<Products>> GetProductsByTeacherAsync(int teacherId);
 
     /// <summary>
+    /// Lấy danh sách Products theo Teacher + Project (không bao gồm Deleted)
+    /// </summary>
+    Task<List<Products>> GetProductsByTeacherAndProjectAsync(int teacherId, int projectId);
+
+    /// <summary>
     /// Tạo Product mới với status NEW
     /// </summary>
     Task<Products> CreateProductAsync(Products product);

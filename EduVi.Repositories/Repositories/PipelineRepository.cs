@@ -68,6 +68,17 @@ public class PipelineRepository : IPipelineRepository
             .ToListAsync();
     }
 
+    public async Task<List<Products>> GetProductsByTeacherAndProjectAsync(int teacherId, int projectId)
+    {
+        return await _context.Products
+            .Where(product =>
+                product.TeacherId == teacherId &&
+                product.ProjectId == projectId &&
+                product.Status != 7) // exclude Deleted
+            .OrderByDescending(product => product.ProductId)
+            .ToListAsync();
+    }
+
     public async Task<Products> CreateProductAsync(Products product)
     {
         var entry = await _context.Products.AddAsync(product);

@@ -329,6 +329,31 @@ public class PipelineService : IPipelineService
         }).ToList();
     }
 
+    public async Task<List<ProductSummaryDto>> GetProductsByProjectCodeAsync(int teacherId, string projectCode)
+    {
+        var project = await _unitOfWork.PipelineRepository
+            .GetProjectByCodeAndTeacherAsync(projectCode, teacherId)
+            ?? throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại hoặc không thuộc về bạn");
+
+        var products = await _unitOfWork.PipelineRepository
+            .GetProductsByTeacherAndProjectAsync(teacherId, project.ProjectId);
+
+        return products.Select(p => new ProductSummaryDto
+        {
+            ProductCode = p.ProductCode,
+            ProductName = p.ProductName,
+            Description = p.Description,
+            Status = p.Status ?? 0,
+            StatusName = ProductStatusConstants.GetStatusName(p.Status),
+            EvaluatedAt = p.EvaluatedAt,
+            SlideGeneratedAt = p.SlideGeneratedAt,
+            SlideEditedAt = p.SlideEditedAt,
+            HasEvaluation = !string.IsNullOrEmpty(p.EvaluationResult),
+            HasSlide = !string.IsNullOrEmpty(p.SlideDocument),
+            HasEditedSlide = !string.IsNullOrEmpty(p.SlideEditedDocument)
+        }).ToList();
+    }
+
     public async Task<ProductDetailDto> GetProductByCodeAsync(int teacherId, string productCode)
     {
         var product = await _unitOfWork.PipelineRepository
