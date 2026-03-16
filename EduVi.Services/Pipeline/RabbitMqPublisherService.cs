@@ -151,7 +151,7 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
         }
     }
 
-    public async Task PublishVideoGenerationTaskAsync(Guid taskId, string userId, int productId, string slideEditedDocumentUrl, string productVideoCode)
+    public async Task PublishVideoGenerationTaskAsync(Guid taskId, string productVideoCode, string userId, int productId, string productCode, string slideEditedDocumentUrl)
     {
         await _semaphore.WaitAsync();
         try
@@ -161,18 +161,39 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
             var message = new
             {
                 taskId = taskId.ToString(),
+                requestId = productVideoCode,
                 userId,
                 productId,
-                slideEditedDocumentUrl,
-                requestId = productVideoCode
+                productCode,
+                slideEditedDocumentUrl
             };
 
-            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+            var bodyJson = JsonSerializer.Serialize(message);
+            if (string.IsNullOrWhiteSpace(bodyJson))
+                throw new InvalidOperationException($"Serialized RabbitMQ video message is empty. TaskId={taskId}, RequestId={productVideoCode}, ProductId={productId}");
+
+            var body = Encoding.UTF8.GetBytes(bodyJson);
+            if (body.Length <= 0)
+                throw new InvalidOperationException($"Serialized RabbitMQ video message has zero length body. TaskId={taskId}, RequestId={productVideoCode}, ProductId={productId}");
+
+            _logger.LogInformation(
+                "Video publish payload prepared. TaskId={TaskId}, RequestId={RequestId}, ProductId={ProductId}, BodyLength={BodyLength}",
+                taskId,
+                productVideoCode,
+                productId,
+                body.Length);
+            _logger.LogInformation(
+                "Video publish payload JSON. TaskId={TaskId}, RequestId={RequestId}, ProductId={ProductId}, Body={BodyJson}",
+                taskId,
+                productVideoCode,
+                productId,
+                bodyJson);
 
             var properties = new BasicProperties
             {
-                Persistent = true,
-                ContentType = "application/json"
+                ContentType = "application/json",
+                DeliveryMode = DeliveryModes.Persistent,
+                Persistent = true
             };
 
             await _channel!.BasicPublishAsync(
@@ -182,7 +203,12 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
                 basicProperties: properties,
                 body: body);
 
-            _logger.LogInformation("Published video generation task {TaskId} for user {UserId}, product {ProductId}", taskId, userId, productId);
+            _logger.LogInformation(
+                "Published video generation task {TaskId} for user {UserId}, product {ProductId}, request {RequestId}",
+                taskId,
+                userId,
+                productId,
+                productVideoCode);
         }
         finally
         {

@@ -93,11 +93,16 @@ public class PipelineResultConsumerService : BackgroundService
                         if (progress is not null)
                         {
                             var redisDb = _redis.GetDatabase();
+                            RedisValue existingMeta = RedisValue.Null;
+
+                            if (progress.TaskId != Guid.Empty)
+                            {
+                                existingMeta = await redisDb.StringGetAsync($"pipeline:status:{progress.TaskId}");
+                            }
 
                             // Resolve productId from Redis if worker didn't include it
                             if (progress.ProductId == 0 && progress.TaskId != Guid.Empty)
                             {
-                                var existingMeta = await redisDb.StringGetAsync($"pipeline:status:{progress.TaskId}");
                                 if (!existingMeta.IsNullOrEmpty)
                                 {
                                     var originalTask = JsonSerializer.Deserialize<PipelineProgressDto>(existingMeta!, JsonOptions);
@@ -111,17 +116,19 @@ public class PipelineResultConsumerService : BackgroundService
                                 .Group($"user_{progress.UserId}")
                                 .SendAsync("PipelineProgress", BuildSignalRPayload(progress), stoppingToken);
 
-                            // Update status in Redis
-                            await redisDb.StringSetAsync(
-                                $"pipeline:status:{progress.TaskId}",
-                                JsonSerializer.Serialize(progress),
-                                TimeSpan.FromHours(1));
-
                             // Persist to DB when completed or failed
                             if (progress.Status is "completed" or "failed" && progress.ProductId > 0)
                             {
                                 await UpdateProductInDatabaseAsync(progress);
                             }
+
+                            // Update status in Redis after DB persistence.
+                            // This keeps original task metadata (e.g. productVideoCode/requestId)
+                            // available during DB update correlation.
+                            await redisDb.StringSetAsync(
+                                $"pipeline:status:{progress.TaskId}",
+                                BuildRedisProgressPayload(progress, existingMeta.IsNullOrEmpty ? null : (string)existingMeta!),
+                                TimeSpan.FromHours(1));
 
                             _logger.LogInformation(
                                 "Pushed progress for task {TaskId} (Product {ProductId}) to user {UserId}: {Status} ({Progress}%)",
@@ -405,16 +412,26 @@ public class PipelineResultConsumerService : BackgroundService
     {
         var productVideoCode = await ResolveProductVideoCodeAsync(progress);
 
-        var productVideo = !string.IsNullOrWhiteSpace(productVideoCode)
-            ? await unitOfWork.PipelineRepository.GetProductVideoByCodeAsync(productVideoCode!)
-            : await unitOfWork.PipelineRepository.GetLatestProductVideoAsync(productId);
+        if (string.IsNullOrWhiteSpace(productVideoCode) && progress.TaskId != Guid.Empty)
+            productVideoCode = $"video_task_{progress.TaskId}";
+
+        if (string.IsNullOrWhiteSpace(productVideoCode))
+        {
+            _logger.LogWarning(
+                "Cannot correlate video result to ProductVideos row. TaskId={TaskId}, ProductId={ProductId}",
+                progress.TaskId,
+                productId);
+            return;
+        }
+
+        var productVideo = await unitOfWork.PipelineRepository.GetProductVideoByCodeAsync(productVideoCode!);
 
         if (productVideo is null)
         {
             productVideo = await unitOfWork.PipelineRepository.CreateProductVideoAsync(new EduVi.Repositories.Models.ProductVideos
             {
                 ProductId = productId,
-                ProductVideoCode = productVideoCode ?? $"video_task_{progress.TaskId}",
+                ProductVideoCode = productVideoCode,
                 Status = "completed",
                 CreatedAt = DateTime.UtcNow
             });
@@ -450,16 +467,26 @@ public class PipelineResultConsumerService : BackgroundService
     {
         var productVideoCode = await ResolveProductVideoCodeAsync(progress);
 
-        var productVideo = !string.IsNullOrWhiteSpace(productVideoCode)
-            ? await unitOfWork.PipelineRepository.GetProductVideoByCodeAsync(productVideoCode!)
-            : await unitOfWork.PipelineRepository.GetLatestProductVideoAsync(productId);
+        if (string.IsNullOrWhiteSpace(productVideoCode) && progress.TaskId != Guid.Empty)
+            productVideoCode = $"video_task_{progress.TaskId}";
+
+        if (string.IsNullOrWhiteSpace(productVideoCode))
+        {
+            _logger.LogWarning(
+                "Cannot correlate failed video result to ProductVideos row. TaskId={TaskId}, ProductId={ProductId}",
+                progress.TaskId,
+                productId);
+            return;
+        }
+
+        var productVideo = await unitOfWork.PipelineRepository.GetProductVideoByCodeAsync(productVideoCode!);
 
         if (productVideo is null)
         {
             productVideo = await unitOfWork.PipelineRepository.CreateProductVideoAsync(new EduVi.Repositories.Models.ProductVideos
             {
                 ProductId = productId,
-                ProductVideoCode = productVideoCode ?? $"video_task_{progress.TaskId}",
+                ProductVideoCode = productVideoCode,
                 Status = "failed",
                 CreatedAt = DateTime.UtcNow
             });
@@ -474,12 +501,21 @@ public class PipelineResultConsumerService : BackgroundService
     private async Task<string?> ResolveProductVideoCodeAsync(PipelineProgressDto progress)
     {
         if (progress.Result is JsonElement resultElement
-            && resultElement.ValueKind == JsonValueKind.Object
-            && resultElement.TryGetProperty("request_id", out var requestIdElement))
+            && resultElement.ValueKind == JsonValueKind.Object)
         {
-            var requestIdFromResult = requestIdElement.GetString();
-            if (!string.IsNullOrWhiteSpace(requestIdFromResult))
-                return requestIdFromResult;
+            if (resultElement.TryGetProperty("request_id", out var requestIdElement))
+            {
+                var requestIdFromResult = requestIdElement.GetString();
+                if (!string.IsNullOrWhiteSpace(requestIdFromResult))
+                    return requestIdFromResult;
+            }
+
+            if (resultElement.TryGetProperty("requestId", out var requestIdCamelElement))
+            {
+                var requestIdFromResult = requestIdCamelElement.GetString();
+                if (!string.IsNullOrWhiteSpace(requestIdFromResult))
+                    return requestIdFromResult;
+            }
         }
 
         try
@@ -495,6 +531,9 @@ public class PipelineResultConsumerService : BackgroundService
 
             if (doc.RootElement.TryGetProperty("requestId", out var requestIdMetaElement))
                 return requestIdMetaElement.GetString();
+
+            if (doc.RootElement.TryGetProperty("request_id", out var requestIdSnakeMetaElement))
+                return requestIdSnakeMetaElement.GetString();
         }
         catch
         {
@@ -502,5 +541,50 @@ public class PipelineResultConsumerService : BackgroundService
         }
 
         return null;
+    }
+
+    private static string BuildRedisProgressPayload(PipelineProgressDto progress, string? existingMetaJson)
+    {
+        string? requestId = null;
+        string? productVideoCode = null;
+        string? createdAt = null;
+
+        if (!string.IsNullOrWhiteSpace(existingMetaJson))
+        {
+            try
+            {
+                using var existingMetaDocument = JsonDocument.Parse(existingMetaJson);
+                var existingRoot = existingMetaDocument.RootElement;
+
+                if (existingRoot.TryGetProperty("requestId", out var requestIdElement))
+                    requestId = requestIdElement.GetString();
+
+                if (existingRoot.TryGetProperty("productVideoCode", out var productVideoCodeElement))
+                    productVideoCode = productVideoCodeElement.GetString();
+
+                if (existingRoot.TryGetProperty("createdAt", out var createdAtElement))
+                    createdAt = createdAtElement.GetString();
+            }
+            catch
+            {
+                // Ignore parse errors and fall back to minimal payload.
+            }
+        }
+
+        return JsonSerializer.Serialize(new
+        {
+            taskId = progress.TaskId,
+            userId = progress.UserId,
+            productId = progress.ProductId,
+            status = progress.Status,
+            step = progress.Step,
+            progress = progress.Progress,
+            detail = progress.Detail,
+            result = progress.Result,
+            error = progress.Error,
+            requestId,
+            productVideoCode,
+            createdAt
+        });
     }
 }

@@ -240,10 +240,11 @@ public class PipelineService : IPipelineService
         var publishStart = Stopwatch.GetTimestamp();
         await _publisher.PublishVideoGenerationTaskAsync(
             taskId,
+            productVideoCode,
             teacherId.ToString(),
             product.ProductId,
-            slideEditedDocumentUrl,
-            productVideoCode);
+            product.ProductCode,
+            slideEditedDocumentUrl);
         var publishElapsed = Stopwatch.GetElapsedTime(publishStart);
         _logger.LogInformation("RabbitMQ video generation task published in {ElapsedMs}ms for task {TaskId}, product {ProductCode}",
             publishElapsed.TotalMilliseconds, taskId, product.ProductCode);

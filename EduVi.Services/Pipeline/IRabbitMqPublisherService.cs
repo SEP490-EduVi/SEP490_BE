@@ -16,7 +16,7 @@ public interface IRabbitMqPublisherService
 
     /// <summary>
     /// Publish một task tạo video từ slide edited document (GCS URL) lên RabbitMQ.
-    /// Message format: { taskId, userId, productId, slideEditedDocumentUrl, requestId }
+    /// Message format: { taskId, requestId, userId, productId, productCode, slideEditedDocumentUrl }
     /// </summary>
-    Task PublishVideoGenerationTaskAsync(Guid taskId, string userId, int productId, string slideEditedDocumentUrl, string productVideoCode);
+    Task PublishVideoGenerationTaskAsync(Guid taskId, string productVideoCode, string userId, int productId, string productCode, string slideEditedDocumentUrl);
 }
