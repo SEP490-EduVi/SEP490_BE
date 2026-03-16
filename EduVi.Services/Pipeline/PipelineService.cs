@@ -1,7 +1,6 @@
 using EduVi.Contracts.DTOs.Pipeline;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System.Diagnostics;
@@ -14,20 +13,17 @@ public class PipelineService : IPipelineService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRabbitMqPublisherService _publisher;
     private readonly IConnectionMultiplexer _redis;
-    private readonly IConfiguration _configuration;
     private readonly ILogger<PipelineService> _logger;
 
     public PipelineService(
         IUnitOfWork unitOfWork,
         IRabbitMqPublisherService publisher,
         IConnectionMultiplexer redis,
-        IConfiguration configuration,
         ILogger<PipelineService> logger)
     {
         _unitOfWork = unitOfWork;
         _publisher = publisher;
         _redis = redis;
-        _configuration = configuration;
         _logger = logger;
     }
 
@@ -195,6 +191,71 @@ public class PipelineService : IPipelineService
         };
     }
 
+    public async Task<PipelineTaskResponseDto> CreateVideoGenerationTaskAsync(int teacherId, GenerateVideoRequestDto request)
+    {
+        var taskId = Guid.NewGuid();
+
+        var product = await _unitOfWork.PipelineRepository
+            .GetProductByCodeAndTeacherAsync(request.ProductCode, teacherId)
+            ?? throw new InvalidOperationException("Product không tồn tại hoặc không thuộc về bạn");
+
+        if (!IsSupportedGcsUrl(request.SlideEditedDocumentUrl))
+            throw new InvalidOperationException("SlideEditedDocumentUrl phải là GCS URL hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
+
+        var slideEditedDocumentUrl = request.SlideEditedDocumentUrl.Trim();
+
+        product.SlideEditedDocument = slideEditedDocumentUrl;
+        product.SlideEditedAt = DateTime.UtcNow;
+        product.Status = ProductStatusConstants.GeneratingVideo;
+
+        _unitOfWork.PipelineRepository.UpdateProduct(product);
+
+        var productVideoCode = $"video_{product.ProductCode}_{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+        await _unitOfWork.PipelineRepository.CreateProductVideoAsync(new ProductVideos
+        {
+            ProductId = product.ProductId,
+            ProductVideoCode = productVideoCode,
+            Status = "queued",
+            SlideDocumentUrl = slideEditedDocumentUrl,
+            CreatedAt = DateTime.UtcNow
+        });
+        await _unitOfWork.SaveChangesAsync();
+
+        var db = _redis.GetDatabase();
+        var taskMeta = JsonSerializer.Serialize(new
+        {
+            userId = teacherId.ToString(),
+            productId = product.ProductId,
+            productVideoCode,
+            status = "queued",
+            step = "video_generation",
+            createdAt = DateTime.UtcNow.ToString("o")
+        });
+        var redisStart = Stopwatch.GetTimestamp();
+        await db.StringSetAsync($"pipeline:status:{taskId}", taskMeta, TimeSpan.FromHours(1));
+        var redisElapsed = Stopwatch.GetElapsedTime(redisStart);
+        _logger.LogInformation("Redis video generation task metadata stored in {ElapsedMs}ms for task {TaskId}",
+            redisElapsed.TotalMilliseconds, taskId);
+
+        var publishStart = Stopwatch.GetTimestamp();
+        await _publisher.PublishVideoGenerationTaskAsync(
+            taskId,
+            teacherId.ToString(),
+            product.ProductId,
+            slideEditedDocumentUrl,
+            productVideoCode);
+        var publishElapsed = Stopwatch.GetElapsedTime(publishStart);
+        _logger.LogInformation("RabbitMQ video generation task published in {ElapsedMs}ms for task {TaskId}, product {ProductCode}",
+            publishElapsed.TotalMilliseconds, taskId, product.ProductCode);
+
+        return new PipelineTaskResponseDto
+        {
+            TaskId = taskId,
+            ProductCode = product.ProductCode,
+            Status = "queued"
+        };
+    }
+
     public async Task<PipelineProgressDto?> GetTaskStatusAsync(Guid taskId)
     {
         var db = _redis.GetDatabase();
@@ -352,6 +413,8 @@ public class PipelineService : IPipelineService
         if (product.Status == ProductStatusConstants.Deleted)
             throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
 
+        var latestProductVideo = await _unitOfWork.PipelineRepository.GetLatestActiveProductVideoAsync(product.ProductId);
+
         return new ProductDetailDto
         {
             ProductCode = product.ProductCode,
@@ -366,7 +429,78 @@ public class PipelineService : IPipelineService
             SlideDocument = ParseJson(product.SlideDocument),
             SlideGeneratedAt = product.SlideGeneratedAt,
             SlideEditedDocument = ParseJson(product.SlideEditedDocument),
-            SlideEditedAt = product.SlideEditedAt
+            SlideEditedAt = product.SlideEditedAt,
+            VideoUrl = latestProductVideo?.VideoUrl,
+            VideoDuration = latestProductVideo?.Duration,
+            ProductVideoCode = latestProductVideo?.ProductVideoCode,
+            VideoInteractions = ParseJson(latestProductVideo?.Interactions),
+            VideoPausePoints = ParseJson(latestProductVideo?.PausePoints),
+            VideoGeneratedAt = latestProductVideo?.CompletedAt
+        };
+    }
+
+    public async Task<ProductVideoDetailDto> GetProductVideoByCodeAsync(int teacherId, string productVideoCode)
+    {
+        var productVideo = await _unitOfWork.PipelineRepository
+            .GetProductVideoByCodeAndTeacherAsync(productVideoCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy video với mã {productVideoCode}");
+
+        if (productVideo.Status == "deleted")
+            throw new KeyNotFoundException($"Không tìm thấy video với mã {productVideoCode}");
+
+        return MapToProductVideoDetailDto(productVideo);
+    }
+
+    public async Task<ProductVideoDetailDto> GetLatestProductVideoByProductCodeAsync(int teacherId, string productCode)
+    {
+        var product = await _unitOfWork.PipelineRepository
+            .GetProductByCodeAndTeacherAsync(productCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+
+        var productVideo = await _unitOfWork.PipelineRepository
+            .GetLatestActiveProductVideoAsync(product.ProductId)
+            ?? throw new KeyNotFoundException($"Product {productCode} chưa có video nào");
+
+        if (productVideo.Product is null)
+            productVideo.Product = product;
+
+        return MapToProductVideoDetailDto(productVideo);
+    }
+
+    public async Task SoftDeleteProductVideoAsync(int teacherId, string productVideoCode)
+    {
+        var productVideo = await _unitOfWork.PipelineRepository
+            .GetProductVideoByCodeAndTeacherAsync(productVideoCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy video với mã {productVideoCode}");
+
+        if (productVideo.Status == "deleted")
+            throw new KeyNotFoundException($"Không tìm thấy video với mã {productVideoCode}");
+
+        productVideo.Status = "deleted";
+        productVideo.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.PipelineRepository.UpdateProductVideo(productVideo);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Teacher {TeacherId} soft-deleted product video {ProductVideoCode}", teacherId, productVideoCode);
+    }
+
+    private ProductVideoDetailDto MapToProductVideoDetailDto(ProductVideos productVideo)
+    {
+        return new ProductVideoDetailDto
+        {
+            ProductCode = productVideo.Product?.ProductCode ?? string.Empty,
+            ProductVideoCode = productVideo.ProductVideoCode,
+            Status = productVideo.Status,
+            SlideDocumentUrl = productVideo.SlideDocumentUrl,
+            VideoUrl = productVideo.VideoUrl,
+            Duration = productVideo.Duration,
+            Interactions = ParseJson(productVideo.Interactions),
+            PausePoints = ParseJson(productVideo.PausePoints),
+            ErrorMessage = productVideo.ErrorMessage,
+            CreatedAt = productVideo.CreatedAt,
+            UpdatedAt = productVideo.UpdatedAt,
+            CompletedAt = productVideo.CompletedAt
         };
     }
 

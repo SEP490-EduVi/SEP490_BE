@@ -221,7 +221,15 @@ public class PipelineResultConsumerService : BackgroundService
                     : null;
 
                 // Determine which pipeline step completed based on the step field
-                if (progress.Step == "slides_completed")
+                if (progress.Step == "video_completed" || IsVideoGenerationResult(progress.Result))
+                {
+                    // Video generation completed
+                    product.Status = ProductStatusConstants.VideoGenerated;
+                    await UpsertProductVideoCompletedAsync(unitOfWork, progress, product.ProductId);
+
+                    _logger.LogInformation("Product {ProductId} video generated successfully", product.ProductId);
+                }
+                else if (progress.Step == "slides_completed")
                 {
                     // Slide generation completed — store SlideDocument
                     product.Status = ProductStatusConstants.SlidesGenerated;
@@ -256,10 +264,17 @@ public class PipelineResultConsumerService : BackgroundService
             }
             else if (progress.Status == "failed")
             {
+                var isVideoGeneration = await IsVideoGenerationTaskAsync(progress.TaskId);
                 // Check Redis to determine which pipeline this task belongs to
                 var isSlideGeneration = await IsSlideGenerationTaskAsync(progress.TaskId);
 
-                if (isSlideGeneration)
+                if (isVideoGeneration)
+                {
+                    product.Status = ProductStatusConstants.VideoFailed;
+                    await UpsertProductVideoFailedAsync(unitOfWork, progress, product.ProductId);
+                    _logger.LogWarning("Product {ProductId} video generation FAILED: {Error}", product.ProductId, progress.Error);
+                }
+                else if (isSlideGeneration)
                 {
                     product.Status = ProductStatusConstants.SlidesFailed;
                     _logger.LogWarning("Product {ProductId} slide generation FAILED: {Error}", product.ProductId, progress.Error);
@@ -347,5 +362,145 @@ public class PipelineResultConsumerService : BackgroundService
         {
             return false;
         }
+    }
+
+    private async Task<bool> IsVideoGenerationTaskAsync(Guid taskId)
+    {
+        try
+        {
+            var redisDb = _redis.GetDatabase();
+            var data = await redisDb.StringGetAsync($"pipeline:status:{taskId}");
+            if (data.IsNullOrEmpty)
+                return false;
+
+            using var doc = JsonDocument.Parse((string)data!);
+            if (doc.RootElement.TryGetProperty("step", out var stepElement))
+            {
+                var step = stepElement.GetString();
+                return step == "video_generation"
+                    || step == "video_processing"
+                    || step == "video_completed";
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsVideoGenerationResult(object? result)
+    {
+        if (result is not JsonElement resultElement || resultElement.ValueKind != JsonValueKind.Object)
+            return false;
+
+        return resultElement.TryGetProperty("video_url", out _)
+            || resultElement.TryGetProperty("request_id", out _)
+            || resultElement.TryGetProperty("pause_points", out _)
+            || resultElement.TryGetProperty("interactions", out _);
+    }
+
+    private async Task UpsertProductVideoCompletedAsync(IUnitOfWork unitOfWork, PipelineProgressDto progress, int productId)
+    {
+        var productVideoCode = await ResolveProductVideoCodeAsync(progress);
+
+        var productVideo = !string.IsNullOrWhiteSpace(productVideoCode)
+            ? await unitOfWork.PipelineRepository.GetProductVideoByCodeAsync(productVideoCode!)
+            : await unitOfWork.PipelineRepository.GetLatestProductVideoAsync(productId);
+
+        if (productVideo is null)
+        {
+            productVideo = await unitOfWork.PipelineRepository.CreateProductVideoAsync(new EduVi.Repositories.Models.ProductVideos
+            {
+                ProductId = productId,
+                ProductVideoCode = productVideoCode ?? $"video_task_{progress.TaskId}",
+                Status = "completed",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        productVideo.Status = "completed";
+        productVideo.UpdatedAt = DateTime.UtcNow;
+        productVideo.CompletedAt = DateTime.UtcNow;
+
+        if (progress.Result is JsonElement videoResultElement)
+        {
+            if (videoResultElement.TryGetProperty("video_url", out var videoUrlElement))
+                productVideo.VideoUrl = videoUrlElement.GetString();
+
+            if (videoResultElement.TryGetProperty("duration", out var durationElement) &&
+                durationElement.TryGetDouble(out var videoDuration))
+                productVideo.Duration = videoDuration;
+
+            if (videoResultElement.TryGetProperty("request_id", out var requestIdElement))
+                productVideo.ProductVideoCode = requestIdElement.GetString() ?? productVideo.ProductVideoCode;
+
+            if (videoResultElement.TryGetProperty("interactions", out var interactionsElement))
+                productVideo.Interactions = interactionsElement.GetRawText();
+
+            if (videoResultElement.TryGetProperty("pause_points", out var pausePointsElement))
+                productVideo.PausePoints = pausePointsElement.GetRawText();
+        }
+
+        unitOfWork.PipelineRepository.UpdateProductVideo(productVideo);
+    }
+
+    private async Task UpsertProductVideoFailedAsync(IUnitOfWork unitOfWork, PipelineProgressDto progress, int productId)
+    {
+        var productVideoCode = await ResolveProductVideoCodeAsync(progress);
+
+        var productVideo = !string.IsNullOrWhiteSpace(productVideoCode)
+            ? await unitOfWork.PipelineRepository.GetProductVideoByCodeAsync(productVideoCode!)
+            : await unitOfWork.PipelineRepository.GetLatestProductVideoAsync(productId);
+
+        if (productVideo is null)
+        {
+            productVideo = await unitOfWork.PipelineRepository.CreateProductVideoAsync(new EduVi.Repositories.Models.ProductVideos
+            {
+                ProductId = productId,
+                ProductVideoCode = productVideoCode ?? $"video_task_{progress.TaskId}",
+                Status = "failed",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        productVideo.Status = "failed";
+        productVideo.ErrorMessage = progress.Error;
+        productVideo.UpdatedAt = DateTime.UtcNow;
+        unitOfWork.PipelineRepository.UpdateProductVideo(productVideo);
+    }
+
+    private async Task<string?> ResolveProductVideoCodeAsync(PipelineProgressDto progress)
+    {
+        if (progress.Result is JsonElement resultElement
+            && resultElement.ValueKind == JsonValueKind.Object
+            && resultElement.TryGetProperty("request_id", out var requestIdElement))
+        {
+            var requestIdFromResult = requestIdElement.GetString();
+            if (!string.IsNullOrWhiteSpace(requestIdFromResult))
+                return requestIdFromResult;
+        }
+
+        try
+        {
+            var redisDb = _redis.GetDatabase();
+            var data = await redisDb.StringGetAsync($"pipeline:status:{progress.TaskId}");
+            if (data.IsNullOrEmpty)
+                return null;
+
+            using var doc = JsonDocument.Parse((string)data!);
+            if (doc.RootElement.TryGetProperty("productVideoCode", out var productVideoCodeMetaElement))
+                return productVideoCodeMetaElement.GetString();
+
+            if (doc.RootElement.TryGetProperty("requestId", out var requestIdMetaElement))
+                return requestIdMetaElement.GetString();
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
     }
 }

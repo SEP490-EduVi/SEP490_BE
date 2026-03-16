@@ -13,4 +13,10 @@ public interface IRabbitMqPublisherService
     /// Message format: { taskId, userId, productId, evaluationResult, lessonPlanText, textbookSections, preferences }
     /// </summary>
     Task PublishSlideGenerationTaskAsync(Guid taskId, string userId, int productId, object evaluationResult, string lessonPlanText, object textbookSections, string slideRange);
+
+    /// <summary>
+    /// Publish một task tạo video từ slide edited document (GCS URL) lên RabbitMQ.
+    /// Message format: { taskId, userId, productId, slideEditedDocumentUrl, requestId }
+    /// </summary>
+    Task PublishVideoGenerationTaskAsync(Guid taskId, string userId, int productId, string slideEditedDocumentUrl, string productVideoCode);
 }

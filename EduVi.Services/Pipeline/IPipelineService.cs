@@ -13,6 +13,7 @@ public interface IPipelineService
     /// Trigger tạo slide presentation từ evaluation result đã có
     /// </summary>
     Task<PipelineTaskResponseDto> CreateSlideGenerationTaskAsync(int teacherId, SlideGenerationRequestDto request);
+    Task<PipelineTaskResponseDto> CreateVideoGenerationTaskAsync(int teacherId, GenerateVideoRequestDto request);
 
     /// <summary>
     /// Lấy trạng thái task từ Redis (fallback khi SignalR bị ngắt)
@@ -24,24 +25,16 @@ public interface IPipelineService
     /// </summary>
     Task<string> SaveEditedSlideAsync(int teacherId, string productCode, SaveEditedSlideRequestDto request);
 
-    /// <summary>
-    /// Xóa Product (và toàn bộ ProductComponents liên quan) theo ProductCode.
-    /// Chỉ xóa được khi product không đang trong trạng thái xử lý.
-    /// </summary>
-    Task DeleteProductAsync(int teacherId, string productCode);
-
-    /// <summary>
-    /// Lấy danh sách Products của Teacher (không bao gồm Deleted)
-    /// </summary>
+    // Product queries
     Task<List<ProductSummaryDto>> GetProductsByTeacherAsync(int teacherId);
-
-    /// <summary>
-    /// Lấy danh sách Products của Teacher theo ProjectCode (không bao gồm Deleted)
-    /// </summary>
     Task<List<ProductSummaryDto>> GetProductsByProjectCodeAsync(int teacherId, string projectCode);
-
-    /// <summary>
-    /// Lấy chi tiết đầy đủ của một Product theo ProductCode
-    /// </summary>
     Task<ProductDetailDto> GetProductByCodeAsync(int teacherId, string productCode);
+
+    // Video queries
+    Task<ProductVideoDetailDto> GetProductVideoByCodeAsync(int teacherId, string productVideoCode);
+    Task<ProductVideoDetailDto> GetLatestProductVideoByProductCodeAsync(int teacherId, string productCode);
+    Task SoftDeleteProductVideoAsync(int teacherId, string productVideoCode);
+
+    // Product delete
+    Task DeleteProductAsync(int teacherId, string productCode);
 }

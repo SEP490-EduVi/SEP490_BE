@@ -16,6 +16,7 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
 
     private const string LessonAnalysisQueue = "lesson.analysis.requests";
     private const string SlideGenerationQueue = "slide.generation.requests";
+    private const string VideoGenerationQueue = "video.generation.requests";
 
     public RabbitMqPublisherService(IConfiguration configuration, ILogger<RabbitMqPublisherService> logger)
     {
@@ -54,8 +55,15 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
             autoDelete: false,
             arguments: null);
 
-        _logger.LogInformation("RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}'",
-            LessonAnalysisQueue, SlideGenerationQueue);
+        await _channel.QueueDeclareAsync(
+            queue: VideoGenerationQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
+
+        _logger.LogInformation("RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}', '{VideoQueue}'",
+            LessonAnalysisQueue, SlideGenerationQueue, VideoGenerationQueue);
     }
 
     public async Task PublishLessonAnalysisTaskAsync(Guid taskId, string userId, int productId, string gcsUri, string subjectCode, string gradeCode, string lessonCode)
@@ -136,6 +144,45 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
                 body: body);
 
             _logger.LogInformation("Published slide generation task {TaskId} for user {UserId}", taskId, userId);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task PublishVideoGenerationTaskAsync(Guid taskId, string userId, int productId, string slideEditedDocumentUrl, string productVideoCode)
+    {
+        await _semaphore.WaitAsync();
+        try
+        {
+            await EnsureConnectedAsync();
+
+            var message = new
+            {
+                taskId = taskId.ToString(),
+                userId,
+                productId,
+                slideEditedDocumentUrl,
+                requestId = productVideoCode
+            };
+
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                ContentType = "application/json"
+            };
+
+            await _channel!.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: VideoGenerationQueue,
+                mandatory: false,
+                basicProperties: properties,
+                body: body);
+
+            _logger.LogInformation("Published video generation task {TaskId} for user {UserId}, product {ProductId}", taskId, userId, productId);
         }
         finally
         {

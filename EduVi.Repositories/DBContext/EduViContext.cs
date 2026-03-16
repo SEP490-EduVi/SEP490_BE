@@ -39,6 +39,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<Products> Products { get; set; }
 
+    public virtual DbSet<ProductVideos> ProductVideos { get; set; }
+
     public virtual DbSet<Projects> Projects { get; set; }
 
     public virtual DbSet<Roles> Roles { get; set; }
@@ -382,6 +384,39 @@ public partial class EduViContext : DbContext
                 .HasForeignKey(d => d.TeacherId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Products__Teache__6FE99F9F");
+        });
+
+        modelBuilder.Entity<ProductVideos>(entity =>
+        {
+            entity.HasKey(e => e.ProductVideoId).HasName("PK_ProductVideos");
+
+            entity.HasIndex(e => new { e.ProductId, e.CreatedAt }, "IX_ProductVideos_ProductId_CreatedAt");
+            entity.HasIndex(e => e.ProductVideoCode, "UQ_ProductVideos_ProductVideoCode").IsUnique();
+
+            entity.Property(e => e.ProductVideoId).HasColumnName("ProductVideoId");
+            entity.Property(e => e.ProductId).HasColumnName("ProductId");
+            entity.Property(e => e.ProductVideoCode)
+                .HasMaxLength(200)
+                .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .IsUnicode(false);
+            entity.Property(e => e.SlideDocumentUrl).HasMaxLength(1000);
+            entity.Property(e => e.VideoUrl).HasMaxLength(1000);
+            entity.Property(e => e.Duration).HasColumnType("float");
+            entity.Property(e => e.Interactions).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.PausePoints).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+            entity.Property(e => e.CompletedAt).HasColumnType("datetime2");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.ProductVideos)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ProductVideos_Products");
         });
 
         modelBuilder.Entity<Projects>(entity =>

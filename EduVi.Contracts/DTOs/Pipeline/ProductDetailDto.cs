@@ -33,4 +33,13 @@ public class ProductDetailDto
     /// <summary>Slide JSON sau khi Teacher chỉnh sửa (JSON object). Null nếu chưa edit.</summary>
     public JsonElement? SlideEditedDocument { get; set; }
     public DateTime? SlideEditedAt { get; set; }
+
+    // ── Bước 4: Video Generation ─────────────────────────────────────────
+    /// <summary>Video URL sau khi AI tạo xong.</summary>
+    public string? VideoUrl { get; set; }
+    public double? VideoDuration { get; set; }
+    public string? ProductVideoCode { get; set; }
+    public JsonElement? VideoInteractions { get; set; }
+    public JsonElement? VideoPausePoints { get; set; }
+    public DateTime? VideoGeneratedAt { get; set; }
 }

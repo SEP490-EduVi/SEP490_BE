@@ -14,6 +14,59 @@ public class PipelineRepository : IPipelineRepository
         _context = context;
     }
 
+    public async Task<InputDocuments?> GetInputDocumentByIdAsync(int documentId)
+    {
+        return await _context.InputDocuments
+            .Include(d => d.Subject)
+            .Include(d => d.Grade)
+            .Include(d => d.Lesson)
+            .FirstOrDefaultAsync(d => d.DocumentId == documentId);
+    }
+
+    public async Task<InputDocuments?> GetInputDocumentByCodeAsync(string documentCode)
+    {
+        return await _context.InputDocuments
+            .Include(d => d.Subject)
+            .Include(d => d.Grade)
+            .Include(d => d.Lesson)
+            .FirstOrDefaultAsync(d => d.DocumentCode == documentCode);
+    }
+
+    public async Task<InputDocuments?> GetExistingInputDocumentAsync(int teacherId, int subjectId, int gradeId, int? lessonId)
+    {
+        return await _context.InputDocuments
+            .Include(d => d.Subject)
+            .Include(d => d.Grade)
+            .Include(d => d.Lesson)
+            .FirstOrDefaultAsync(d =>
+                d.TeacherId == teacherId &&
+                d.SubjectId == subjectId &&
+                d.GradeId == gradeId &&
+                d.LessonId == lessonId);
+    }
+
+    public async Task<InputDocuments> CreateInputDocumentAsync(InputDocuments document)
+    {
+        var entry = await _context.InputDocuments.AddAsync(document);
+        return entry.Entity;
+    }
+
+    public void UpdateInputDocument(InputDocuments document)
+    {
+        _context.InputDocuments.Update(document);
+    }
+
+    public async Task<List<InputDocuments>> GetInputDocumentsByTeacherAsync(int teacherId)
+    {
+        return await _context.InputDocuments
+            .Include(d => d.Subject)
+            .Include(d => d.Grade)
+            .Include(d => d.Lesson)
+            .Where(d => d.TeacherId == teacherId)
+            .OrderByDescending(d => d.UploadDate)
+            .ToListAsync();
+    }
+
     public async Task<List<Projects>> GetProjectsByTeacherAsync(int teacherId)
     {
         return await _context.Projects
@@ -113,6 +166,48 @@ public class PipelineRepository : IPipelineRepository
     {
         return await _context.TeacherMaterials
             .AnyAsync(teacherMaterial => teacherMaterial.TeacherId == teacherId && teacherMaterial.MaterialId == materialId);
+    }
+
+    public async Task<ProductVideos> CreateProductVideoAsync(ProductVideos productVideo)
+    {
+        var entry = await _context.ProductVideos.AddAsync(productVideo);
+        return entry.Entity;
+    }
+
+    public async Task<ProductVideos?> GetLatestProductVideoAsync(int productId)
+    {
+        return await _context.ProductVideos
+            .Where(productVideo => productVideo.ProductId == productId)
+            .OrderByDescending(productVideo => productVideo.CreatedAt)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<ProductVideos?> GetProductVideoByCodeAsync(string productVideoCode)
+    {
+        return await _context.ProductVideos
+            .FirstOrDefaultAsync(productVideo => productVideo.ProductVideoCode == productVideoCode);
+    }
+
+    public async Task<ProductVideos?> GetProductVideoByCodeAndTeacherAsync(string productVideoCode, int teacherId)
+    {
+        return await _context.ProductVideos
+            .Include(productVideo => productVideo.Product)
+            .FirstOrDefaultAsync(productVideo =>
+                productVideo.ProductVideoCode == productVideoCode
+                && productVideo.Product.TeacherId == teacherId);
+    }
+
+    public async Task<ProductVideos?> GetLatestActiveProductVideoAsync(int productId)
+    {
+        return await _context.ProductVideos
+            .Where(productVideo => productVideo.ProductId == productId && productVideo.Status != "deleted")
+            .OrderByDescending(productVideo => productVideo.CreatedAt)
+            .FirstOrDefaultAsync();
+    }
+
+    public void UpdateProductVideo(ProductVideos productVideo)
+    {
+        _context.ProductVideos.Update(productVideo);
     }
 
     public async Task<Products?> GetProductByIdAsync(int productId)

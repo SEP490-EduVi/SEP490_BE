@@ -4,6 +4,38 @@ namespace EduVi.Repositories.Interfaces;
 
 public interface IPipelineRepository
 {
+    // ============ InputDocuments ============
+
+    /// <summary>
+    /// Lấy InputDocument theo ID (kèm Subject, Grade, Lesson info)
+    /// </summary>
+    Task<InputDocuments?> GetInputDocumentByIdAsync(int documentId);
+
+    /// <summary>
+    /// Lấy InputDocument theo Code (kèm Subject, Grade, Lesson info)
+    /// </summary>
+    Task<InputDocuments?> GetInputDocumentByCodeAsync(string documentCode);
+
+    /// <summary>
+    /// Tìm InputDocument đã tồn tại theo Teacher + Subject + Grade + Lesson
+    /// </summary>
+    Task<InputDocuments?> GetExistingInputDocumentAsync(int teacherId, int subjectId, int gradeId, int? lessonId);
+
+    /// <summary>
+    /// Tạo InputDocument mới
+    /// </summary>
+    Task<InputDocuments> CreateInputDocumentAsync(InputDocuments document);
+
+    /// <summary>
+    /// Cập nhật InputDocument đã tồn tại
+    /// </summary>
+    void UpdateInputDocument(InputDocuments document);
+
+    /// <summary>
+    /// Lấy danh sách InputDocuments của một Teacher
+    /// </summary>
+    Task<List<InputDocuments>> GetInputDocumentsByTeacherAsync(int teacherId);
+
     // ============ Projects ============
 
     /// <summary>
@@ -106,4 +138,36 @@ public interface IPipelineRepository
     /// Kiểm tra Teacher đã mua Material này chưa
     /// </summary>
     Task<bool> IsTeacherOwnsMaterialAsync(int teacherId, int materialId);
+
+    // ============ ProductVideos ============
+
+    /// <summary>
+    /// Tạo bản ghi video pipeline cho Product.
+    /// </summary>
+    Task<ProductVideos> CreateProductVideoAsync(ProductVideos productVideo);
+
+    /// <summary>
+    /// Lấy bản ghi video mới nhất của Product.
+    /// </summary>
+    Task<ProductVideos?> GetLatestProductVideoAsync(int productId);
+
+    /// <summary>
+    /// Lấy bản ghi video theo ProductVideoCode.
+    /// </summary>
+    Task<ProductVideos?> GetProductVideoByCodeAsync(string productVideoCode);
+
+    /// <summary>
+    /// Lấy bản ghi video theo ProductVideoCode và TeacherId.
+    /// </summary>
+    Task<ProductVideos?> GetProductVideoByCodeAndTeacherAsync(string productVideoCode, int teacherId);
+
+    /// <summary>
+    /// Lấy bản ghi video mới nhất (không tính deleted) theo ProductId.
+    /// </summary>
+    Task<ProductVideos?> GetLatestActiveProductVideoAsync(int productId);
+
+    /// <summary>
+    /// Cập nhật bản ghi ProductVideo.
+    /// </summary>
+    void UpdateProductVideo(ProductVideos productVideo);
 }
