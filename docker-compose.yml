@@ -60,6 +60,7 @@ services:
       GCS__BucketName: ${GCS__BucketName}
       GCS__Folders__UserInputs: ${GCS__Folders__UserInputs}
       GCS__Folders__ExpertVerifications: ${GCS__Folders__ExpertVerifications}
+      GCS__Folders__EditedSlides: ${GCS__Folders__EditedSlides}
 
       # Email
       EmailSettings__SmtpHost: ${EmailSettings__SmtpHost}
