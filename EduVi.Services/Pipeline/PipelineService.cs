@@ -1,13 +1,10 @@
 using EduVi.Contracts.DTOs.Pipeline;
-using Google;
-using Google.Cloud.Storage.V1;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System.Diagnostics;
-using System.Text;
 using System.Text.Json;
 
 namespace EduVi.Services.Pipeline;
@@ -270,45 +267,10 @@ public class PipelineService : IPipelineService
                 _unitOfWork.PipelineRepository.DeleteProductComponents(existingComponents);
         }
 
-        var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("GCS BucketName not configured");
-        var editedSlidesFolder = _configuration["GCS:Folders:EditedSlides"] ?? "edited_slides";
+        if (!IsSupportedGcsUrl(request.SlideEditedDocumentUrl))
+            throw new InvalidOperationException("SlideEditedDocumentUrl phải là GCS URL hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
 
-        var storageClient = await StorageClient.CreateAsync();
-        var objectName = BuildEditedSlideObjectName(editedSlidesFolder, teacherId, product.ProductCode);
-
-        var uploadStart = Stopwatch.GetTimestamp();
-        await using (var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(request.SlideDocument)))
-        {
-            await storageClient.UploadObjectAsync(
-                bucketName,
-                objectName,
-                "application/json; charset=utf-8",
-                contentStream);
-        }
-        var uploadElapsed = Stopwatch.GetElapsedTime(uploadStart);
-        var slideEditedDocumentUrl = $"https://storage.googleapis.com/{bucketName}/{objectName}";
-        _logger.LogInformation("Edited slide JSON uploaded to GCS in {ElapsedMs}ms for product {ProductCode}: {SlideEditedDocumentUrl}",
-            uploadElapsed.TotalMilliseconds, productCode, slideEditedDocumentUrl);
-
-        // Xóa object cũ nếu SlideEditedDocument đang lưu GCS URL để tránh file rác.
-        var oldObjectName = ExtractGcsObjectName(bucketName, product.SlideEditedDocument);
-        if (!string.IsNullOrEmpty(oldObjectName))
-        {
-            try
-            {
-                var deleteStart = Stopwatch.GetTimestamp();
-                await storageClient.DeleteObjectAsync(bucketName, oldObjectName);
-                var deleteElapsed = Stopwatch.GetElapsedTime(deleteStart);
-                _logger.LogInformation("Old edited slide JSON deleted from GCS in {ElapsedMs}ms for product {ProductCode}",
-                    deleteElapsed.TotalMilliseconds, productCode);
-            }
-            catch (GoogleApiException ex) when (ex.Error?.Code == 404)
-            {
-                _logger.LogWarning("Old edited slide GCS object not found during cleanup for product {ProductCode}: {OldObjectName}",
-                    productCode, oldObjectName);
-            }
-        }
+        var slideEditedDocumentUrl = request.SlideEditedDocumentUrl.Trim();
 
         // Lưu link slide đã edit — bản gốc SlideDocument giữ nguyên
         product.SlideEditedDocument = slideEditedDocumentUrl;
@@ -323,26 +285,13 @@ public class PipelineService : IPipelineService
         return slideEditedDocumentUrl;
     }
 
-    private static string BuildEditedSlideObjectName(string folder, int teacherId, string productCode)
+    private static bool IsSupportedGcsUrl(string? value)
     {
-        var normalizedFolder = folder.Trim('/');
-        return $"{normalizedFolder}/teacher_{teacherId}/{productCode}/slide_{DateTime.UtcNow:yyyyMMddHHmmssfff}.json";
-    }
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
 
-    private static string? ExtractGcsObjectName(string bucketName, string? storedValue)
-    {
-        if (string.IsNullOrWhiteSpace(storedValue))
-            return null;
-
-        var gsPrefix = $"gs://{bucketName}/";
-        if (storedValue.StartsWith(gsPrefix, StringComparison.OrdinalIgnoreCase))
-            return storedValue[gsPrefix.Length..];
-
-        var httpsPrefix = $"https://storage.googleapis.com/{bucketName}/";
-        if (storedValue.StartsWith(httpsPrefix, StringComparison.OrdinalIgnoreCase))
-            return storedValue[httpsPrefix.Length..];
-
-        return null;
+        return value.StartsWith("gs://", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("https://storage.googleapis.com/", StringComparison.OrdinalIgnoreCase);
     }
 
     #endregion

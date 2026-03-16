@@ -8,10 +8,10 @@ namespace EduVi.Contracts.DTOs.Pipeline;
 public class SaveEditedSlideRequestDto
 {
     /// <summary>
-    /// Toàn bộ JSON slide sau khi Teacher chỉnh sửa (cấu trúc cards).
+    /// URL file JSON slide đã upload sẵn lên GCS bởi FE.
     /// </summary>
-    [Required(ErrorMessage = "SlideDocument không được để trống")]
-    public required string SlideDocument { get; set; }
+    [Required(ErrorMessage = "SlideEditedDocumentUrl không được để trống")]
+    public required string SlideEditedDocumentUrl { get; set; }
 
     /// <summary>
     /// Danh sách materials được chèn vào slide kèm vị trí (CardId, BlockId).
