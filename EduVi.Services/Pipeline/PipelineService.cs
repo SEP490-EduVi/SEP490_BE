@@ -1,9 +1,13 @@
 using EduVi.Contracts.DTOs.Pipeline;
+using Google;
+using Google.Cloud.Storage.V1;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 
 namespace EduVi.Services.Pipeline;
@@ -13,17 +17,20 @@ public class PipelineService : IPipelineService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRabbitMqPublisherService _publisher;
     private readonly IConnectionMultiplexer _redis;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<PipelineService> _logger;
 
     public PipelineService(
         IUnitOfWork unitOfWork,
         IRabbitMqPublisherService publisher,
         IConnectionMultiplexer redis,
+        IConfiguration configuration,
         ILogger<PipelineService> logger)
     {
         _unitOfWork = unitOfWork;
         _publisher = publisher;
         _redis = redis;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -53,41 +60,19 @@ public class PipelineService : IPipelineService
         var subjectCode = document.Subject?.SubjectCode ?? "Unknown";
         var gradeCode = document.Grade?.GradeCode ?? "Unknown";
 
-        // 4. Reuse existing Product by the true FK key (ProjectId + SourceInputId).
-        // Ownership is already guaranteed by step 1 (project belongs to this teacher).
-        // NOTE: Do NOT look up by ProductCode — legacy products may have a NULL ProductCode
-        //       and would be missed, causing a duplicate row to be inserted every call.
+        // 4. Reuse existing Product by ProductCode (deterministic key for this project+document pair)
         var productCode = $"prod_{request.ProjectCode}_{request.DocumentCode}";
         var product = await _unitOfWork.PipelineRepository
-            .GetExistingProductAsync(project.ProjectId, document.DocumentId);
+            .GetProductByCodeAndTeacherAsync(productCode, teacherId);
 
         if (product is not null)
         {
-            // Guard: cannot re-run while actively being processed
-            if (product.Status == ProductStatusConstants.Processing ||
-                product.Status == ProductStatusConstants.GeneratingSlides)
-                throw new InvalidOperationException("Product đang được xử lý. Vui lòng chờ hoàn tất trước khi chạy lại");
-
-            // Cascade-clear all downstream data from every subsequent stage
             product.ProductName = request.ProductName ?? $"Phân tích: {document.Title}";
             product.Description = $"AI evaluation cho document: {document.Title}";
             product.ProductCode = productCode;
             product.Status = ProductStatusConstants.New;
             product.EvaluationResult = null;
             product.EvaluatedAt = null;
-            product.LessonPlanText = null;
-            product.TextbookSections = null;
-            product.SlideDocument = null;
-            product.SlideGeneratedAt = null;
-            product.SlideEditedDocument = null;
-            product.SlideEditedAt = null;
-
-            // Remove stale ProductComponents from the old run
-            var staleComponents = await _unitOfWork.PipelineRepository
-                .GetProductComponentsAsync(product.ProductId);
-            if (staleComponents.Count > 0)
-                _unitOfWork.PipelineRepository.DeleteProductComponents(staleComponents);
-
             _unitOfWork.PipelineRepository.UpdateProduct(product);
         }
         else
@@ -169,19 +154,10 @@ public class PipelineService : IPipelineService
             ? JsonSerializer.Deserialize<object>(product.TextbookSections)
             : new object[] { };
 
-        // 3. Update product status to GeneratingSlides, cascade-clear slide downstream data
+        // 3. Update product status to GeneratingSlides
         product.Status = ProductStatusConstants.GeneratingSlides;
         product.SlideDocument = null;
         product.SlideGeneratedAt = null;
-        product.SlideEditedDocument = null;
-        product.SlideEditedAt = null;
-
-        // Remove stale ProductComponents from the previous slide run
-        var staleComponents = await _unitOfWork.PipelineRepository
-            .GetProductComponentsAsync(product.ProductId);
-        if (staleComponents.Count > 0)
-            _unitOfWork.PipelineRepository.DeleteProductComponents(staleComponents);
-
         _unitOfWork.PipelineRepository.UpdateProduct(product);
         await _unitOfWork.SaveChangesAsync();
 
@@ -240,7 +216,7 @@ public class PipelineService : IPipelineService
 
     #region Slide Edit
 
-    public async Task SaveEditedSlideAsync(int teacherId, string productCode, SaveEditedSlideRequestDto request)
+    public async Task<string> SaveEditedSlideAsync(int teacherId, string productCode, SaveEditedSlideRequestDto request)
     {
         var product = await _unitOfWork.PipelineRepository
             .GetProductByCodeAndTeacherAsync(productCode, teacherId)
@@ -294,8 +270,48 @@ public class PipelineService : IPipelineService
                 _unitOfWork.PipelineRepository.DeleteProductComponents(existingComponents);
         }
 
-        // Lưu slide đã edit — bản gốc SlideDocument giữ nguyên
-        product.SlideEditedDocument = request.SlideDocument;
+        var bucketName = _configuration["GCS:BucketName"]
+            ?? throw new InvalidOperationException("GCS BucketName not configured");
+        var editedSlidesFolder = _configuration["GCS:Folders:EditedSlides"] ?? "edited_slides";
+
+        var storageClient = await StorageClient.CreateAsync();
+        var objectName = BuildEditedSlideObjectName(editedSlidesFolder, teacherId, product.ProductCode);
+
+        var uploadStart = Stopwatch.GetTimestamp();
+        await using (var contentStream = new MemoryStream(Encoding.UTF8.GetBytes(request.SlideDocument)))
+        {
+            await storageClient.UploadObjectAsync(
+                bucketName,
+                objectName,
+                "application/json; charset=utf-8",
+                contentStream);
+        }
+        var uploadElapsed = Stopwatch.GetElapsedTime(uploadStart);
+        var slideEditedDocumentUrl = $"https://storage.googleapis.com/{bucketName}/{objectName}";
+        _logger.LogInformation("Edited slide JSON uploaded to GCS in {ElapsedMs}ms for product {ProductCode}: {SlideEditedDocumentUrl}",
+            uploadElapsed.TotalMilliseconds, productCode, slideEditedDocumentUrl);
+
+        // Xóa object cũ nếu SlideEditedDocument đang lưu GCS URL để tránh file rác.
+        var oldObjectName = ExtractGcsObjectName(bucketName, product.SlideEditedDocument);
+        if (!string.IsNullOrEmpty(oldObjectName))
+        {
+            try
+            {
+                var deleteStart = Stopwatch.GetTimestamp();
+                await storageClient.DeleteObjectAsync(bucketName, oldObjectName);
+                var deleteElapsed = Stopwatch.GetElapsedTime(deleteStart);
+                _logger.LogInformation("Old edited slide JSON deleted from GCS in {ElapsedMs}ms for product {ProductCode}",
+                    deleteElapsed.TotalMilliseconds, productCode);
+            }
+            catch (GoogleApiException ex) when (ex.Error?.Code == 404)
+            {
+                _logger.LogWarning("Old edited slide GCS object not found during cleanup for product {ProductCode}: {OldObjectName}",
+                    productCode, oldObjectName);
+            }
+        }
+
+        // Lưu link slide đã edit — bản gốc SlideDocument giữ nguyên
+        product.SlideEditedDocument = slideEditedDocumentUrl;
         product.SlideEditedAt = DateTime.UtcNow;
 
         _unitOfWork.PipelineRepository.UpdateProduct(product);
@@ -303,6 +319,30 @@ public class PipelineService : IPipelineService
 
         _logger.LogInformation("Teacher {TeacherId} saved edited slide for product {ProductCode} with {MaterialCount} material(s) at {EditedAt}",
             teacherId, productCode, request.UsedMaterials?.Count ?? 0, product.SlideEditedAt);
+
+        return slideEditedDocumentUrl;
+    }
+
+    private static string BuildEditedSlideObjectName(string folder, int teacherId, string productCode)
+    {
+        var normalizedFolder = folder.Trim('/');
+        return $"{normalizedFolder}/teacher_{teacherId}/{productCode}/slide_{DateTime.UtcNow:yyyyMMddHHmmssfff}.json";
+    }
+
+    private static string? ExtractGcsObjectName(string bucketName, string? storedValue)
+    {
+        if (string.IsNullOrWhiteSpace(storedValue))
+            return null;
+
+        var gsPrefix = $"gs://{bucketName}/";
+        if (storedValue.StartsWith(gsPrefix, StringComparison.OrdinalIgnoreCase))
+            return storedValue[gsPrefix.Length..];
+
+        var httpsPrefix = $"https://storage.googleapis.com/{bucketName}/";
+        if (storedValue.StartsWith(httpsPrefix, StringComparison.OrdinalIgnoreCase))
+            return storedValue[httpsPrefix.Length..];
+
+        return null;
     }
 
     #endregion
@@ -313,19 +353,19 @@ public class PipelineService : IPipelineService
     {
         var products = await _unitOfWork.PipelineRepository.GetProductsByTeacherAsync(teacherId);
 
-        return products.Select(p => new ProductSummaryDto
+        return products.Select(product => new ProductSummaryDto
         {
-            ProductCode = p.ProductCode,
-            ProductName = p.ProductName,
-            Description = p.Description,
-            Status = p.Status ?? 0,
-            StatusName = ProductStatusConstants.GetStatusName(p.Status),
-            EvaluatedAt = p.EvaluatedAt,
-            SlideGeneratedAt = p.SlideGeneratedAt,
-            SlideEditedAt = p.SlideEditedAt,
-            HasEvaluation = !string.IsNullOrEmpty(p.EvaluationResult),
-            HasSlide = !string.IsNullOrEmpty(p.SlideDocument),
-            HasEditedSlide = !string.IsNullOrEmpty(p.SlideEditedDocument)
+            ProductCode = product.ProductCode,
+            ProductName = product.ProductName,
+            Description = product.Description,
+            Status = product.Status ?? 0,
+            StatusName = ProductStatusConstants.GetStatusName(product.Status),
+            EvaluatedAt = product.EvaluatedAt,
+            SlideGeneratedAt = product.SlideGeneratedAt,
+            SlideEditedAt = product.SlideEditedAt,
+            HasEvaluation = !string.IsNullOrEmpty(product.EvaluationResult),
+            HasSlide = !string.IsNullOrEmpty(product.SlideDocument),
+            HasEditedSlide = !string.IsNullOrEmpty(product.SlideEditedDocument)
         }).ToList();
     }
 
@@ -338,19 +378,19 @@ public class PipelineService : IPipelineService
         var products = await _unitOfWork.PipelineRepository
             .GetProductsByTeacherAndProjectAsync(teacherId, project.ProjectId);
 
-        return products.Select(p => new ProductSummaryDto
+        return products.Select(product => new ProductSummaryDto
         {
-            ProductCode = p.ProductCode,
-            ProductName = p.ProductName,
-            Description = p.Description,
-            Status = p.Status ?? 0,
-            StatusName = ProductStatusConstants.GetStatusName(p.Status),
-            EvaluatedAt = p.EvaluatedAt,
-            SlideGeneratedAt = p.SlideGeneratedAt,
-            SlideEditedAt = p.SlideEditedAt,
-            HasEvaluation = !string.IsNullOrEmpty(p.EvaluationResult),
-            HasSlide = !string.IsNullOrEmpty(p.SlideDocument),
-            HasEditedSlide = !string.IsNullOrEmpty(p.SlideEditedDocument)
+            ProductCode = product.ProductCode,
+            ProductName = product.ProductName,
+            Description = product.Description,
+            Status = product.Status ?? 0,
+            StatusName = ProductStatusConstants.GetStatusName(product.Status),
+            EvaluatedAt = product.EvaluatedAt,
+            SlideGeneratedAt = product.SlideGeneratedAt,
+            SlideEditedAt = product.SlideEditedAt,
+            HasEvaluation = !string.IsNullOrEmpty(product.EvaluationResult),
+            HasSlide = !string.IsNullOrEmpty(product.SlideDocument),
+            HasEditedSlide = !string.IsNullOrEmpty(product.SlideEditedDocument)
         }).ToList();
     }
 
@@ -383,8 +423,17 @@ public class PipelineService : IPipelineService
 
     private static JsonElement? ParseJson(string? value)
     {
-        if (string.IsNullOrEmpty(value)) return null;
-        return JsonSerializer.Deserialize<JsonElement>(value);
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize<JsonElement>(value);
+        }
+        catch (JsonException)
+        {
+            return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(value));
+        }
     }
 
     #endregion

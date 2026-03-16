@@ -97,8 +97,11 @@ public class PipelineController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
-            await _pipelineService.SaveEditedSlideAsync(userId, productCode, request);
-            return Ok(ApiResponse<object>.Success(null, "Slide đã được lưu thành công"));
+            var slideEditedDocumentUrl = await _pipelineService.SaveEditedSlideAsync(userId, productCode, request);
+            return Ok(ApiResponse<object>.Success(new
+            {
+                SlideEditedDocumentUrl = slideEditedDocumentUrl
+            }, "Slide đã được lưu thành công"));
         }
         catch (KeyNotFoundException ex)
         {

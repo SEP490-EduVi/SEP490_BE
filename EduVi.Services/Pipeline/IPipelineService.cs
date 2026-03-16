@@ -22,7 +22,7 @@ public interface IPipelineService
     /// <summary>
     /// Teacher lưu slide đã chỉnh sửa vào SlideEditedDocument
     /// </summary>
-    Task SaveEditedSlideAsync(int teacherId, string productCode, SaveEditedSlideRequestDto request);
+    Task<string> SaveEditedSlideAsync(int teacherId, string productCode, SaveEditedSlideRequestDto request);
 
     /// <summary>
     /// Xóa Product (và toàn bộ ProductComponents liên quan) theo ProductCode.
