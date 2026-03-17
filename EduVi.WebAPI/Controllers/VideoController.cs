@@ -44,14 +44,14 @@ public class VideoController : ControllerBase
         }
     }
 
-    [HttpGet("{productVideoCode}")]
+    [HttpGet("project/{projectCode}/latest")]
     [Authorize]
-    public async Task<ActionResult<ApiResponse<ProductVideoDetailDto>>> GetVideoByCode(string productVideoCode)
+    public async Task<ActionResult<ApiResponse<ProductVideoDetailDto>>> GetVideoByProjectCode(string projectCode)
     {
         try
         {
             var userId = GetCurrentUserId();
-            var result = await _pipelineService.GetProductVideoByCodeAsync(userId, productVideoCode);
+            var result = await _pipelineService.GetLatestProductVideoByProjectCodeAsync(userId, projectCode);
             return Ok(ApiResponse<ProductVideoDetailDto>.Success(result));
         }
         catch (KeyNotFoundException ex)
@@ -60,31 +60,31 @@ public class VideoController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting product video {ProductVideoCode}", productVideoCode);
+            _logger.LogError(ex, "Error getting latest product video for project {ProjectCode}", projectCode);
             return StatusCode(500, ApiResponse<ProductVideoDetailDto>.Fail("Lỗi khi lấy thông tin video", 500));
         }
     }
 
-    [HttpGet("product/{productCode}/latest")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<ProductVideoDetailDto>>> GetLatestVideoByProductCode(string productCode)
-    {
-        try
-        {
-            var userId = GetCurrentUserId();
-            var result = await _pipelineService.GetLatestProductVideoByProductCodeAsync(userId, productCode);
-            return Ok(ApiResponse<ProductVideoDetailDto>.Success(result));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ApiResponse<ProductVideoDetailDto>.Fail(ex.Message, 404));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting latest product video for product {ProductCode}", productCode);
-            return StatusCode(500, ApiResponse<ProductVideoDetailDto>.Fail("Lỗi khi lấy video mới nhất của product", 500));
-        }
-    }
+    //[HttpGet("product/{productCode}/latest")]
+    //[Authorize]
+    //public async Task<ActionResult<ApiResponse<ProductVideoDetailDto>>> GetLatestVideoByProductCode(string productCode)
+    //{
+    //    try
+    //    {
+    //        var userId = GetCurrentUserId();
+    //        var result = await _pipelineService.GetLatestProductVideoByProductCodeAsync(userId, productCode);
+    //        return Ok(ApiResponse<ProductVideoDetailDto>.Success(result));
+    //    }
+    //    catch (KeyNotFoundException ex)
+    //    {
+    //        return NotFound(ApiResponse<ProductVideoDetailDto>.Fail(ex.Message, 404));
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(ex, "Error getting latest product video for product {ProductCode}", productCode);
+    //        return StatusCode(500, ApiResponse<ProductVideoDetailDto>.Fail("Lỗi khi lấy video mới nhất của product", 500));
+    //    }
+    //}
 
     [HttpDelete("{productVideoCode}")]
     [Authorize]

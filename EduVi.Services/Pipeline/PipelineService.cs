@@ -440,14 +440,11 @@ public class PipelineService : IPipelineService
         };
     }
 
-    public async Task<ProductVideoDetailDto> GetProductVideoByCodeAsync(int teacherId, string productVideoCode)
+    public async Task<ProductVideoDetailDto> GetLatestProductVideoByProjectCodeAsync(int teacherId, string projectCode)
     {
         var productVideo = await _unitOfWork.PipelineRepository
-            .GetProductVideoByCodeAndTeacherAsync(productVideoCode, teacherId)
-            ?? throw new KeyNotFoundException($"Không tìm thấy video với mã {productVideoCode}");
-
-        if (productVideo.Status == "deleted")
-            throw new KeyNotFoundException($"Không tìm thấy video với mã {productVideoCode}");
+            .GetLatestActiveProductVideoByProjectCodeAndTeacherAsync(projectCode, teacherId)
+            ?? throw new KeyNotFoundException($"Project {projectCode} chưa có video nào");
 
         return MapToProductVideoDetailDto(productVideo);
     }
@@ -491,6 +488,7 @@ public class PipelineService : IPipelineService
         return new ProductVideoDetailDto
         {
             ProductCode = productVideo.Product?.ProductCode ?? string.Empty,
+            ProductName = productVideo.Product?.ProductName ?? string.Empty,
             ProductVideoCode = productVideo.ProductVideoCode,
             Status = productVideo.Status,
             SlideDocumentUrl = productVideo.SlideDocumentUrl,
