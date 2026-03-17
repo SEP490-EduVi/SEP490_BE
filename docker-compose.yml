@@ -154,6 +154,30 @@ services:
     networks:
       - eduvi
 
+  # ── Video Generator Worker ───────────────────────────────────────────
+  # NO GOOGLE_APPLICATION_CREDENTIALS — VM service account handles GCP auth via ADC
+  # Scale for concurrent users: docker-compose up --scale video-generator=3
+  video-generator:
+    image: ghcr.io/${GITHUB_ORG}/video-generator:latest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD}
+      PREFETCH_COUNT: ${VIDEO_PREFETCH_COUNT:-1}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME}
+      VIDEO_GCS_PREFIX: ${VIDEO_GCS_PREFIX:-generated_videos}
+      VIDEO_RETURN_GCS_URI: ${VIDEO_RETURN_GCS_URI:-true}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+    volumes:
+      - videos:/app/videos
+    restart: unless-stopped
+    networks:
+      - eduvi
+
   # ── Dozzle (Log Viewer) ─────────────────────────────────────────────
   # NO host ports — access via: ssh -L 9999:localhost:8080 user@VM then open localhost:9999
   dozzle:
@@ -173,3 +197,4 @@ networks:
 
 volumes:
   rabbitmq_data:
+  videos:
