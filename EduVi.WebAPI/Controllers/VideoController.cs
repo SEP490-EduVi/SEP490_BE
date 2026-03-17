@@ -86,6 +86,7 @@ public class VideoController : ControllerBase
     //    }
     //}
 
+    // Đánh dấu video là đã xóa mềm (soft delete) thay vì xóa hẳn khỏi database
     [HttpDelete("{productVideoCode}")]
     [Authorize]
     public async Task<ActionResult<ApiResponse<object>>> SoftDeleteVideo(string productVideoCode)
