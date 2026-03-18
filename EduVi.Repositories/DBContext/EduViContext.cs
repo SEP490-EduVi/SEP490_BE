@@ -41,6 +41,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<ProductVideos> ProductVideos { get; set; }
 
+    public virtual DbSet<CurriculumDocuments> CurriculumDocuments { get; set; }
+
     public virtual DbSet<Projects> Projects { get; set; }
 
     public virtual DbSet<Roles> Roles { get; set; }
@@ -369,7 +371,6 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.EvaluationResult).HasColumnType("nvarchar(max)");
             entity.Property(e => e.EvaluatedAt).HasColumnType("datetime");
             entity.Property(e => e.LessonPlanText).HasColumnType("nvarchar(max)");
-            entity.Property(e => e.TextbookSections).HasColumnType("nvarchar(max)");
             entity.Property(e => e.SlideDocument).HasColumnType("nvarchar(max)");
             entity.Property(e => e.SlideGeneratedAt).HasColumnType("datetime");
             entity.Property(e => e.SlideEditedDocument).HasColumnType("nvarchar(max)");
@@ -670,6 +671,40 @@ public partial class EduViContext : DbContext
             entity.HasOne(d => d.Plan).WithMany()
                 .HasForeignKey(d => d.PlanId)
                 .HasConstraintName("FK__WalletTrans__PlanID");
+        });
+
+        modelBuilder.Entity<CurriculumDocuments>(entity =>
+        {
+            entity.HasKey(e => e.CurriculumDocumentId).HasName("PK_CurriculumDocuments");
+
+            entity.HasIndex(e => e.DocumentCode, "UQ_CurriculumDocuments_DocumentCode").IsUnique();
+
+            entity.Property(e => e.CurriculumDocumentId).HasColumnName("CurriculumDocumentId");
+            entity.Property(e => e.DocumentCode)
+                .IsRequired()
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.SubjectCode)
+                .IsRequired()
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.EducationLevel)
+                .IsRequired()
+                .HasMaxLength(20);
+            entity.Property(e => e.OriginalFileName)
+                .IsRequired()
+                .HasMaxLength(255);
+            entity.Property(e => e.FileUrl)
+                .IsRequired()
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.Status).HasDefaultValue(0);
+            entity.Property(e => e.Note).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.Stats).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.ErrorMessage).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .HasColumnType("datetime");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -33,8 +33,6 @@ public partial class Products
 
     public string LessonPlanText { get; set; }
 
-    public string TextbookSections { get; set; }
-
     public string SlideDocument { get; set; }
 
     public DateTime? SlideGeneratedAt { get; set; }

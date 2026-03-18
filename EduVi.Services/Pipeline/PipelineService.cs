@@ -113,7 +113,8 @@ public class PipelineService : IPipelineService
             document.FilePath,
             subjectCode,
             gradeCode,
-            lessonCode);
+            lessonCode,
+            request.CurriculumYear);
         var publishElapsed = Stopwatch.GetElapsedTime(publishStart);
         _logger.LogInformation("RabbitMQ lesson analysis task published in {ElapsedMs}ms for task {TaskId}, product {ProductCode}",
             publishElapsed.TotalMilliseconds, taskId, productCode);
@@ -143,9 +144,6 @@ public class PipelineService : IPipelineService
 
         // 2. Deserialize stored data to pass to the Python worker
         var evaluationResult = JsonSerializer.Deserialize<object>(product.EvaluationResult);
-        var textbookSections = !string.IsNullOrEmpty(product.TextbookSections)
-            ? JsonSerializer.Deserialize<object>(product.TextbookSections)
-            : new object[] { };
 
         // 3. Update product status to GeneratingSlides
         product.Status = ProductStatusConstants.GeneratingSlides;
@@ -177,7 +175,6 @@ public class PipelineService : IPipelineService
             product.ProductId,
             evaluationResult!,
             product.LessonPlanText,
-            textbookSections!,
             request.SlideRange);
         var publishElapsed = Stopwatch.GetElapsedTime(publishStart);
         _logger.LogInformation("RabbitMQ slide generation task published in {ElapsedMs}ms for task {TaskId}, product {ProductCode}",
@@ -426,7 +423,6 @@ public class PipelineService : IPipelineService
             EvaluationResult = ParseJson(product.EvaluationResult),
             EvaluatedAt = product.EvaluatedAt,
             LessonPlanText = product.LessonPlanText,
-            TextbookSections = ParseJson(product.TextbookSections),
             SlideDocument = ParseJson(product.SlideDocument),
             SlideGeneratedAt = product.SlideGeneratedAt,
             SlideEditedDocument = ParseJson(product.SlideEditedDocument),

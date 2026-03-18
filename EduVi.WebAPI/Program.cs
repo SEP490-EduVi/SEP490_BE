@@ -4,6 +4,7 @@ using EduVi.Repositories.Interfaces;
 using EduVi.Services.Admin;
 using EduVi.Services.Authentication;
 using EduVi.Services.Curriculum;
+using EduVi.Services.CurriculumIngestion;
 using EduVi.Services.Email;
 using EduVi.Services.Expert;
 using EduVi.Services.Material;
@@ -116,12 +117,16 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddScoped<IExpertService, ExpertService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
+builder.Services.AddScoped<ICurriculumIngestionService, CurriculumIngestionService>();
 
 // RabbitMQ Publisher
 builder.Services.AddSingleton<IRabbitMqPublisherService, RabbitMqPublisherService>();
 
 // Pipeline Result Consumer (BackgroundService)
 builder.Services.AddHostedService<PipelineResultConsumerService>();
+
+// Curriculum Ingestion Result Consumer (BackgroundService)
+builder.Services.AddHostedService<CurriculumResultConsumerService>();
 
 // SignalR with Redis backplane
 builder.Services.AddSignalR()

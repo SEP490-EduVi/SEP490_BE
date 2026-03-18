@@ -247,23 +247,24 @@ public class PipelineResultConsumerService : BackgroundService
                 }
                 else
                 {
-                    // Lesson analysis completed — store EvaluationResult + extracted text + textbook sections
+                    // Lesson analysis completed — store EvaluationResult (lesson_plan_text excluded) + LessonPlanText separately
                     product.Status = ProductStatusConstants.Evaluated;
-                    product.EvaluationResult = resultJson;
                     product.EvaluatedAt = DateTime.UtcNow;
 
-                    // Extract and store lesson_plan_text and textbook_sections from the result
                     if (progress.Result is JsonElement resultElement)
                     {
                         if (resultElement.TryGetProperty("lesson_plan_text", out var lessonPlanTextElement))
-                        {
                             product.LessonPlanText = lessonPlanTextElement.GetString();
-                        }
 
-                        if (resultElement.TryGetProperty("textbook_sections", out var textbookSectionsElement))
-                        {
-                            product.TextbookSections = textbookSectionsElement.GetRawText();
-                        }
+                        // Serialize without lesson_plan_text to avoid storing the large text blob twice
+                        var strippedResult = resultElement.EnumerateObject()
+                            .Where(property => property.Name != "lesson_plan_text")
+                            .ToDictionary(property => property.Name, property => property.Value);
+                        product.EvaluationResult = JsonSerializer.Serialize(strippedResult);
+                    }
+                    else if (progress.Result is not null)
+                    {
+                        product.EvaluationResult = JsonSerializer.Serialize(progress.Result);
                     }
 
                     _logger.LogInformation("Product {ProductId} marked as EVALUATED", product.ProductId);

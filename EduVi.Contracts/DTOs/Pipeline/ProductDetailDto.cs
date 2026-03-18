@@ -21,10 +21,7 @@ public class ProductDetailDto
     /// <summary>Lesson plan text được rút ra từ tài liệu (plain text).</summary>
     public string? LessonPlanText { get; set; }
 
-    /// <summary>Các đoạn sách giáo khoa tham chiếu (JSON array).</summary>
-    public JsonElement? TextbookSections { get; set; }
-
-    // ── Bước 2: Slide Generation ─────────────────────────────────────────
+    // ── Bước 2: Slide Generation
     /// <summary>Slide JSON do AI tạo ra (JSON object). Null nếu chưa generate.</summary>
     public JsonElement? SlideDocument { get; set; }
     public DateTime? SlideGeneratedAt { get; set; }

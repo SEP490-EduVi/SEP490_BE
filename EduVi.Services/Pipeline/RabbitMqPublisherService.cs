@@ -17,6 +17,7 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
     private const string LessonAnalysisQueue = "lesson.analysis.requests";
     private const string SlideGenerationQueue = "slide.generation.requests";
     private const string VideoGenerationQueue = "video.generation.requests";
+    private const string CurriculumIngestionQueue = "curriculum.ingestion.requests";
 
     public RabbitMqPublisherService(IConfiguration configuration, ILogger<RabbitMqPublisherService> logger)
     {
@@ -62,11 +63,18 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
             autoDelete: false,
             arguments: null);
 
-        _logger.LogInformation("RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}', '{VideoQueue}'",
-            LessonAnalysisQueue, SlideGenerationQueue, VideoGenerationQueue);
+        await _channel.QueueDeclareAsync(
+            queue: CurriculumIngestionQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
+
+        _logger.LogInformation("RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}', '{VideoQueue}', '{CurriculumQueue}'",
+            LessonAnalysisQueue, SlideGenerationQueue, VideoGenerationQueue, CurriculumIngestionQueue);
     }
 
-    public async Task PublishLessonAnalysisTaskAsync(Guid taskId, string userId, int productId, string gcsUri, string subjectCode, string gradeCode, string lessonCode)
+    public async Task PublishLessonAnalysisTaskAsync(Guid taskId, string userId, int productId, string gcsUri, string subjectCode, string gradeCode, string lessonCode, int? curriculumYear)
     {
         await _semaphore.WaitAsync();
         try
@@ -81,7 +89,8 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
                 gcsUri,
                 subjectCode,
                 gradeCode,
-                lessonCode
+                lessonCode,
+                curriculumYear
             };
 
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
@@ -107,7 +116,7 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
         }
     }
 
-    public async Task PublishSlideGenerationTaskAsync(Guid taskId, string userId, int productId, object evaluationResult, string lessonPlanText, object textbookSections, string slideRange)
+    public async Task PublishSlideGenerationTaskAsync(Guid taskId, string userId, int productId, object evaluationResult, string lessonPlanText, string slideRange)
     {
         await _semaphore.WaitAsync();
         try
@@ -121,7 +130,6 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
                 productId,
                 evaluationResult,
                 lessonPlanText,
-                textbookSections,
                 preferences = new
                 {
                     slideRange
@@ -209,6 +217,46 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
                 userId,
                 productId,
                 productVideoCode);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task PublishCurriculumIngestionTaskAsync(Guid taskId, int documentId, string gcsUri, string subjectCode, string educationLevel, int curriculumYear)
+    {
+        await _semaphore.WaitAsync();
+        try
+        {
+            await EnsureConnectedAsync();
+
+            var message = new
+            {
+                taskId = taskId.ToString(),
+                documentId,
+                gcsUri,
+                subjectCode,
+                educationLevel,
+                curriculumYear
+            };
+
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                ContentType = "application/json"
+            };
+
+            await _channel!.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: CurriculumIngestionQueue,
+                mandatory: false,
+                basicProperties: properties,
+                body: body);
+
+            _logger.LogInformation("Published curriculum ingestion task {TaskId} for document {DocumentId}", taskId, documentId);
         }
         finally
         {

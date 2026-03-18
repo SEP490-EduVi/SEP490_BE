@@ -54,6 +54,11 @@ public interface IUnitOfWork
     /// </summary>
     ITeacherRepository TeacherRepository { get; }
 
+    /// <summary>
+    /// Repository xử lý CurriculumDocuments: upload/quản lý tài liệu chương trình giáo dục
+    /// </summary>
+    ICurriculumDocumentRepository CurriculumDocumentRepository { get; }
+
     // ============ Transaction Management ============
 
     /// <summary>

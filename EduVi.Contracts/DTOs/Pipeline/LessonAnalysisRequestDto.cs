@@ -26,4 +26,9 @@ public class LessonAnalysisRequestDto
     /// </summary>
     [MaxLength(200)]
     public string? ProductName { get; set; }
+
+    /// <summary>
+    /// Năm curriculum tham chiếu (tùy chọn) — e.g. 2018
+    /// </summary>
+    public int? CurriculumYear { get; set; }
 }
