@@ -72,32 +72,32 @@ namespace EduVi.Repositories.Basic
             return true;
         }
 
-        public T GetById(int id)
+        public T? GetById(int id)
         {
             return _context.Set<T>().Find(id);
         }
 
-        public async Task<T> GetByIdAsync(int id)
+        public async Task<T?> GetByIdAsync(int id)
         {
             return await _context.Set<T>().FindAsync(id);
         }
 
-        public T GetById(string code)
+        public T? GetById(string code)
         {
             return _context.Set<T>().Find(code);
         }
 
-        public async Task<T> GetByIdAsync(string code)
+        public async Task<T?> GetByIdAsync(string code)
         {
             return await _context.Set<T>().FindAsync(code);
         }
 
-        public T GetById(Guid code)
+        public T? GetById(Guid code)
         {
             return _context.Set<T>().Find(code);
         }
 
-        public async Task<T> GetByIdAsync(Guid code)
+        public async Task<T?> GetByIdAsync(Guid code)
         {
             return await _context.Set<T>().FindAsync(code);
         }

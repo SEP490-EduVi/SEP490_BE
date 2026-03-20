@@ -220,8 +220,10 @@ public class ExpertService : IExpertService
             ? keyFilePath
             : Path.GetFullPath(Path.Combine(_hostEnvironment.ContentRootPath, keyFilePath));
 
+        #pragma warning disable CS0618
         var credential = GoogleCredential.FromFile(absoluteKeyPath)
             .CreateScoped("https://www.googleapis.com/auth/devstorage.read_only");
+        #pragma warning restore CS0618
 
         return UrlSigner.FromCredential(credential);
     }

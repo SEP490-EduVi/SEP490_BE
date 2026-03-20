@@ -6,20 +6,17 @@ public class ApiResponse<T>
     public string Message { get; set; } = string.Empty;
     public T? Result { get; set; } = default!;
 
-    public static ApiResponse<T> Success(T result, string message = "Success", int code = 200)
+    public static ApiResponse<T> Success(T? result, string message = "Success", int code = 200)
     {
-        object value = result;
-
-        if (typeof(T) == typeof(string) && result == null)
-        {
-            value = "";
-        }
+        T? normalizedResult = result;
+        if (typeof(T) == typeof(string) && result is null)
+            normalizedResult = (T?)(object)string.Empty;
 
         return new ApiResponse<T>
         {
             Code = code,
             Message = message,
-            Result = (T)value
+            Result = normalizedResult
         };
     }
 
@@ -29,7 +26,7 @@ public class ApiResponse<T>
         {
             Code = code,
             Message = message,
-            Result = default(T)
+            Result = default
         };
     }
 }

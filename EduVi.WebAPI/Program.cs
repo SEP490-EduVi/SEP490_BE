@@ -31,7 +31,8 @@ builder.Services.AddDbContext<EduViContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Redis Configuration
-var redisConnection = builder.Configuration.GetConnectionString("RedisConnection");
+var redisConnection = builder.Configuration.GetConnectionString("RedisConnection")
+    ?? throw new InvalidOperationException("RedisConnection is not configured");
 
 var redisOptions = ConfigurationOptions.Parse(redisConnection);
 redisOptions.AbortOnConnectFail = false;

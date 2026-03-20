@@ -376,10 +376,13 @@ public class AuthenticationService : IAuthenticationService
             </html>";
 
         // Reuse existing email service infrastructure
-        var smtpHost = _configuration["EmailSettings:SmtpHost"];
+        var smtpHost = _configuration["EmailSettings:SmtpHost"]
+            ?? throw new InvalidOperationException("EmailSettings:SmtpHost is not configured");
         var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var senderEmail = _configuration["EmailSettings:SenderEmail"];
-        var senderPassword = _configuration["EmailSettings:SenderPassword"];
+        var senderEmail = _configuration["EmailSettings:SenderEmail"]
+            ?? throw new InvalidOperationException("EmailSettings:SenderEmail is not configured");
+        var senderPassword = _configuration["EmailSettings:SenderPassword"]
+            ?? throw new InvalidOperationException("EmailSettings:SenderPassword is not configured");
 
         using var smtpClient = new System.Net.Mail.SmtpClient(smtpHost, smtpPort)
         {
@@ -421,10 +424,13 @@ public class AuthenticationService : IAuthenticationService
             </html>";
 
         // Reuse existing email service infrastructure
-        var smtpHost = _configuration["EmailSettings:SmtpHost"];
+        var smtpHost = _configuration["EmailSettings:SmtpHost"]
+            ?? throw new InvalidOperationException("EmailSettings:SmtpHost is not configured");
         var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var senderEmail = _configuration["EmailSettings:SenderEmail"];
-        var senderPassword = _configuration["EmailSettings:SenderPassword"];
+        var senderEmail = _configuration["EmailSettings:SenderEmail"]
+            ?? throw new InvalidOperationException("EmailSettings:SenderEmail is not configured");
+        var senderPassword = _configuration["EmailSettings:SenderPassword"]
+            ?? throw new InvalidOperationException("EmailSettings:SenderPassword is not configured");
 
         using var smtpClient = new System.Net.Mail.SmtpClient(smtpHost, smtpPort)
         {

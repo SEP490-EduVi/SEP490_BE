@@ -14,6 +14,9 @@ public class MaterialService : IMaterialService
     private readonly IConfiguration _configuration;
     private readonly ILogger<MaterialService> _logger;
 
+    private const long MaxImageFileSizeBytes = 10 * 1024 * 1024; // 10MB
+    private const long MaxVideoFileSizeBytes = 100 * 1024 * 1024; // 100MB
+
     private static readonly string[] AllowedFileTypes = ["image", "video"];
 
     private static readonly Dictionary<string, string[]> AllowedContentTypesByFileType = new()
@@ -41,6 +44,8 @@ public class MaterialService : IMaterialService
         var type = request.Type.ToLower();
         if (!AllowedFileTypes.Contains(type))
             throw new InvalidOperationException($"Type không hợp lệ cho file upload. Cho phép: {string.Join(", ", AllowedFileTypes)}");
+
+        ValidateFileSizeByType(request.File, type);
 
         if (!AllowedContentTypesByFileType.TryGetValue(type, out var allowedContentTypes)
             || !allowedContentTypes.Contains(request.File.ContentType))
@@ -345,6 +350,19 @@ public class MaterialService : IMaterialService
             ApprovalStatus = 0, // Pending
             CreatedAt = DateTime.UtcNow
         };
+    }
+
+    private static void ValidateFileSizeByType(Microsoft.AspNetCore.Http.IFormFile file, string type)
+    {
+        if (file.Length <= 0)
+            throw new InvalidOperationException("File upload rỗng hoặc không hợp lệ");
+
+        var maxFileSizeBytes = type == "video" ? MaxVideoFileSizeBytes : MaxImageFileSizeBytes;
+        if (file.Length > maxFileSizeBytes)
+        {
+            var maxFileSizeMb = type == "video" ? 100 : 10;
+            throw new InvalidOperationException($"File {type} vượt quá giới hạn {maxFileSizeMb}MB");
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
