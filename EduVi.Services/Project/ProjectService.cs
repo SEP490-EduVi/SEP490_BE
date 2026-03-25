@@ -44,7 +44,8 @@ public class ProjectService : IProjectService
             TeacherId = teacherId,
             ProjectCode = request.ProjectCode,
             ProjectName = request.ProjectName,
-            Status = ProjectStatusConstants.Active
+            Status = ProjectStatusConstants.Active,
+            CreatedAt = DateTime.UtcNow
         };
 
         await _unitOfWork.PipelineRepository.CreateProjectAsync(project);
