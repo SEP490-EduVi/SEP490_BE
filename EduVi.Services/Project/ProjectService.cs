@@ -27,6 +27,9 @@ public class ProjectService : IProjectService
         var project = await _unitOfWork.PipelineRepository.GetProjectByCodeAsync(projectCode, includeRelations: true)
             ?? throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại");
 
+        if (project.Status == ProjectStatusConstants.Deleted)
+            throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại");
+
         return MapToProjectResponse(project);
     }
 
@@ -41,7 +44,7 @@ public class ProjectService : IProjectService
             TeacherId = teacherId,
             ProjectCode = request.ProjectCode,
             ProjectName = request.ProjectName,
-            Status = 0
+            Status = ProjectStatusConstants.Active
         };
 
         await _unitOfWork.PipelineRepository.CreateProjectAsync(project);
@@ -88,7 +91,11 @@ public class ProjectService : IProjectService
         if (project.Products.Count > 0)
             throw new InvalidOperationException($"Không thể xóa Project đang có {project.Products.Count} Product");
 
-        _unitOfWork.PipelineRepository.DeleteProject(project);
+        if (project.Status == ProjectStatusConstants.Deleted)
+            throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại");
+
+        project.Status = ProjectStatusConstants.Deleted;
+        _unitOfWork.PipelineRepository.UpdateProject(project);
         await _unitOfWork.SaveChangesAsync();
     }
 
@@ -98,7 +105,8 @@ public class ProjectService : IProjectService
         {
             ProjectCode = project.ProjectCode,
             ProjectName = project.ProjectName,
-            Status = project.Status
+            Status = project.Status,
+            CreatedAt = project.CreatedAt
         };
     }
 }

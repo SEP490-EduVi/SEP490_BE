@@ -70,7 +70,7 @@ public class PipelineRepository : IPipelineRepository
     public async Task<List<Projects>> GetProjectsByTeacherAsync(int teacherId)
     {
         return await _context.Projects
-            .Where(project => project.TeacherId == teacherId)
+            .Where(project => project.TeacherId == teacherId && project.Status != 7)
             .OrderByDescending(project => project.ProjectId)
             .ToListAsync();
     }
@@ -88,7 +88,10 @@ public class PipelineRepository : IPipelineRepository
     public async Task<Projects?> GetProjectByCodeAndTeacherAsync(string projectCode, int teacherId)
     {
         return await _context.Projects
-            .FirstOrDefaultAsync(project => project.ProjectCode == projectCode && project.TeacherId == teacherId);
+            .FirstOrDefaultAsync(project =>
+                project.ProjectCode == projectCode
+                && project.TeacherId == teacherId
+                && project.Status != 7);
     }
 
     public async Task<Projects> CreateProjectAsync(Projects project)

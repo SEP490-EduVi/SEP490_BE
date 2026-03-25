@@ -17,6 +17,8 @@ public partial class Projects
 
     public int? Status { get; set; }
 
+    public DateTime? CreatedAt { get; set; }
+
     public virtual ICollection<InputDocuments> InputDocuments { get; set; } = new List<InputDocuments>();
 
     public virtual ICollection<Products> Products { get; set; } = new List<Products>();

@@ -231,7 +231,6 @@ public class PipelineResultConsumerService : BackgroundService
                 if (progress.Step == "video_completed" || IsVideoGenerationResult(progress.Result))
                 {
                     // Video generation completed
-                    product.Status = ProductStatusConstants.VideoGenerated;
                     await UpsertProductVideoCompletedAsync(unitOfWork, progress, product.ProductId);
 
                     _logger.LogInformation("Product {ProductId} video generated successfully", product.ProductId);
@@ -278,7 +277,6 @@ public class PipelineResultConsumerService : BackgroundService
 
                 if (isVideoGeneration)
                 {
-                    product.Status = ProductStatusConstants.VideoFailed;
                     await UpsertProductVideoFailedAsync(unitOfWork, progress, product.ProductId);
                     _logger.LogWarning("Product {ProductId} video generation FAILED: {Error}", product.ProductId, progress.Error);
                 }
@@ -433,12 +431,12 @@ public class PipelineResultConsumerService : BackgroundService
             {
                 ProductId = productId,
                 ProductVideoCode = productVideoCode,
-                Status = "completed",
+                Status = VideoStatusConstants.Completed,
                 CreatedAt = DateTime.UtcNow
             });
         }
 
-        productVideo.Status = "completed";
+        productVideo.Status = VideoStatusConstants.Completed;
         productVideo.UpdatedAt = DateTime.UtcNow;
         productVideo.CompletedAt = DateTime.UtcNow;
 
@@ -488,12 +486,12 @@ public class PipelineResultConsumerService : BackgroundService
             {
                 ProductId = productId,
                 ProductVideoCode = productVideoCode,
-                Status = "failed",
+                Status = VideoStatusConstants.Failed,
                 CreatedAt = DateTime.UtcNow
             });
         }
 
-        productVideo.Status = "failed";
+        productVideo.Status = VideoStatusConstants.Failed;
         productVideo.ErrorMessage = progress.Error;
         productVideo.UpdatedAt = DateTime.UtcNow;
         unitOfWork.PipelineRepository.UpdateProductVideo(productVideo);

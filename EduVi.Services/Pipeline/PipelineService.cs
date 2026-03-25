@@ -203,7 +203,6 @@ public class PipelineService : IPipelineService
 
         product.SlideEditedDocument = slideEditedDocumentUrl;
         product.SlideEditedAt = DateTime.UtcNow;
-        product.Status = ProductStatusConstants.GeneratingVideo;
 
         _unitOfWork.PipelineRepository.UpdateProduct(product);
 
@@ -212,7 +211,7 @@ public class PipelineService : IPipelineService
         {
             ProductId = product.ProductId,
             ProductVideoCode = productVideoCode,
-            Status = "queued",
+            Status = VideoStatusConstants.Queued,
             SlideDocumentUrl = slideEditedDocumentUrl,
             CreatedAt = DateTime.UtcNow
         });
@@ -467,10 +466,10 @@ public class PipelineService : IPipelineService
             .GetProductVideoByCodeAndTeacherAsync(productVideoCode, teacherId)
             ?? throw new KeyNotFoundException($"Không tìm thấy video với mã {productVideoCode}");
 
-        if (productVideo.Status == "deleted")
+        if (productVideo.Status == VideoStatusConstants.Deleted)
             throw new KeyNotFoundException($"Không tìm thấy video với mã {productVideoCode}");
 
-        productVideo.Status = "deleted";
+        productVideo.Status = VideoStatusConstants.Deleted;
         productVideo.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.PipelineRepository.UpdateProductVideo(productVideo);

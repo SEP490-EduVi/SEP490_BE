@@ -45,21 +45,6 @@ public static class ProductStatusConstants
     /// </summary>
     public const int Deleted = 7;
 
-    /// <summary>
-    /// Đang tạo video từ slide edited
-    /// </summary>
-    public const int GeneratingVideo = 8;
-
-    /// <summary>
-    /// Video đã được tạo thành công
-    /// </summary>
-    public const int VideoGenerated = 9;
-
-    /// <summary>
-    /// Quá trình tạo video thất bại
-    /// </summary>
-    public const int VideoFailed = 10;
-
     public static string GetStatusName(int? status) => status switch
     {
         New => "NEW",
@@ -70,9 +55,6 @@ public static class ProductStatusConstants
         SlidesGenerated => "SLIDES_GENERATED",
         SlidesFailed => "SLIDES_FAILED",
         Deleted => "DELETED",
-        GeneratingVideo => "GENERATING_VIDEO",
-        VideoGenerated => "VIDEO_GENERATED",
-        VideoFailed => "VIDEO_FAILED",
         _ => "UNKNOWN"
     };
 }

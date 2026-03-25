@@ -425,6 +425,9 @@ public partial class EduViContext : DbContext
             entity.HasKey(e => e.ProjectId).HasName("PK__Projects__761ABED03237E04E");
 
             entity.Property(e => e.ProjectId).HasColumnName("ProjectID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .HasColumnType("datetime2");
             entity.Property(e => e.ProjectCode)
                 .HasMaxLength(100)
                 .IsUnicode(false)
