@@ -44,24 +44,24 @@ public class StaffController : ControllerBase
     }
 
     /// <summary>
-    /// Xem chi tiết một hồ sơ (Signed URL mới được tạo mỗi lần gọi).
+    /// Proxy file verification qua backend để Staff xem trực tiếp mà không cần Signed URL.
     /// </summary>
-    [HttpGet("verifications/{verificationCode}")]
-    public async Task<ActionResult<ApiResponse<ExpertVerificationStaffDto>>> GetVerificationDetail(string verificationCode)
+    [HttpGet("verifications/{verificationCode}/file")]
+    public async Task<IActionResult> GetVerificationFile(string verificationCode)
     {
         try
         {
-            var result = await _expertService.GetVerificationDetailAsync(verificationCode);
-            return Ok(ApiResponse<ExpertVerificationStaffDto>.Success(result));
+            var filePayload = await _expertService.GetVerificationFileAsync(verificationCode);
+            return File(filePayload.FileBytes, filePayload.ContentType, filePayload.FileName);
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ApiResponse<ExpertVerificationStaffDto>.Fail(ex.Message, 404));
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching verification detail for {VerificationCode}", verificationCode);
-            return StatusCode(500, ApiResponse<ExpertVerificationStaffDto>.Fail("Đã xảy ra lỗi", 500));
+            _logger.LogError(ex, "Error proxying verification file for {VerificationCode}", verificationCode);
+            return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi tải file hồ sơ", 500));
         }
     }
 

@@ -1,10 +1,8 @@
 using EduVi.Contracts.DTOs.Expert;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
-using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System.Diagnostics;
@@ -15,7 +13,6 @@ public class ExpertService : IExpertService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
-    private readonly IHostEnvironment _hostEnvironment;
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<ExpertService> _logger;
 
@@ -28,13 +25,11 @@ public class ExpertService : IExpertService
     public ExpertService(
         IUnitOfWork unitOfWork,
         IConfiguration configuration,
-        IHostEnvironment hostEnvironment,
         IConnectionMultiplexer redis,
         ILogger<ExpertService> logger)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
-        _hostEnvironment = hostEnvironment;
         _redis = redis;
         _logger = logger;
     }
@@ -136,26 +131,35 @@ public class ExpertService : IExpertService
     public async Task<List<ExpertVerificationStaffDto>> GetPendingVerificationsAsync()
     {
         var verifications = await _unitOfWork.StaffRepository.GetPendingVerificationsAsync();
-        var urlSigner = BuildUrlSigner();
-
-        var tasks = verifications.Select(async verification =>
-        {
-            var signedUrl = await GenerateSignedUrlAsync(urlSigner, verification.FileUrl);
-            return MapToStaffDto(verification, signedUrl);
-        });
-
-        return (await Task.WhenAll(tasks)).ToList();
+        return verifications
+            .Select(verification =>
+            {
+                var proxyUrl = $"/api/staff/verifications/{verification.VerificationCode}/file";
+                return MapToStaffDto(verification, proxyUrl);
+            })
+            .ToList();
     }
 
-    public async Task<ExpertVerificationStaffDto> GetVerificationDetailAsync(string verificationCode)
+    public async Task<ExpertVerificationFileDto> GetVerificationFileAsync(string verificationCode)
     {
         var verification = await _unitOfWork.StaffRepository.GetVerificationByCodeAsync(verificationCode)
             ?? throw new KeyNotFoundException($"Verification '{verificationCode}' không tồn tại");
 
-        var urlSigner = BuildUrlSigner();
-        var signedUrl = await GenerateSignedUrlAsync(urlSigner, verification.FileUrl);
+        var (bucketName, objectName) = ParseGcsPath(verification.FileUrl);
+        var storageClient = await StorageClient.CreateAsync();
+        var googleStorageObject = await storageClient.GetObjectAsync(bucketName, objectName);
 
-        return MapToStaffDto(verification, signedUrl);
+        await using var memoryStream = new MemoryStream();
+        await storageClient.DownloadObjectAsync(googleStorageObject, memoryStream);
+
+        return new ExpertVerificationFileDto
+        {
+            FileBytes = memoryStream.ToArray(),
+            ContentType = string.IsNullOrWhiteSpace(googleStorageObject.ContentType)
+                ? "application/octet-stream"
+                : googleStorageObject.ContentType,
+            FileName = Path.GetFileName(objectName)
+        };
     }
 
     public async Task ReviewVerificationAsync(int staffId, string verificationCode, ReviewVerificationRequestDto request)
@@ -210,34 +214,20 @@ public class ExpertService : IExpertService
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private UrlSigner BuildUrlSigner()
+    private static (string BucketName, string ObjectName) ParseGcsPath(string gcsPath)
     {
-        var keyFilePath = _configuration["GCS:ServiceAccountKeyPath"]
-            ?? throw new InvalidOperationException("GCS ServiceAccountKeyPath not configured");
+        if (string.IsNullOrWhiteSpace(gcsPath) || !gcsPath.StartsWith("gs://", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Đường dẫn file GCS không hợp lệ");
 
-        // Resolve relative path từ ContentRootPath (= thư mục project WebAPI, không phải bin/Debug)
-        var absoluteKeyPath = Path.IsPathRooted(keyFilePath)
-            ? keyFilePath
-            : Path.GetFullPath(Path.Combine(_hostEnvironment.ContentRootPath, keyFilePath));
+        var pathWithoutScheme = gcsPath["gs://".Length..];
+        var separatorIndex = pathWithoutScheme.IndexOf('/');
 
-        #pragma warning disable CS0618
-        var credential = GoogleCredential.FromFile(absoluteKeyPath)
-            .CreateScoped("https://www.googleapis.com/auth/devstorage.read_only");
-        #pragma warning restore CS0618
+        if (separatorIndex <= 0 || separatorIndex == pathWithoutScheme.Length - 1)
+            throw new InvalidOperationException("Đường dẫn file GCS không hợp lệ");
 
-        return UrlSigner.FromCredential(credential);
-    }
-
-    private async Task<string> GenerateSignedUrlAsync(UrlSigner urlSigner, string gcsPath)
-    {
-        var bucketName = _configuration["GCS:BucketName"]!;
-        var objectName = gcsPath.Replace($"gs://{bucketName}/", "");
-
-        return await urlSigner.SignAsync(
-            bucketName,
-            objectName,
-            TimeSpan.FromMinutes(15),
-            HttpMethod.Get);
+        var bucketName = pathWithoutScheme[..separatorIndex];
+        var objectName = pathWithoutScheme[(separatorIndex + 1)..];
+        return (bucketName, objectName);
     }
 
     private static ExpertVerificationDto MapToExpertDto(ExpertVerifications verification)
@@ -254,7 +244,7 @@ public class ExpertService : IExpertService
         };
     }
 
-    private static ExpertVerificationStaffDto MapToStaffDto(ExpertVerifications verification, string signedUrl)
+    private static ExpertVerificationStaffDto MapToStaffDto(ExpertVerifications verification, string fileUrl)
     {
         return new ExpertVerificationStaffDto
         {
@@ -268,7 +258,7 @@ public class ExpertService : IExpertService
             RejectionReason = verification.RejectionReason,
             UploadedAt = verification.UploadedAt,
             ReviewedAt = verification.ReviewedAt,
-            SignedUrl = signedUrl
+            FileUrl = fileUrl
         };
     }
 }
