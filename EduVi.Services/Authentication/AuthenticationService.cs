@@ -192,7 +192,7 @@ public class AuthenticationService : IAuthenticationService
             AvatarUrl = request.AvatarUrl,
             PasswordHash = HashPassword(request.Password),
             RoleId = request.RoleId,
-            Status = 0, // Pending - chỉ Active sau khi verify OTP
+            Status = 1, // Active nhưng chưa verify OTP
             IsEmailVerified = false, // QUAN TRỌNG: Chưa verify
             CreatedAt = DateTime.UtcNow
         };

@@ -400,8 +400,7 @@ public partial class EduViContext : DbContext
                 .HasMaxLength(200)
                 .IsUnicode(false);
             entity.Property(e => e.Status)
-                .HasMaxLength(30)
-                .IsUnicode(false);
+                .HasDefaultValue(0);
             entity.Property(e => e.SlideDocumentUrl).HasMaxLength(1000);
             entity.Property(e => e.VideoUrl).HasMaxLength(1000);
             entity.Property(e => e.Duration).HasColumnType("float");

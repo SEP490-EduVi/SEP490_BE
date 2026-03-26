@@ -5,8 +5,20 @@ namespace EduVi.Services.Pipeline;
 /// </summary>
 public static class VideoStatusConstants
 {
-    public const string Queued = "queued";
-    public const string Completed = "completed";
-    public const string Failed = "failed";
-    public const string Deleted = "deleted";
+    public const int Queued = 0;
+    public const int Completed = 1;
+    public const int Failed = 2;
+    public const int Deleted = 3;
+
+    public static string GetStatusName(int status)
+    {
+        return status switch
+        {
+            Queued => "queued",
+            Completed => "completed",
+            Failed => "failed",
+            Deleted => "deleted",
+            _ => "unknown"
+        };
+    }
 }
