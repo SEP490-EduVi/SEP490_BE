@@ -12,7 +12,7 @@ public partial class ProductVideos
 
     public string ProductVideoCode { get; set; }
 
-    public string Status { get; set; }
+    public int Status { get; set; }
 
     public string SlideDocumentUrl { get; set; }
 

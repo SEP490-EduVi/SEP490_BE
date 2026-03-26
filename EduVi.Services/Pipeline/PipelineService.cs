@@ -485,7 +485,7 @@ public class PipelineService : IPipelineService
             ProductCode = productVideo.Product?.ProductCode ?? string.Empty,
             ProductName = productVideo.Product?.ProductName ?? string.Empty,
             ProductVideoCode = productVideo.ProductVideoCode,
-            Status = productVideo.Status,
+            Status = VideoStatusConstants.GetStatusName(productVideo.Status),
             SlideDocumentUrl = productVideo.SlideDocumentUrl,
             VideoUrl = productVideo.VideoUrl,
             Duration = productVideo.Duration,
