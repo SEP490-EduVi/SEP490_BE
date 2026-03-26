@@ -42,7 +42,6 @@ EduVi.Contracts       → DTOs, shared constants, API response wrappers
 | `ProjectController` | Teacher project management (CRUD) |
 | `PipelineController` | Upload documents, trigger AI analysis, check task status |
 | `PaymentController` | Wallet, orders, subscriptions |
-| `HealthController` | Service health checks (Redis, DB) |
 
 ## AI Pipeline Flow
 

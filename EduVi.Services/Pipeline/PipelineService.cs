@@ -444,6 +444,20 @@ public class PipelineService : IPipelineService
         return MapToProductVideoDetailDto(productVideo);
     }
 
+    public async Task<List<ProductVideoDetailDto>> GetProductVideosByProjectCodeAsync(int teacherId, string projectCode)
+    {
+        var project = await _unitOfWork.PipelineRepository
+            .GetProjectByCodeAndTeacherAsync(projectCode, teacherId)
+            ?? throw new KeyNotFoundException($"Project {projectCode} không tồn tại hoặc không thuộc về bạn");
+
+        var productVideos = await _unitOfWork.PipelineRepository
+            .GetActiveProductVideosByProjectCodeAndTeacherAsync(project.ProjectCode, teacherId);
+
+        return productVideos
+            .Select(MapToProductVideoDetailDto)
+            .ToList();
+    }
+
     public async Task<ProductVideoDetailDto> GetLatestProductVideoByProductCodeAsync(int teacherId, string productCode)
     {
         var product = await _unitOfWork.PipelineRepository

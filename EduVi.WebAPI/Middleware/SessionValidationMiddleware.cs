@@ -66,8 +66,7 @@ public class SessionValidationMiddleware
             "/api/auth/google-login",
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
-            "/swagger",
-            "/health"
+            "/swagger"
         };
 
         return publicEndpoints.Any(endpoint => path.StartsWith(endpoint));
