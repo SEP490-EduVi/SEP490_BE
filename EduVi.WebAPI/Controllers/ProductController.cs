@@ -26,6 +26,25 @@ public class ProductController : ControllerBase
     // =====================================================================
 
     /// <summary>
+    /// Lấy danh sách tất cả Products của Teacher hiện tại (không bao gồm đã xóa)
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<ApiResponse<List<ProductSummaryDto>>>> GetProducts()
+    {
+        try
+        {
+            var teacherId = GetCurrentUserId();
+            var result = await _pipelineService.GetProductsByTeacherAsync(teacherId);
+            return Ok(ApiResponse<List<ProductSummaryDto>>.Success(result));
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Error fetching all products for current teacher");
+            return StatusCode(500, ApiResponse<List<ProductSummaryDto>>.Fail("Lỗi khi lấy danh sách product", 500));
+        }
+    }
+
+    /// <summary>
     /// Lấy danh sách tất cả Products theo ProjectCode của Teacher hiện tại (không bao gồm đã xóa)
     /// </summary>
     [HttpGet("project/{projectCode}")]

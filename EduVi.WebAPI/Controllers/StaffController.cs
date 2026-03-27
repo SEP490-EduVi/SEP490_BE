@@ -26,7 +26,6 @@ public class StaffController : ControllerBase
 
     /// <summary>
     /// Lấy danh sách hồ sơ Expert đang chờ duyệt (queue kiểm duyệt).
-    /// Mỗi hồ sơ kèm Signed URL có hiệu lực 15 phút để Staff xem file trực tiếp.
     /// </summary>
     [HttpGet("verifications/pending")]
     public async Task<ActionResult<ApiResponse<List<ExpertVerificationStaffDto>>>> GetPendingVerifications()

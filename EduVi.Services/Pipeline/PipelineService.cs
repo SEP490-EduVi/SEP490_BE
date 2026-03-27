@@ -444,6 +444,16 @@ public class PipelineService : IPipelineService
         return MapToProductVideoDetailDto(productVideo);
     }
 
+    public async Task<List<ProductVideoDetailDto>> GetProductVideosByTeacherAsync(int teacherId)
+    {
+        var productVideos = await _unitOfWork.PipelineRepository
+            .GetActiveProductVideosByTeacherAsync(teacherId);
+
+        return productVideos
+            .Select(MapToProductVideoDetailDto)
+            .ToList();
+    }
+
     public async Task<List<ProductVideoDetailDto>> GetProductVideosByProjectCodeAsync(int teacherId, string projectCode)
     {
         var project = await _unitOfWork.PipelineRepository

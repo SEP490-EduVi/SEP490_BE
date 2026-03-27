@@ -23,6 +23,22 @@ public class VideoController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet]
+    public async Task<ActionResult<ApiResponse<List<ProductVideoDetailDto>>>> GetVideos()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _pipelineService.GetProductVideosByTeacherAsync(userId);
+            return Ok(ApiResponse<List<ProductVideoDetailDto>>.Success(result));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all product videos for current teacher");
+            return StatusCode(500, ApiResponse<List<ProductVideoDetailDto>>.Fail("Lỗi khi lấy danh sách video", 500));
+        }
+    }
+
     [HttpPost("generate")]
     public async Task<ActionResult<ApiResponse<PipelineTaskResponseDto>>> GenerateVideo(
         [FromBody] GenerateVideoRequestDto request)
