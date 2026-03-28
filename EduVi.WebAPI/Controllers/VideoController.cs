@@ -9,6 +9,7 @@ namespace EduVi.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Teacher")]
 public class VideoController : ControllerBase
 {
     private readonly IPipelineService _pipelineService;
@@ -22,8 +23,23 @@ public class VideoController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet]
+    public async Task<ActionResult<ApiResponse<List<ProductVideoDetailDto>>>> GetVideos()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _pipelineService.GetProductVideosByTeacherAsync(userId);
+            return Ok(ApiResponse<List<ProductVideoDetailDto>>.Success(result));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all product videos for current teacher");
+            return StatusCode(500, ApiResponse<List<ProductVideoDetailDto>>.Fail("Lỗi khi lấy danh sách video", 500));
+        }
+    }
+
     [HttpPost("generate")]
-    [Authorize]
     public async Task<ActionResult<ApiResponse<PipelineTaskResponseDto>>> GenerateVideo(
         [FromBody] GenerateVideoRequestDto request)
     {
@@ -44,8 +60,27 @@ public class VideoController : ControllerBase
         }
     }
 
+    [HttpGet("project/{projectCode}")]
+    public async Task<ActionResult<ApiResponse<List<ProductVideoDetailDto>>>> GetVideosByProjectCode(string projectCode)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _pipelineService.GetProductVideosByProjectCodeAsync(userId, projectCode);
+            return Ok(ApiResponse<List<ProductVideoDetailDto>>.Success(result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<List<ProductVideoDetailDto>>.Fail(ex.Message, 404));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting product videos for project {ProjectCode}", projectCode);
+            return StatusCode(500, ApiResponse<List<ProductVideoDetailDto>>.Fail("Lỗi khi lấy danh sách video", 500));
+        }
+    }
+
     [HttpGet("project/{projectCode}/latest")]
-    [Authorize]
     public async Task<ActionResult<ApiResponse<ProductVideoDetailDto>>> GetVideoByProjectCode(string projectCode)
     {
         try
@@ -88,7 +123,6 @@ public class VideoController : ControllerBase
 
     // Đánh dấu video là đã xóa mềm (soft delete) thay vì xóa hẳn khỏi database
     [HttpDelete("{productVideoCode}")]
-    [Authorize]
     public async Task<ActionResult<ApiResponse<object>>> SoftDeleteVideo(string productVideoCode)
     {
         try

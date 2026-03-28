@@ -27,14 +27,14 @@ public interface IExpertService
 
     /// <summary>
     /// Staff lấy danh sách hồ sơ đang chờ duyệt.
-    /// Trả về Signed URL (15 phút) để Staff xem file trực tiếp từ GCS.
+    /// Trả về URL proxy nội bộ để Staff xem file qua backend.
     /// </summary>
     Task<List<ExpertVerificationStaffDto>> GetPendingVerificationsAsync();
 
     /// <summary>
-    /// Staff xem chi tiết 1 hồ sơ (bao gồm Signed URL mới).
+    /// Lấy nội dung file verification để controller stream cho Staff.
     /// </summary>
-    Task<ExpertVerificationStaffDto> GetVerificationDetailAsync(string verificationCode);
+    Task<ExpertVerificationFileDto> GetVerificationFileAsync(string verificationCode);
 
     /// <summary>
     /// Staff phê duyệt hoặc từ chối hồ sơ.

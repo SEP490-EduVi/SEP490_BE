@@ -156,7 +156,7 @@ public class AdminRepository : IAdminRepository
     public async Task<(int Total, int Active, int Banned)> GetUserCountsAsync()
     {
         var total = await _context.Users.CountAsync();
-        var active = await _context.Users.CountAsync(u => u.Status == 1);
+        var active = await _context.Users.CountAsync(u => u.Status == 1 && u.IsEmailVerified == true);
         var banned = await _context.Users.CountAsync(u => u.Status == 0);
         return (total, active, banned);
     }

@@ -20,7 +20,7 @@ public class ExpertVerificationDto
 }
 
 /// <summary>
-/// Thông tin hồ sơ verification dành cho Staff — có Signed URL để xem file.
+/// Thông tin hồ sơ verification dành cho Staff — có URL proxy nội bộ để xem file.
 /// </summary>
 public class ExpertVerificationStaffDto
 {
@@ -36,9 +36,19 @@ public class ExpertVerificationStaffDto
     public DateTime? ReviewedAt { get; set; }
 
     /// <summary>
-    /// GCS Signed URL có hiệu lực 15 phút để Staff xem file. Không trả về GCS path thô.
+    /// URL proxy nội bộ để Staff xem file qua backend.
     /// </summary>
-    public string SignedUrl { get; set; } = null!;
+    public string FileUrl { get; set; } = null!;
+}
+
+/// <summary>
+/// Payload file verification do service trả về để controller stream xuống client.
+/// </summary>
+public class ExpertVerificationFileDto
+{
+    public byte[] FileBytes { get; set; } = Array.Empty<byte>();
+    public string ContentType { get; set; } = "application/octet-stream";
+    public string FileName { get; set; } = "verification-file";
 }
 
 /// <summary>
