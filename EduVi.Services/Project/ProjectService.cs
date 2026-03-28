@@ -25,10 +25,10 @@ public class ProjectService : IProjectService
     public async Task<ProjectResponseDto> GetProjectByCodeAsync(string projectCode)
     {
         var project = await _unitOfWork.PipelineRepository.GetProjectByCodeAsync(projectCode, includeRelations: true)
-            ?? throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại");
 
         if (project.Status == ProjectStatusConstants.Deleted)
-            throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại");
+            throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại");
 
         return MapToProjectResponse(project);
     }
@@ -37,7 +37,7 @@ public class ProjectService : IProjectService
     {
         var existing = await _unitOfWork.PipelineRepository.GetProjectByCodeAsync(request.ProjectCode);
         if (existing is not null)
-            throw new InvalidOperationException($"ProjectCode '{request.ProjectCode}' đã tồn tại");
+            throw new InvalidOperationException($"Mã dự án '{request.ProjectCode}' đã tồn tại");
 
         var project = new Projects
         {
@@ -58,13 +58,13 @@ public class ProjectService : IProjectService
     public async Task<ProjectResponseDto> UpdateProjectAsync(int teacherId, string projectCode, UpdateProjectRequestDto request)
     {
         var project = await _unitOfWork.PipelineRepository.GetProjectByCodeAndTeacherAsync(projectCode, teacherId)
-            ?? throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại hoặc không thuộc về bạn");
+            ?? throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại hoặc không thuộc về bạn");
 
         if (request.ProjectCode is not null && request.ProjectCode != projectCode)
         {
             var existing = await _unitOfWork.PipelineRepository.GetProjectByCodeAsync(request.ProjectCode);
             if (existing is not null)
-                throw new InvalidOperationException($"ProjectCode '{request.ProjectCode}' đã được sử dụng");
+                throw new InvalidOperationException($"Mã dự án '{request.ProjectCode}' đã được sử dụng");
             project.ProjectCode = request.ProjectCode;
         }
 
@@ -84,16 +84,16 @@ public class ProjectService : IProjectService
     public async Task DeleteProjectAsync(int teacherId, string projectCode)
     {
         var project = await _unitOfWork.PipelineRepository.GetProjectByCodeAsync(projectCode, includeRelations: true)
-            ?? throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại");
 
         if (project.TeacherId != teacherId)
-            throw new InvalidOperationException("Project không thuộc về bạn");
+            throw new InvalidOperationException("Dự án không thuộc về bạn");
 
         if (project.Products.Count > 0)
-            throw new InvalidOperationException($"Không thể xóa Project đang có {project.Products.Count} Product");
+            throw new InvalidOperationException($"Không thể xóa Dự án đang có {project.Products.Count} Product");
 
         if (project.Status == ProjectStatusConstants.Deleted)
-            throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại");
+            throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại");
 
         project.Status = ProjectStatusConstants.Deleted;
         _unitOfWork.PipelineRepository.UpdateProject(project);

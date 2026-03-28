@@ -30,7 +30,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.LoginAsync(request);
-            return Ok(ApiResponse<AuthResponse>.Success(result, "Login successful"));
+            return Ok(ApiResponse<AuthResponse>.Success(result, "Đăng nhập thành công"));
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -40,7 +40,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during login for username: {Username}", request.Username);
-            return StatusCode(500, ApiResponse<AuthResponse>.Fail("An error occurred during login", 500));
+            return StatusCode(500, ApiResponse<AuthResponse>.Fail("Lỗi đăng nhập, xin vui lòng thử lại (500)", 500));
         }
     }
 
@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.GoogleLoginAsync(request);
-            return Ok(ApiResponse<AuthResponse>.Success(result, "Google login successful"));
+            return Ok(ApiResponse<AuthResponse>.Success(result, "Đăng nhập bằng Google thành công"));
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -63,7 +63,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during Google login");
-            return StatusCode(500, ApiResponse<AuthResponse>.Fail("An error occurred during Google login", 500));
+            return StatusCode(500, ApiResponse<AuthResponse>.Fail("Lỗi đăng nhập Google, xin vui lòng thử lại (500)", 500));
         }
     }
 
@@ -76,18 +76,18 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.RegisterAsync(request);
-            return StatusCode(202, ApiResponse<RegisterResponse>.Success(result, 
-                "Registration successful. Please check your email for OTP verification.", 202));
+            return StatusCode(202, ApiResponse<RegisterResponse>.Success(result,
+                $"Đăng ký thành công. Xin vui lòng kiểm tra mã OTP đã được gửi tới email {request.Email}.", 202));
         }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning("Registration failed for email: {Email}. Reason: {Reason}", request.Email, ex.Message);
-            return BadRequest(ApiResponse<RegisterResponse>.Fail(ex.Message, 400));
+            return BadRequest(ApiResponse<RegisterResponse>.Fail($"Đăng ký thất bại cho email {request.Email}, xin vui lòng thử lại (400).", 400));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during registration for email: {Email}", request.Email);
-            return StatusCode(500, ApiResponse<RegisterResponse>.Fail("An error occurred during registration", 500));
+            return StatusCode(500, ApiResponse<RegisterResponse>.Fail("Lỗi đăng ký, xin vui lòng thử lại (500).", 500));
         }
     }
 
@@ -101,24 +101,24 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.VerifyOtpAsync(request);
             return Ok(ApiResponse<VerifyOtpResponse>.Success(result, 
-                "Email verified successfully. You can now login."));
+                "Xác nhận Email thành công. Bạn có thể đăng nhập."));
         }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning("OTP verification failed for userId: {UserId}. Reason: {Reason}", 
                 request.UserId, ex.Message);
-            return Unauthorized(ApiResponse<VerifyOtpResponse>.Fail(ex.Message, 401));
+            return Unauthorized(ApiResponse<VerifyOtpResponse>.Fail("Xác nhận OTP không thành công, xin vui lòng thử lại.", 401));
         }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning("Invalid OTP verification for userId: {UserId}. Reason: {Reason}", 
                 request.UserId, ex.Message);
-            return BadRequest(ApiResponse<VerifyOtpResponse>.Fail(ex.Message, 400));
+            return BadRequest(ApiResponse<VerifyOtpResponse>.Fail("Mã OTP sai, xin vui lòng thử lại.", 400));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during OTP verification for userId: {UserId}", request.UserId);
-            return StatusCode(500, ApiResponse<VerifyOtpResponse>.Fail("An error occurred during verification", 500));
+            return StatusCode(500, ApiResponse<VerifyOtpResponse>.Fail("Lỗi xác nhận OTP, xin vui lòng thử lại (500).", 500));
         }
     }
 
@@ -132,7 +132,7 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.ResendOtpAsync(request);
             return Ok(ApiResponse<ResendOtpResponse>.Success(result, 
-                "OTP resent successfully. Please check your email."));
+                "Mã OTP đã được gửi lại, xin vui lòng kiểm tra email."));
         }
         catch (InvalidOperationException ex)
         {
@@ -143,7 +143,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error resending OTP for userId: {UserId}", request.UserId);
-            return StatusCode(500, ApiResponse<ResendOtpResponse>.Fail("An error occurred while resending OTP", 500));
+            return StatusCode(500, ApiResponse<ResendOtpResponse>.Fail("Lỗi gửi lại OTP, xin vui lòng thử lại", 500));
         }
     }
 
@@ -160,14 +160,14 @@ public class AuthController : ControllerBase
             var result = await _authService.LogoutAsync(userId);
 
             if (result)
-                return Ok(ApiResponse<bool>.Success(true, "Logout successful"));
+                return Ok(ApiResponse<bool>.Success(true, "Đăng xuất thành công"));
 
-            return BadRequest(ApiResponse<bool>.Fail("Logout failed", 400));
+            return BadRequest(ApiResponse<bool>.Fail("Đăng xuất thất bại", 400));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during logout");
-            return StatusCode(500, ApiResponse<bool>.Fail("An error occurred during logout", 500));
+            return StatusCode(500, ApiResponse<bool>.Fail("Lỗi đăng xuất, xin vui lòng thử lại", 500));
         }
     }
 
@@ -184,14 +184,14 @@ public class AuthController : ControllerBase
             var result = await _authService.GetCurrentUserAsync(userId);
 
             if (result == null)
-                return NotFound(ApiResponse<UserInfo>.Fail("User not found", 404));
+                return NotFound(ApiResponse<UserInfo>.Fail("Không tìm thấy người dùng", 404));
 
-            return Ok(ApiResponse<UserInfo>.Success(result, "User information retrieved successfully"));
+            return Ok(ApiResponse<UserInfo>.Success(result, "Lấy thông tin người dùng thành công"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving current user information");
-            return StatusCode(500, ApiResponse<UserInfo>.Fail("An error occurred while retrieving user information", 500));
+            return StatusCode(500, ApiResponse<UserInfo>.Fail("Lỗi khi lấy thông tin người dùng", 500));
         }
     }
 
@@ -206,12 +206,12 @@ public class AuthController : ControllerBase
             var result = await _authService.ForgotPasswordAsync(request);
             
             // Luôn trả về success để không tiết lộ email có tồn tại hay không
-            return Ok(ApiResponse<bool>.Success(true, "If the email exists, an OTP has been sent. The OTP will expire in 5 minutes."));
+            return Ok(ApiResponse<bool>.Success(true, "Nếu email tồn tại, mã OTP đã được gửi. OTP sẽ hết hạn sau 5 phút."));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during forgot password for email: {Email}", request.Email);
-            return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while processing your request", 500));
+            return StatusCode(500, ApiResponse<bool>.Fail("Lỗi xử lý yêu cầu, xin vui lòng thử lại", 500));
         }
     }
 
@@ -225,7 +225,7 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.ResendResetPasswordOtpAsync(request.Email);
             return Ok(ApiResponse<ResendOtpResponse>.Success(result, 
-                "OTP resent successfully. Please check your email."));
+                "Mã OTP đã được gửi lại, xin vui lòng kiểm tra email."));
         }
         catch (InvalidOperationException ex)
         {
@@ -236,7 +236,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error resending reset OTP for email: {Email}", request.Email);
-            return StatusCode(500, ApiResponse<ResendOtpResponse>.Fail("An error occurred while resending OTP", 500));
+            return StatusCode(500, ApiResponse<ResendOtpResponse>.Fail("Lỗi gửi lại OTP, xin vui lòng thử lại", 500));
         }
     }
 
@@ -251,9 +251,9 @@ public class AuthController : ControllerBase
             var result = await _authService.ResetPasswordAsync(request);
 
             if (result)
-                return Ok(ApiResponse<bool>.Success(true, "Password reset successful. You can now login with your new password."));
+                return Ok(ApiResponse<bool>.Success(true, "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới."));
 
-            return BadRequest(ApiResponse<bool>.Fail("Invalid or expired OTP", 400));
+            return BadRequest(ApiResponse<bool>.Fail("Mã OTP không hợp lệ hoặc đã hết hạn", 400));
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -264,7 +264,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during password reset for email: {Email}", request.Email);
-            return StatusCode(500, ApiResponse<bool>.Fail("An error occurred while resetting password", 500));
+            return StatusCode(500, ApiResponse<bool>.Fail("Lỗi đặt lại mật khẩu, xin vui lòng thử lại", 500));
         }
     }
 
@@ -281,19 +281,19 @@ public class AuthController : ControllerBase
             var token = GetTokenFromHeader();
 
             if (string.IsNullOrEmpty(token))
-                return Unauthorized(ApiResponse<bool>.Fail("Token not provided", 401));
+                return Unauthorized(ApiResponse<bool>.Fail("Không có token được cung cấp", 401));
 
             var isValid = await _authService.VerifySessionAsync(userId, token);
 
             if (isValid)
-                return Ok(ApiResponse<bool>.Success(true, "Session is valid"));
+                return Ok(ApiResponse<bool>.Success(true, "Phiên đăng nhập hợp lệ"));
 
-            return Unauthorized(ApiResponse<bool>.Fail("Invalid session", 401));
+            return Unauthorized(ApiResponse<bool>.Fail("Phiên đăng nhập không hợp lệ", 401));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during session verification");
-            return StatusCode(500, ApiResponse<bool>.Fail("An error occurred during session verification", 500));
+            return StatusCode(500, ApiResponse<bool>.Fail("Lỗi xác thực phiên đăng nhập, xin vui lòng thử lại", 500));
         }
     }
 
@@ -310,9 +310,9 @@ public class AuthController : ControllerBase
             var success = await _authService.ChangePasswordAsync(userId, request);
 
             if (success)
-                return Ok(ApiResponse<bool>.Success(true, "Password changed successfully. Please login again with new password."));
+                return Ok(ApiResponse<bool>.Success(true, "Đổi mật khẩu thành công. Vui lòng đăng nhập lại với mật khẩu mới."));
 
-            return BadRequest(ApiResponse<bool>.Fail("Failed to change password", 400));
+            return BadRequest(ApiResponse<bool>.Fail("Đổi mật khẩu thất bại", 400));
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -327,7 +327,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during password change");
-            return StatusCode(500, ApiResponse<bool>.Fail("An error occurred during password change", 500));
+            return StatusCode(500, ApiResponse<bool>.Fail("Lỗi đổi mật khẩu, xin vui lòng thử lại", 500));
         }
     }
 
@@ -337,7 +337,7 @@ public class AuthController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedAccessException("User ID not found in token");
+            throw new UnauthorizedAccessException("Không tìm thấy người dùng");
 
         return userId;
     }

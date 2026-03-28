@@ -39,9 +39,9 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             var result = await _materialService.UploadFileMaterialAsync(expertId, request);
-            return Ok(ApiResponse<MaterialResponseDto>.Success(result, "File material đã được upload thành công. Vui lòng chờ Staff kiểm duyệt."));
+            return Ok(ApiResponse<MaterialResponseDto>.Success(result, "File học liệu đã được upload thành công. Vui lòng chờ nhân viên kiểm duyệt."));
         }
         catch (InvalidOperationException ex)
         {
@@ -54,7 +54,7 @@ public class MaterialController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading file material for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
-            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Đã xảy ra lỗi khi upload material", 500));
+            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Đã xảy ra lỗi khi upload học liệu", 500));
         }
     }
 
@@ -67,14 +67,14 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             var result = await _materialService.GetMyMaterialsAsync(expertId);
             return Ok(ApiResponse<List<MaterialResponseDto>>.Success(result));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting materials for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
-            return StatusCode(500, ApiResponse<List<MaterialResponseDto>>.Fail("Đã xảy ra lỗi khi lấy danh sách material", 500));
+            return StatusCode(500, ApiResponse<List<MaterialResponseDto>>.Fail("Đã xảy ra lỗi khi lấy danh sách học liệu", 500));
         }
     }
 
@@ -89,9 +89,9 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             var result = await _materialService.UpdateMaterialAsync(expertId, materialCode, request);
-            return Ok(ApiResponse<MaterialResponseDto>.Success(result, "Material đã được cập nhật. Vui lòng chờ Staff duyệt lại."));
+            return Ok(ApiResponse<MaterialResponseDto>.Success(result, "Học liệu đã được cập nhật. Vui lòng chờ nhân viên duyệt lại."));
         }
         catch (KeyNotFoundException ex)
         {
@@ -104,7 +104,7 @@ public class MaterialController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating material {MaterialCode}", materialCode);
-            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Đã xảy ra lỗi khi cập nhật material", 500));
+            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Đã xảy ra lỗi khi cập nhật học liệu", 500));
         }
     }
 
@@ -117,7 +117,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             await _materialService.DeleteMaterialAsync(expertId, materialCode);
             return Ok(ApiResponse<object>.Success(null, "Material đã được xóa."));
         }
@@ -132,7 +132,7 @@ public class MaterialController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting material {MaterialCode}", materialCode);
-            return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi xóa material", 500));
+            return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi xóa học liệu", 500));
         }
     }
 
@@ -155,7 +155,7 @@ public class MaterialController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching pending materials");
-            return StatusCode(500, ApiResponse<List<MaterialResponseDto>>.Fail("Đã xảy ra lỗi khi lấy danh sách material chờ duyệt", 500));
+            return StatusCode(500, ApiResponse<List<MaterialResponseDto>>.Fail("Đã xảy ra lỗi khi lấy danh sách học liệu chờ duyệt", 500));
         }
     }
 
@@ -192,7 +192,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var staffId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var staffId = GetCurrentUserId();
             await _materialService.ReviewMaterialAsync(staffId, materialCode, request);
 
             var message = request.Approved
@@ -213,7 +213,7 @@ public class MaterialController : ControllerBase
         {
             _logger.LogError(ex, "Error reviewing material {MaterialCode} by staff {StaffId}",
                 materialCode, User.FindFirstValue(ClaimTypes.NameIdentifier));
-            return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi duyệt material", 500));
+            return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi duyệt học liệu", 500));
         }
     }
 
@@ -241,7 +241,7 @@ public class MaterialController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error browsing materials");
-            return StatusCode(500, ApiResponse<List<MaterialResponseDto>>.Fail("Đã xảy ra lỗi khi duyệt danh sách material", 500));
+            return StatusCode(500, ApiResponse<List<MaterialResponseDto>>.Fail("Đã xảy ra lỗi khi duyệt danh sách học liệu", 500));
         }
     }
 
@@ -254,7 +254,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var teacherId = GetCurrentUserId();
             var result = await _materialService.GetMaterialDetailForTeacherAsync(teacherId, materialCode);
             return Ok(ApiResponse<MaterialResponseDto>.Success(result));
         }
@@ -279,9 +279,9 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var teacherId = GetCurrentUserId();
             var result = await _materialService.PurchaseMaterialAsync(teacherId, materialCode);
-            return Ok(ApiResponse<PurchasedMaterialResponseDto>.Success(result, "Mua material thành công!"));
+            return Ok(ApiResponse<PurchasedMaterialResponseDto>.Success(result, "Mua học liệu thành công!"));
         }
         catch (KeyNotFoundException ex)
         {
@@ -295,7 +295,7 @@ public class MaterialController : ControllerBase
         {
             _logger.LogError(ex, "Error purchasing material {MaterialCode} by teacher {TeacherId}",
                 materialCode, User.FindFirstValue(ClaimTypes.NameIdentifier));
-            return StatusCode(500, ApiResponse<PurchasedMaterialResponseDto>.Fail("Đã xảy ra lỗi khi mua material", 500));
+            return StatusCode(500, ApiResponse<PurchasedMaterialResponseDto>.Fail("Đã xảy ra lỗi khi mua học liệu", 500));
         }
     }
 
@@ -308,7 +308,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var teacherId = GetCurrentUserId();
             var result = await _materialService.GetPurchasedMaterialsAsync(teacherId);
             return Ok(ApiResponse<List<PurchasedMaterialResponseDto>>.Success(result));
         }
@@ -318,5 +318,13 @@ public class MaterialController : ControllerBase
                 User.FindFirstValue(ClaimTypes.NameIdentifier));
             return StatusCode(500, ApiResponse<List<PurchasedMaterialResponseDto>>.Fail("Đã xảy ra lỗi khi lấy danh sách đã mua", 500));
         }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
+        return userId;
     }
 }

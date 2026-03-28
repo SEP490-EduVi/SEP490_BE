@@ -57,25 +57,25 @@ public class AuthenticationService : IAuthenticationService
         if (!isAllowed)
         {
             var remaining = await _rateLimitService.GetRemainingAttemptsAsync($"login:{request.Username}", 5, 5);
-            throw new UnauthorizedAccessException($"Too many login attempts. Please try again in 5 minutes. Remaining attempts: {remaining}");
+            throw new UnauthorizedAccessException($"Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 5 phút. Số lần còn lại: {remaining}");
         }
 
         // 1. Tìm người dùng
         var user = await _unitOfWork.AuthenticationRepository.GetUserByUsernameAsync(request.Username);
         if (user == null)
-            throw new UnauthorizedAccessException("Invalid username or password");
+            throw new UnauthorizedAccessException("Đăng nhập thất bại. Tên đăng nhập hoặc mật khẩu không đúng");
 
         // 2. Kiểm tra mật khẩu
         if (!VerifyPassword(request.Password, user.PasswordHash))
-            throw new UnauthorizedAccessException("Invalid username or password");
+            throw new UnauthorizedAccessException("Đăng nhập thất bại. Tên đăng nhập hoặc mật khẩu không đúng");
 
         // 3. Kiểm tra trạng thái tài khoản
         if (user.Status == 0) // Banned
-            throw new UnauthorizedAccessException("Your account has been banned");
+            throw new UnauthorizedAccessException("Đăng nhập thất bại. Tài khoản của bạn đã bị khóa");
 
         // 4. CRITICAL: Check email verification status
         if (!user.IsEmailVerified)
-            throw new UnauthorizedAccessException("Please verify your email before logging in. Check your inbox for OTP.");
+            throw new UnauthorizedAccessException("Vui lòng xác thực email trước khi đăng nhập. Kiểm tra hộp thư đến để lấy mã OTP.");
 
         // 5. Login thành công - reset rate limit
         await _rateLimitService.ResetAsync($"login:{request.Username}");
@@ -132,18 +132,18 @@ public class AuthenticationService : IAuthenticationService
                 try
                 {
                     await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
-                    Console.WriteLine($"[GoogleLogin] ✓ Teacher record created for userId {user.UserId}");
+                    _logger.LogInformation("Đã tạo hồ sơ Teacher cho UserId={UserId} qua Google Login", user.UserId);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[GoogleLogin] ✗ Failed to create Teacher record: {ex.Message}");
+                    _logger.LogError(ex, "Không thể tạo hồ sơ Teacher cho UserId={UserId} qua Google Login", user.UserId);
                     // Continue - user still logged in, can create record later
                 }
             }
 
             // 3. Kiểm tra trạng thái
             if (user.Status == 0)
-                throw new UnauthorizedAccessException("Your account has been banned");
+                throw new UnauthorizedAccessException("Đăng nhập thất bại. Tài khoản của bạn đã bị khóa");
 
             // 4. Tạo JWT Token
             var token = GenerateJwtToken(user);
@@ -163,7 +163,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (InvalidJwtException)
         {
-            throw new UnauthorizedAccessException("Invalid Google token");
+            throw new UnauthorizedAccessException("Token Google không hợp lệ");
         }
     }
 
@@ -172,15 +172,15 @@ public class AuthenticationService : IAuthenticationService
         // Defence-in-depth: enforce role whitelist even if DTO annotation is bypassed.
         // Admin (1) and Staff (2) must be created by an Admin, not via public sign-up.
         if (request.RoleId is not (3 or 4))
-            throw new InvalidOperationException("Only Teacher or Expert roles can self-register.");
+            throw new InvalidOperationException("Chỉ có vai trò Giáo viên hoặc Chuyên gia mới có thể tự đăng ký.");
 
         // 1. Kiểm tra email đã tồn tại
         if (await _unitOfWork.AuthenticationRepository.EmailExistsAsync(request.Email))
-            throw new InvalidOperationException("Email already exists");
+            throw new InvalidOperationException("Email này đã được sử dụng");
 
         // 2. Kiểm tra username đã tồn tại
         if (await _unitOfWork.AuthenticationRepository.UsernameExistsAsync(request.Username))
-            throw new InvalidOperationException("Username already exists");
+            throw new InvalidOperationException("Tên đăng nhập này đã được sử dụng");
 
         // 3. Tạo người dùng mới với trạng thái PENDING và CHƯA VERIFY
         var user = new Users
@@ -222,7 +222,7 @@ public class AuthenticationService : IAuthenticationService
         {
             await _unitOfWork.RollbackTransactionAsync();
             _logger.LogError(ex, "Registration failed for email {Email} — transaction rolled back", request.Email);
-            throw new InvalidOperationException($"Registration failed: {ex.Message}", ex);
+            throw new InvalidOperationException($"Đăng ký thất bại: {ex.Message}", ex);
         }
 
         // 4. Generate OTP (6 digits)
@@ -235,11 +235,11 @@ public class AuthenticationService : IAuthenticationService
         try
         {
             await SendOtpEmailAsync(user.Email, otp, user.FullName);
-            Console.WriteLine($"[OTP] ✓ OTP email sent to {user.Email}");
+            _logger.LogInformation("Đã gửi email OTP đến {Email}", user.Email);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[OTP] ✗ Failed to send OTP email: {ex.Message}");
+            _logger.LogError(ex, "Không thể gửi email OTP đến {Email}", user.Email);
             // Continue - user can request resend
         }
 
@@ -257,7 +257,7 @@ public class AuthenticationService : IAuthenticationService
         // 1. Check brute-force protection
         var failedAttempts = await _otpService.GetFailedAttemptsAsync(request.UserId);
         if (failedAttempts >= 5)
-            throw new UnauthorizedAccessException("Too many failed attempts. Please request a new OTP.");
+            throw new UnauthorizedAccessException("Quá nhiều lần nhập sai. Vui lòng yêu cầu mã OTP mới.");
 
         // 2. Verify OTP from Redis
         var isValid = await _otpService.VerifyOtpAsync(request.UserId, request.Otp);
@@ -266,15 +266,15 @@ public class AuthenticationService : IAuthenticationService
         {
             // Increment failed attempts
             await _otpService.IncrementFailedAttemptsAsync(request.UserId);
-            throw new UnauthorizedAccessException("Invalid or expired OTP");
+            throw new UnauthorizedAccessException("Mã OTP không hợp lệ hoặc đã hết hạn");
         }
 
         // 3. Get user from DB
         var user = await _unitOfWork.AuthenticationRepository.GetUserByIdAsync(request.UserId);
         if (user == null)
-            throw new InvalidOperationException("User not found");
+            throw new InvalidOperationException("Không tìm thấy người dùng");
 
-        // 4. Update user status: Active + EmailVerified
+        // 4. Update user status
         user.Status = 1; // Active
         user.IsEmailVerified = true;
 
@@ -288,7 +288,7 @@ public class AuthenticationService : IAuthenticationService
             await _otpService.RevokeOtpAsync(request.UserId);
             await _otpService.ResetFailedAttemptsAsync(request.UserId);
 
-            Console.WriteLine($"[OTP] ✓ Email verified for userId {request.UserId}");
+            _logger.LogInformation("Đã xác thực email thành công cho UserId={UserId}", request.UserId);
 
             return new VerifyOtpResponse
             {
@@ -299,8 +299,8 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[OTP] ✗ Failed to update user verification status: {ex.Message}");
-            throw new Exception("Failed to verify email. Please try again.", ex);
+            _logger.LogError(ex, "Không thể cập nhật trạng thái xác thực email cho UserId={UserId}", request.UserId);
+            throw new Exception("Xác thực email thất bại. Vui lòng thử lại.", ex);
         }
     }
 
@@ -309,21 +309,21 @@ public class AuthenticationService : IAuthenticationService
         // 1. Check if user exists
         var user = await _unitOfWork.AuthenticationRepository.GetUserByIdAsync(request.UserId);
         if (user == null)
-            throw new InvalidOperationException("User not found");
+            throw new InvalidOperationException("Không tìm thấy người dùng");
 
         // 2. Check if already verified
         if (user.IsEmailVerified)
-            throw new InvalidOperationException("Email already verified");
+            throw new InvalidOperationException("Email này đã được xác thực");
 
         // 3. Check cooldown (60 seconds)
         var canResend = await _otpService.CanResendOtpAsync(request.UserId);
         if (!canResend)
-            throw new InvalidOperationException("Please wait 60 seconds before requesting a new OTP");
+            throw new InvalidOperationException("Vui lòng chờ 60 giây trước khi yêu cầu mã OTP mới");
 
         // 4. Check daily limit (5 times per day)
         var resendCount = await _otpService.GetResendCountAsync(request.UserId);
         if (resendCount >= 5)
-            throw new InvalidOperationException("Maximum resend limit reached (5/day). Please try again tomorrow.");
+            throw new InvalidOperationException("Đã đạt giới hạn gửi lại tối đa (5 lần/ngày). Vui lòng thử lại vào ngày mai.");
 
         // 5. Revoke old OTP
         await _otpService.RevokeOtpAsync(request.UserId);
@@ -341,12 +341,12 @@ public class AuthenticationService : IAuthenticationService
         try
         {
             await SendOtpEmailAsync(user.Email, otp, user.FullName);
-            Console.WriteLine($"[OTP] ✓ OTP resent to {user.Email} ({resendCount + 1}/5)");
+            _logger.LogInformation("Đã gửi lại OTP đến {Email} ({Count}/5)", user.Email, resendCount + 1);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[OTP] ✗ Failed to resend OTP email: {ex.Message}");
-            throw new Exception("Failed to send OTP email", ex);
+            _logger.LogError(ex, "Không thể gửi lại email OTP đến {Email}", user.Email);
+            throw new Exception("Không thể gửi email OTP", ex);
         }
 
         return new ResendOtpResponse
@@ -357,20 +357,20 @@ public class AuthenticationService : IAuthenticationService
 
     private async Task SendOtpEmailAsync(string email, string otp, string fullName)
     {
-        var subject = "Verify Your Email - EduVi OTP";
+        var subject = "Xác thực Email - EduVi OTP";
         var body = $@"
             <html>
             <body style='font-family: Arial, sans-serif;'>
-                <h2 style='color: #2563eb;'>Welcome to EduVi, {fullName}!</h2>
-                <p>Thank you for registering. Please use the OTP below to verify your email address.</p>
+                <h2 style='color: #2563eb;'>Chào mừng đến với EduVi, {fullName}!</h2>
+                <p>Cảm ơn bạn đã đăng ký. Vui lòng sử dụng mã OTP bên dưới để xác thực địa chỉ email của bạn.</p>
                 <div style='background-color: #f3f4f6; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center;'>
                     <h1 style='color: #1f2937; letter-spacing: 8px; margin: 0;'>{otp}</h1>
                 </div>
-                <p style='color: #ef4444;'><strong>⚠️ This OTP will expire in 5 minutes.</strong></p>
-                <p>If you didn't request this, please ignore this email.</p>
+                <p style='color: #ef4444;'><strong>⚠️ Mã OTP này sẽ hết hạn sau 5 phút.</strong></p>
+                <p>Nếu bạn không yêu cầu điều này, vui lòng bỏ qua email này.</p>
                 <br/>
                 <p style='color: #6b7280; font-size: 12px;'>
-                    This is an automated message from EduVi. Please do not reply to this email.
+                    Đây là tin nhắn tự động từ EduVi. Vui lòng không trả lời email này.
                 </p>
             </body>
             </html>";
@@ -404,21 +404,21 @@ public class AuthenticationService : IAuthenticationService
 
     private async Task SendResetPasswordOtpEmailAsync(string email, string otp, string fullName)
     {
-        var subject = "Reset Your Password - EduVi OTP";
+        var subject = "Đặt lại Mật khẩu - EduVi OTP";
         var body = $@"
             <html>
             <body style='font-family: Arial, sans-serif;'>
-                <h2 style='color: #ef4444;'>Password Reset Request</h2>
-                <p>Hello {fullName},</p>
-                <p>We received a request to reset your password. Please use the OTP below to reset your password.</p>
+                <h2 style='color: #ef4444;'>Yêu cầu đặt lại mật khẩu</h2>
+                <p>Xin chào {fullName},</p>
+                <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu của bạn. Vui lòng sử dụng mã OTP bên dưới để đặt lại mật khẩu.</p>
                 <div style='background-color: #fef2f2; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center; border: 2px solid #ef4444;'>
                     <h1 style='color: #991b1b; letter-spacing: 8px; margin: 0;'>{otp}</h1>
                 </div>
-                <p style='color: #ef4444;'><strong>⚠️ This OTP will expire in 5 minutes.</strong></p>
-                <p style='color: #dc2626;'><strong>Security Warning:</strong> If you didn't request this password reset, please ignore this email or contact support if you're concerned about your account security.</p>
+                <p style='color: #ef4444;'><strong>⚠️ Mã OTP này sẽ hết hạn sau 5 phút.</strong></p>
+                <p style='color: #dc2626;'><strong>Cảnh báo bảo mật:</strong> Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này hoặc liên hệ hỗ trợ nếu bạn lo lắng về bảo mật tài khoản.</p>
                 <br/>
                 <p style='color: #6b7280; font-size: 12px;'>
-                    This is an automated message from EduVi. Please do not reply to this email.
+                    Đây là tin nhắn tự động từ EduVi. Vui lòng không trả lời email này.
                 </p>
             </body>
             </html>";
@@ -530,11 +530,11 @@ public class AuthenticationService : IAuthenticationService
         try
         {
             await SendResetPasswordOtpEmailAsync(user.Email, otp, user.FullName);
-            Console.WriteLine($"[EMAIL] ✓ Reset password OTP sent to {user.Email}");
+            _logger.LogInformation("Đã gửi OTP đặt lại mật khẩu đến {Email}", user.Email);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[EMAIL] ✗ Failed to send email: {ex.Message}");
+            _logger.LogError(ex, "Không thể gửi email OTP đặt lại mật khẩu đến {Email}", user.Email);
             // Continue execution - OTP is already saved in Redis
         }
 
@@ -546,7 +546,7 @@ public class AuthenticationService : IAuthenticationService
         // 1. Tìm người dùng
         var user = await _unitOfWork.AuthenticationRepository.GetUserByEmailAsync(email);
         if (user == null)
-            throw new UnauthorizedAccessException("User not found");
+            throw new UnauthorizedAccessException("Không tìm thấy người dùng");
 
         // 2. Check cooldown (60 giây)
         var canResend = await _otpService.CanResendOtpAsync(user.UserId, keyPrefix: "otp:reset:resend:cooldown:");
@@ -562,7 +562,7 @@ public class AuthenticationService : IAuthenticationService
         var resendCount = await _otpService.GetResendCountAsync(user.UserId, keyPrefix: "otp:reset:resend:limit:");
         if (resendCount >= 5)
         {
-            throw new InvalidOperationException("You have reached the maximum number of resend attempts for today (5). Please try again tomorrow.");
+            throw new InvalidOperationException("Bạn đã đạt giới hạn gửi lại tối đa trong ngày (5 lần). Vui lòng thử lại vào ngày mai.");
         }
 
         // 4. Revoke OTP cũ
@@ -579,16 +579,16 @@ public class AuthenticationService : IAuthenticationService
         try
         {
             await SendResetPasswordOtpEmailAsync(user.Email, otp, user.FullName);
-            Console.WriteLine($"[EMAIL] ✓ Reset password OTP resent to {user.Email}");
+            _logger.LogInformation("Đã gửi lại OTP đặt lại mật khẩu đến {Email}", user.Email);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[EMAIL] ✗ Failed to send email: {ex.Message}");
+            _logger.LogError(ex, "Không thể gửi lại email OTP đặt lại mật khẩu đến {Email}", user.Email);
         }
 
         return new ResendOtpResponse
         {
-            CanResendAgainAt = DateTimeOffset.UtcNow.AddSeconds(60) // Cooldown 60s
+            CanResendAgainAt = DateTimeOffset.UtcNow.AddSeconds(60)
         };
     }
 
@@ -597,13 +597,13 @@ public class AuthenticationService : IAuthenticationService
         // 1. Tìm người dùng
         var user = await _unitOfWork.AuthenticationRepository.GetUserByEmailAsync(request.Email);
         if (user == null)
-            throw new UnauthorizedAccessException("User not found");
+            throw new UnauthorizedAccessException("Không tìm thấy người dùng");
 
-        // 2. Check brute-force protection (max 5 failed attempts)
+        // 2. Check brute-force protection
         var failedAttempts = await _otpService.GetFailedAttemptsAsync(user.UserId, keyPrefix: "otp:reset:attempts:");
         if (failedAttempts >= 5)
         {
-            throw new UnauthorizedAccessException("Too many failed OTP attempts. Please request a new OTP.");
+            throw new UnauthorizedAccessException("Quá nhiều lần nhập sai mã OTP. Vui lòng yêu cầu mã OTP mới.");
         }
 
         // 3. Verify OTP từ Redis
@@ -613,7 +613,7 @@ public class AuthenticationService : IAuthenticationService
             // Increment failed attempts
             await _otpService.IncrementFailedAttemptsAsync(user.UserId, keyPrefix: "otp:reset:attempts:");
             var remainingAttempts = 5 - (failedAttempts + 1);
-            throw new UnauthorizedAccessException($"Invalid OTP. {remainingAttempts} attempts remaining.");
+            throw new UnauthorizedAccessException($"Mã OTP không hợp lệ. Còn {remainingAttempts} lần thử.");
         }
 
         // 4. Reset mật khẩu
@@ -693,7 +693,7 @@ public class AuthenticationService : IAuthenticationService
     {
         var key = $"token:{userId}";
         await _redisDb.StringSetAsync(key, token, expiration);
-        Console.WriteLine($"[REDIS] ✓ Saved token to Redis: {key} (expires in {expiration.TotalMinutes:F0} minutes)");
+        _logger.LogInformation("Đã lưu token vào Redis cho {Key}, hết hạn sau {Minutes} phút", key, (int)expiration.TotalMinutes);
     }
 
     private string GenerateResetToken()
@@ -739,15 +739,15 @@ public class AuthenticationService : IAuthenticationService
         // 1. Lấy thông tin user
         var user = await _unitOfWork.AuthenticationRepository.GetUserByIdAsync(userId);
         if (user == null)
-            throw new UnauthorizedAccessException("User not found");
+            throw new UnauthorizedAccessException("Không tìm thấy người dùng");
 
         // 2. Verify current password
         if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
-            throw new UnauthorizedAccessException("Current password is incorrect");
+            throw new UnauthorizedAccessException("Mật khẩu hiện tại không đúng");
 
         // 3. Check if new password is same as current
         if (VerifyPassword(request.NewPassword, user.PasswordHash))
-            throw new InvalidOperationException("New password must be different from current password");
+            throw new InvalidOperationException("Mật khẩu mới phải khác mật khẩu hiện tại");
 
         // 4. Update password
         user.PasswordHash = HashPassword(request.NewPassword);
@@ -764,7 +764,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to change password: {ex.Message}", ex);
+            throw new Exception($"Đổi mật khẩu thất bại: {ex.Message}", ex);
         }
     }
 

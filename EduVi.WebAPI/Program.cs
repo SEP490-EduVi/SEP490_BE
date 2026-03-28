@@ -37,11 +37,8 @@ var redisConnection = builder.Configuration.GetConnectionString("RedisConnection
 var redisOptions = ConfigurationOptions.Parse(redisConnection);
 redisOptions.AbortOnConnectFail = false;
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(
-    ConnectionMultiplexer.Connect(redisOptions)
-);
-
-Console.WriteLine("✓ Redis connected");
+var redisMultiplexer = await ConnectionMultiplexer.ConnectAsync(redisOptions);
+builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -103,8 +100,6 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // PayOS Configuration (v1 via IPayOSService wrapper)
 builder.Services.AddSingleton<IPayOSService, PayOSService>();
 
-Console.WriteLine("\u2713 PayOS configured");
-
 // Register Services
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
@@ -135,8 +130,6 @@ builder.Services.AddSignalR()
     {
         options.Configuration.ChannelPrefix = RedisChannel.Literal("EduVi");
     });
-
-Console.WriteLine("\u2713 SignalR + Pipeline configured");
 
 // CORS Configuration
 builder.Services.AddCors(options =>
@@ -196,6 +189,10 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+app.Logger.LogInformation("Redis connected successfully");
+app.Logger.LogInformation("PayOS configured");
+app.Logger.LogInformation("SignalR + Pipeline configured");
 
 // When behind a reverse proxy (Nginx), forward headers so HTTPS redirect
 // and auth schemes work correctly with the original client request.

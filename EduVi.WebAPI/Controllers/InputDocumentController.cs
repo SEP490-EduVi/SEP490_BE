@@ -87,7 +87,7 @@ public class InputDocumentController : ControllerBase
         catch (Exception exception)
         {
             _logger.LogError(exception, "Error getting input documents by project code {ProjectCode}", projectCode);
-            return StatusCode(500, ApiResponse<List<InputDocumentResponseDto>>.Fail("Lỗi khi lấy danh sách tài liệu theo project", 500));
+            return StatusCode(500, ApiResponse<List<InputDocumentResponseDto>>.Fail("Lỗi khi lấy danh sách tài liệu theo dự án", 500));
         }
     }
 
@@ -147,7 +147,7 @@ public class InputDocumentController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedAccessException("User ID not found in token");
+            throw new UnauthorizedAccessException("Không tìm thấy người dùng");
         return userId;
     }
 }

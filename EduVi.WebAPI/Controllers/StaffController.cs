@@ -76,7 +76,7 @@ public class StaffController : ControllerBase
     {
         try
         {
-            var staffId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var staffId = GetCurrentUserId();
             await _expertService.ReviewVerificationAsync(staffId, verificationCode, request);
 
             var message = request.Approved
@@ -99,5 +99,13 @@ public class StaffController : ControllerBase
                 verificationCode, User.FindFirstValue(ClaimTypes.NameIdentifier));
             return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi xử lý hồ sơ", 500));
         }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
+        return userId;
     }
 }

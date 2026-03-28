@@ -38,7 +38,7 @@ public class PipelineController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _pipelineService.CreateLessonAnalysisTaskAsync(userId, request);
-            return Ok(ApiResponse<PipelineTaskResponseDto>.Success(result, "Task đã được đưa vào hàng đợi xử lý"));
+            return Ok(ApiResponse<PipelineTaskResponseDto>.Success(result, "Công việc đã được đưa vào hàng đợi xử lý"));
         }
         catch (InvalidOperationException ex)
         {
@@ -47,7 +47,7 @@ public class PipelineController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating lesson analysis task");
-            return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo task phân tích bài giảng", 500));
+            return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo công việc phân tích bài giảng", 500));
         }
     }
 
@@ -67,7 +67,7 @@ public class PipelineController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _pipelineService.CreateSlideGenerationTaskAsync(userId, request);
-            return Ok(ApiResponse<PipelineTaskResponseDto>.Success(result, "Task tạo slide đã được đưa vào hàng đợi xử lý"));
+            return Ok(ApiResponse<PipelineTaskResponseDto>.Success(result, "Công việc tạo slide đã được đưa vào hàng đợi xử lý"));
         }
         catch (InvalidOperationException ex)
         {
@@ -76,7 +76,7 @@ public class PipelineController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating slide generation task");
-            return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo task tạo slide", 500));
+            return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo công việc tạo slide", 500));
         }
     }
 
@@ -133,14 +133,14 @@ public class PipelineController : ControllerBase
         {
             var result = await _pipelineService.GetTaskStatusAsync(taskId);
             if (result is null)
-                return NotFound(ApiResponse<PipelineProgressDto>.Fail("Không tìm thấy task", 404));
+                return NotFound(ApiResponse<PipelineProgressDto>.Fail("Không tìm thấy công việc", 404));
 
             return Ok(ApiResponse<PipelineProgressDto>.Success(result));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting task status. TaskId={TaskId}", taskId);
-            return StatusCode(500, ApiResponse<PipelineProgressDto>.Fail("Lỗi khi kiểm tra trạng thái task", 500));
+            return StatusCode(500, ApiResponse<PipelineProgressDto>.Fail("Lỗi khi kiểm tra trạng thái công việc", 500));
         }
     }
 
@@ -152,7 +152,7 @@ public class PipelineController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedAccessException("User ID not found in token");
+            throw new UnauthorizedAccessException("Không tìm thấy người dùng");
         return userId;
     }
 }
