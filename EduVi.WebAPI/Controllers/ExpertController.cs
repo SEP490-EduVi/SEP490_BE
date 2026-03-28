@@ -36,7 +36,7 @@ public class ExpertController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             var result = await _expertService.UploadVerificationAsync(expertId, request);
             return Ok(ApiResponse<ExpertVerificationDto>.Success(result, "Hồ sơ đã được nộp thành công. Vui lòng chờ nhân viên kiểm duyệt."));
         }
@@ -59,7 +59,7 @@ public class ExpertController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             var result = await _expertService.GetMyVerificationsAsync(expertId);
             return Ok(ApiResponse<List<ExpertVerificationDto>>.Success(result));
         }
@@ -78,7 +78,7 @@ public class ExpertController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             await _expertService.DeleteVerificationAsync(expertId, verificationCode);
             return Ok(ApiResponse<object>.Success(null, "Hồ sơ đã được xóa. Bạn có thể nộp lại."));
         }
@@ -95,5 +95,13 @@ public class ExpertController : ControllerBase
             _logger.LogError(ex, "Error deleting verification {VerificationCode}", verificationCode);
             return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi xóa hồ sơ", 500));
         }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
+        return userId;
     }
 }

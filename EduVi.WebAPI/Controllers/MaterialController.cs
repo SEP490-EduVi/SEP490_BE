@@ -39,7 +39,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             var result = await _materialService.UploadFileMaterialAsync(expertId, request);
             return Ok(ApiResponse<MaterialResponseDto>.Success(result, "File học liệu đã được upload thành công. Vui lòng chờ nhân viên kiểm duyệt."));
         }
@@ -67,7 +67,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             var result = await _materialService.GetMyMaterialsAsync(expertId);
             return Ok(ApiResponse<List<MaterialResponseDto>>.Success(result));
         }
@@ -89,7 +89,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             var result = await _materialService.UpdateMaterialAsync(expertId, materialCode, request);
             return Ok(ApiResponse<MaterialResponseDto>.Success(result, "Học liệu đã được cập nhật. Vui lòng chờ nhân viên duyệt lại."));
         }
@@ -117,7 +117,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var expertId = GetCurrentUserId();
             await _materialService.DeleteMaterialAsync(expertId, materialCode);
             return Ok(ApiResponse<object>.Success(null, "Material đã được xóa."));
         }
@@ -192,7 +192,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var staffId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var staffId = GetCurrentUserId();
             await _materialService.ReviewMaterialAsync(staffId, materialCode, request);
 
             var message = request.Approved
@@ -254,7 +254,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var teacherId = GetCurrentUserId();
             var result = await _materialService.GetMaterialDetailForTeacherAsync(teacherId, materialCode);
             return Ok(ApiResponse<MaterialResponseDto>.Success(result));
         }
@@ -279,7 +279,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var teacherId = GetCurrentUserId();
             var result = await _materialService.PurchaseMaterialAsync(teacherId, materialCode);
             return Ok(ApiResponse<PurchasedMaterialResponseDto>.Success(result, "Mua học liệu thành công!"));
         }
@@ -308,7 +308,7 @@ public class MaterialController : ControllerBase
     {
         try
         {
-            var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var teacherId = GetCurrentUserId();
             var result = await _materialService.GetPurchasedMaterialsAsync(teacherId);
             return Ok(ApiResponse<List<PurchasedMaterialResponseDto>>.Success(result));
         }
@@ -318,5 +318,13 @@ public class MaterialController : ControllerBase
                 User.FindFirstValue(ClaimTypes.NameIdentifier));
             return StatusCode(500, ApiResponse<List<PurchasedMaterialResponseDto>>.Fail("Đã xảy ra lỗi khi lấy danh sách đã mua", 500));
         }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
+        return userId;
     }
 }
