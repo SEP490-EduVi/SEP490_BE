@@ -435,11 +435,11 @@ public class PipelineService : IPipelineService
         };
     }
 
-    public async Task<ProductVideoDetailDto> GetLatestProductVideoByProjectCodeAsync(int teacherId, string projectCode)
+    public async Task<ProductVideoDetailDto> GetLatestProductVideoByDocumentCodeAsync(int teacherId, string documentCode)
     {
         var productVideo = await _unitOfWork.PipelineRepository
-            .GetLatestActiveProductVideoByProjectCodeAndTeacherAsync(projectCode, teacherId)
-            ?? throw new KeyNotFoundException($"Project {projectCode} chưa có video nào");
+            .GetLatestActiveProductVideoByDocumentCodeAndTeacherAsync(documentCode, teacherId)
+            ?? throw new KeyNotFoundException($"Document {documentCode} chưa có video nào");
 
         return MapToProductVideoDetailDto(productVideo);
     }

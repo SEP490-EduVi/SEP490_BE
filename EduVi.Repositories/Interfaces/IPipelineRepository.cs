@@ -172,6 +172,11 @@ public interface IPipelineRepository
     Task<ProductVideos?> GetLatestActiveProductVideoByProjectCodeAndTeacherAsync(string projectCode, int teacherId);
 
     /// <summary>
+    /// Lấy bản ghi video mới nhất (không tính deleted) theo DocumentCode và TeacherId.
+    /// </summary>
+    Task<ProductVideos?> GetLatestActiveProductVideoByDocumentCodeAndTeacherAsync(string documentCode, int teacherId);
+
+    /// <summary>
     /// Lấy danh sách video (không tính deleted) theo ProjectCode và TeacherId.
     /// </summary>
     Task<List<ProductVideos>> GetActiveProductVideosByProjectCodeAndTeacherAsync(string projectCode, int teacherId);

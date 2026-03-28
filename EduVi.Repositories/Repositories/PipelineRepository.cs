@@ -221,6 +221,22 @@ public class PipelineRepository : IPipelineRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<ProductVideos?> GetLatestActiveProductVideoByDocumentCodeAndTeacherAsync(string documentCode, int teacherId)
+    {
+        return await _context.ProductVideos
+            .Include(productVideo => productVideo.Product)
+            .Where(productVideo =>
+                productVideo.Status != DeletedVideoStatus
+                && productVideo.Product.TeacherId == teacherId
+                && productVideo.Product.SourceInputId != null
+                && _context.InputDocuments.Any(inputDocument =>
+                    inputDocument.DocumentId == productVideo.Product.SourceInputId
+                    && inputDocument.DocumentCode == documentCode
+                    && inputDocument.TeacherId == teacherId))
+            .OrderByDescending(productVideo => productVideo.CreatedAt)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<List<ProductVideos>> GetActiveProductVideosByProjectCodeAndTeacherAsync(string projectCode, int teacherId)
     {
         return await _context.ProductVideos

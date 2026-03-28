@@ -80,13 +80,13 @@ public class VideoController : ControllerBase
         }
     }
 
-    [HttpGet("project/{projectCode}/latest")]
-    public async Task<ActionResult<ApiResponse<ProductVideoDetailDto>>> GetVideoByProjectCode(string projectCode)
+    [HttpGet("document/{documentCode}/latest")]
+    public async Task<ActionResult<ApiResponse<ProductVideoDetailDto>>> GetVideoByDocumentCode(string documentCode)
     {
         try
         {
             var userId = GetCurrentUserId();
-            var result = await _pipelineService.GetLatestProductVideoByProjectCodeAsync(userId, projectCode);
+            var result = await _pipelineService.GetLatestProductVideoByDocumentCodeAsync(userId, documentCode);
             return Ok(ApiResponse<ProductVideoDetailDto>.Success(result));
         }
         catch (KeyNotFoundException ex)
@@ -95,7 +95,7 @@ public class VideoController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting latest product video for project {ProjectCode}", projectCode);
+            _logger.LogError(ex, "Error getting latest product video for document {DocumentCode}", documentCode);
             return StatusCode(500, ApiResponse<ProductVideoDetailDto>.Fail("Lỗi khi lấy thông tin video", 500));
         }
     }

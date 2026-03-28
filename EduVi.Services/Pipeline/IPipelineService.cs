@@ -33,7 +33,7 @@ public interface IPipelineService
     // Video queries
     Task<List<ProductVideoDetailDto>> GetProductVideosByTeacherAsync(int teacherId);
     Task<List<ProductVideoDetailDto>> GetProductVideosByProjectCodeAsync(int teacherId, string projectCode);
-    Task<ProductVideoDetailDto> GetLatestProductVideoByProjectCodeAsync(int teacherId, string projectCode);
+    Task<ProductVideoDetailDto> GetLatestProductVideoByDocumentCodeAsync(int teacherId, string documentCode);
     Task<ProductVideoDetailDto> GetLatestProductVideoByProductCodeAsync(int teacherId, string productCode);
     Task SoftDeleteProductVideoAsync(int teacherId, string productVideoCode);
 
