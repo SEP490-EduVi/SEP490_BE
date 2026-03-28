@@ -60,6 +60,9 @@ public class PipelineService : IPipelineService
 
         if (product is not null)
         {
+            if (product.Status == ProductStatusConstants.New || product.Status == ProductStatusConstants.Processing)
+                throw new InvalidOperationException("Phân tích bài giảng đang được xử lý. Vui lòng chờ hoàn tất trước khi gửi lại");
+
             product.ProductName = request.ProductName ?? $"Phân tích: {document.Title}";
             product.Description = $"AI evaluation cho document: {document.Title}";
             product.ProductCode = productCode;
@@ -142,6 +145,9 @@ public class PipelineService : IPipelineService
         if (string.IsNullOrEmpty(product.LessonPlanText))
             throw new InvalidOperationException("Product thiếu dữ liệu lesson plan text. Hãy chạy lại phân tích bài giảng");
 
+        if (product.Status == ProductStatusConstants.GeneratingSlides)
+            throw new InvalidOperationException("Slide đang được tạo. Vui lòng chờ hoàn tất trước khi gửi lại");
+
         // 2. Deserialize stored data to pass to the Python worker
         var evaluationResult = JsonSerializer.Deserialize<object>(product.EvaluationResult);
 
@@ -195,6 +201,10 @@ public class PipelineService : IPipelineService
         var product = await _unitOfWork.PipelineRepository
             .GetProductByCodeAndTeacherAsync(request.ProductCode, teacherId)
             ?? throw new InvalidOperationException("Product không tồn tại hoặc không thuộc về bạn");
+
+        var activeVideo = await _unitOfWork.PipelineRepository.GetLatestActiveProductVideoAsync(product.ProductId);
+        if (activeVideo?.Status == VideoStatusConstants.Queued)
+            throw new InvalidOperationException("Video đang được tạo. Vui lòng chờ hoàn tất trước khi gửi lại");
 
         if (!IsSupportedGcsUrl(request.SlideEditedDocumentUrl))
             throw new InvalidOperationException("SlideEditedDocumentUrl phải là GCS URL hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
