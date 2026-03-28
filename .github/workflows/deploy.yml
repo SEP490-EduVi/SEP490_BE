@@ -57,3 +57,4 @@ jobs:
             docker compose pull main-system
             docker compose up -d
             docker compose exec nginx nginx -s reload 2>/dev/null || true
+            docker image prune -af
