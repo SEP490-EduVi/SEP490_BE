@@ -95,6 +95,10 @@ public class ProductController : ControllerBase
                 return Conflict(ApiResponse<object>.Fail(
                     "Kết quả đánh giá chưa có. Vui lòng chờ quá trình phân tích bài giảng hoàn tất", 409));
 
+            if (product.Status == ProductStatusConstants.Failed)
+                return UnprocessableEntity(ApiResponse<object>.Fail(
+                    "Quá trình phân tích bài giảng thất bại. Vui lòng thử lại.", 422));
+
             return Ok(ApiResponse<object>.Success(new
             {
                 product.EvaluationResult,
