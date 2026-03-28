@@ -34,7 +34,7 @@ public class VideoController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting all product videos for current teacher");
+            _logger.LogError(ex, "Lỗi khi lấy danh sách video của giáo viên hiện tại");
             return StatusCode(500, ApiResponse<List<ProductVideoDetailDto>>.Fail("Lỗi khi lấy danh sách video", 500));
         }
     }
@@ -55,7 +55,7 @@ public class VideoController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating video generation task");
+            _logger.LogError(ex, "Lỗi khi tạo task tạo video");
             return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo task tạo video", 500));
         }
     }
@@ -75,7 +75,7 @@ public class VideoController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting product videos for project {ProjectCode}", projectCode);
+            _logger.LogError(ex, "Lỗi khi lấy danh sách video cho dự án {ProjectCode}", projectCode);
             return StatusCode(500, ApiResponse<List<ProductVideoDetailDto>>.Fail("Lỗi khi lấy danh sách video", 500));
         }
     }
@@ -95,7 +95,7 @@ public class VideoController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting latest product video for project {ProjectCode}", projectCode);
+            _logger.LogError(ex, "Lỗi khi lấy video mới nhất cho dự án {ProjectCode}", projectCode);
             return StatusCode(500, ApiResponse<ProductVideoDetailDto>.Fail("Lỗi khi lấy thông tin video", 500));
         }
     }
@@ -137,7 +137,7 @@ public class VideoController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error soft-deleting product video {ProductVideoCode}", productVideoCode);
+            _logger.LogError(ex, "Lỗi khi xóa mềm video {ProductVideoCode}", productVideoCode);
             return StatusCode(500, ApiResponse<object>.Fail("Lỗi khi xóa mềm video", 500));
         }
     }
@@ -146,7 +146,7 @@ public class VideoController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedAccessException("User ID not found in token");
+            throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
         return userId;
     }
 }

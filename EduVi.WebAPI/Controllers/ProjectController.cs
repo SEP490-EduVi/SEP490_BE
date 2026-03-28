@@ -33,7 +33,7 @@ public class ProjectController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting projects");
-            return StatusCode(500, ApiResponse<List<ProjectResponseDto>>.Fail("Lỗi khi lấy danh sách project", 500));
+            return StatusCode(500, ApiResponse<List<ProjectResponseDto>>.Fail("Lỗi khi lấy danh sách các dự án", 500));
         }
     }
 
@@ -53,7 +53,7 @@ public class ProjectController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting project {ProjectCode}", projectCode);
-            return StatusCode(500, ApiResponse<ProjectResponseDto>.Fail("Lỗi khi lấy project", 500));
+            return StatusCode(500, ApiResponse<ProjectResponseDto>.Fail("Lỗi khi lấy dự án", 500));
         }
     }
 
@@ -66,7 +66,7 @@ public class ProjectController : ControllerBase
         {
             var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _projectService.CreateProjectAsync(teacherId, request);
-            return Ok(ApiResponse<ProjectResponseDto>.Success(result, "Tạo project thành công"));
+            return Ok(ApiResponse<ProjectResponseDto>.Success(result, "Tạo dự án thành công"));
         }
         catch (InvalidOperationException ex)
         {
@@ -75,7 +75,7 @@ public class ProjectController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating project");
-            return StatusCode(500, ApiResponse<ProjectResponseDto>.Fail("Lỗi khi tạo project", 500));
+            return StatusCode(500, ApiResponse<ProjectResponseDto>.Fail("Lỗi khi tạo dự án", 500));
         }
     }
 
@@ -88,7 +88,7 @@ public class ProjectController : ControllerBase
         {
             var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _projectService.UpdateProjectAsync(teacherId, projectCode, request);
-            return Ok(ApiResponse<ProjectResponseDto>.Success(result, "Cập nhật project thành công"));
+            return Ok(ApiResponse<ProjectResponseDto>.Success(result, "Cập nhật dự án thành công"));
         }
         catch (KeyNotFoundException ex)
         {
@@ -101,7 +101,7 @@ public class ProjectController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating project {ProjectCode}", projectCode);
-            return StatusCode(500, ApiResponse<ProjectResponseDto>.Fail("Lỗi khi cập nhật project", 500));
+            return StatusCode(500, ApiResponse<ProjectResponseDto>.Fail("Lỗi khi cập nhật dự án", 500));
         }
     }
 
@@ -113,7 +113,7 @@ public class ProjectController : ControllerBase
         {
             var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             await _projectService.DeleteProjectAsync(teacherId, projectCode);
-            return Ok(ApiResponse<string>.Success("Đã xóa", "Xóa project thành công"));
+            return Ok(ApiResponse<string>.Success("Đã xóa", "Xóa dự án thành công"));
         }
         catch (KeyNotFoundException ex)
         {
@@ -126,7 +126,7 @@ public class ProjectController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting project {ProjectCode}", projectCode);
-            return StatusCode(500, ApiResponse<string>.Fail("Lỗi khi xóa project", 500));
+            return StatusCode(500, ApiResponse<string>.Fail("Lỗi khi xóa dự án", 500));
         }
     }
 }

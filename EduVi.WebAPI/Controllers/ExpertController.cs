@@ -38,7 +38,7 @@ public class ExpertController : ControllerBase
         {
             var expertId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _expertService.UploadVerificationAsync(expertId, request);
-            return Ok(ApiResponse<ExpertVerificationDto>.Success(result, "Hồ sơ đã được nộp thành công. Vui lòng chờ Staff kiểm duyệt."));
+            return Ok(ApiResponse<ExpertVerificationDto>.Success(result, "Hồ sơ đã được nộp thành công. Vui lòng chờ nhân viên kiểm duyệt."));
         }
         catch (InvalidOperationException ex)
         {

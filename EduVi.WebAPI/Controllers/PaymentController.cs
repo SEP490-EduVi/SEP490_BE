@@ -120,7 +120,7 @@ public class PaymentController : ControllerBase
             _logger.LogError(ex, "Error processing PayOS webhook");
             // PHẢI trả OK để PayOS không gửi lại (retry storm)
             // Log lỗi để xử lý thủ công
-            return Ok(new { success = false, message = "Internal error logged" });
+            return Ok(new { success = false, message = "Lỗi hệ thống (liên quan tới payos-webhook" });
         }
     }
 
@@ -220,7 +220,7 @@ public class PaymentController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedAccessException("User ID not found in token");
+            throw new UnauthorizedAccessException("Không tìm thấy người dùng");
         return userId;
     }
 }

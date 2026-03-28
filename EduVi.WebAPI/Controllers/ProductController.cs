@@ -40,7 +40,7 @@ public class ProductController : ControllerBase
         catch (Exception exception)
         {
             _logger.LogError(exception, "Error fetching all products for current teacher");
-            return StatusCode(500, ApiResponse<List<ProductSummaryDto>>.Fail("Lỗi khi lấy danh sách product", 500));
+            return StatusCode(500, ApiResponse<List<ProductSummaryDto>>.Fail("Lỗi khi lấy danh sách nội dung số", 500));
         }
     }
 
@@ -63,7 +63,7 @@ public class ProductController : ControllerBase
         catch (Exception exception)
         {
             _logger.LogError(exception, "Error fetching products for project {ProjectCode}", projectCode);
-            return StatusCode(500, ApiResponse<List<ProductSummaryDto>>.Fail("Lỗi khi lấy danh sách product theo project", 500));
+            return StatusCode(500, ApiResponse<List<ProductSummaryDto>>.Fail("Lỗi khi lấy danh sách nội dung số theo dự án", 500));
         }
     }
 
@@ -90,7 +90,7 @@ public class ProductController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching product {ProductCode}", productCode);
-            return StatusCode(500, ApiResponse<ProductDetailDto>.Fail("Lỗi khi lấy thông tin product", 500));
+            return StatusCode(500, ApiResponse<ProductDetailDto>.Fail("Lỗi khi lấy thông tin nội dung số", 500));
         }
     }
 
@@ -216,7 +216,7 @@ public class ProductController : ControllerBase
         {
             var teacherId = GetCurrentUserId();
             await _pipelineService.DeleteProductAsync(teacherId, productCode);
-            return Ok(ApiResponse<object>.Success(null, "Product đã được xóa thành công"));
+            return Ok(ApiResponse<object>.Success(null, "Nội dung số đã được xóa thành công"));
         }
         catch (KeyNotFoundException ex)
         {
@@ -229,7 +229,7 @@ public class ProductController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting product {ProductCode}", productCode);
-            return StatusCode(500, ApiResponse<object>.Fail("Lỗi khi xóa product", 500));
+            return StatusCode(500, ApiResponse<object>.Fail("Lỗi khi xóa nội dung số", 500));
         }
     }
 
@@ -241,7 +241,7 @@ public class ProductController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedAccessException("User ID not found in token");
+            throw new UnauthorizedAccessException("Không tìm thấy người dùng");
         return userId;
     }
 }
