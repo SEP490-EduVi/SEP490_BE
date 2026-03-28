@@ -37,7 +37,7 @@ public class PipelineService : IPipelineService
         var project = await _unitOfWork.PipelineRepository
             .GetProjectByCodeAndTeacherAsync(request.ProjectCode, teacherId);
         if (project is null)
-            throw new InvalidOperationException("Project không tồn tại hoặc không thuộc về bạn");
+            throw new InvalidOperationException("Dự án không tồn tại hoặc không thuộc về bạn");
 
         // 2. Get InputDocument from DB (by Code)
         var document = await _unitOfWork.InputDocumentRepository
@@ -46,7 +46,7 @@ public class PipelineService : IPipelineService
             throw new InvalidOperationException("InputDocument không tồn tại hoặc không thuộc về bạn");
 
         if (document.ProjectId != project.ProjectId)
-            throw new InvalidOperationException("InputDocument không thuộc Project đã chọn");
+            throw new InvalidOperationException("Tài liệu đầu vào không thuộc Dự án đã chọn");
 
         var lessonCode = document.Lesson?.LessonCode
             ?? throw new InvalidOperationException("Lesson chưa có LessonCode");
@@ -137,13 +137,13 @@ public class PipelineService : IPipelineService
         // 1. Validate Product belongs to this Teacher and has evaluation data
         var product = await _unitOfWork.PipelineRepository
             .GetProductByCodeAndTeacherAsync(request.ProductCode, teacherId)
-            ?? throw new InvalidOperationException("Product không tồn tại hoặc không thuộc về bạn");
+            ?? throw new InvalidOperationException("Nội dung số không tồn tại hoặc không thuộc về bạn");
 
         if (string.IsNullOrEmpty(product.EvaluationResult))
-            throw new InvalidOperationException("Product chưa được đánh giá. Hãy chạy phân tích bài giảng trước");
+            throw new InvalidOperationException("Nội dung số chưa được đánh giá. Hãy chạy phân tích bài giảng trước");
 
         if (string.IsNullOrEmpty(product.LessonPlanText))
-            throw new InvalidOperationException("Product thiếu dữ liệu lesson plan text. Hãy chạy lại phân tích bài giảng");
+            throw new InvalidOperationException("Nội dung số thiếu dữ liệu giáo án. Hãy chạy lại phân tích bài giảng");
 
         if (product.Status == ProductStatusConstants.GeneratingSlides)
             throw new InvalidOperationException("Slide đang được tạo. Vui lòng chờ hoàn tất trước khi gửi lại");
@@ -200,7 +200,7 @@ public class PipelineService : IPipelineService
 
         var product = await _unitOfWork.PipelineRepository
             .GetProductByCodeAndTeacherAsync(request.ProductCode, teacherId)
-            ?? throw new InvalidOperationException("Product không tồn tại hoặc không thuộc về bạn");
+            ?? throw new InvalidOperationException("Nội dung số không tồn tại hoặc không thuộc về bạn");
 
         var activeVideo = await _unitOfWork.PipelineRepository.GetLatestActiveProductVideoAsync(product.ProductId);
         if (activeVideo?.Status == VideoStatusConstants.Queued)
@@ -285,10 +285,10 @@ public class PipelineService : IPipelineService
     {
         var product = await _unitOfWork.PipelineRepository
             .GetProductByCodeAndTeacherAsync(productCode, teacherId)
-            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+            ?? throw new KeyNotFoundException($"Không tìm thấy nội dung số với mã {productCode}");
 
         if (string.IsNullOrEmpty(product.SlideDocument))
-            throw new InvalidOperationException("Product chưa có slide. Hãy tạo slide trước khi chỉnh sửa");
+            throw new InvalidOperationException("Nội dung số chưa có slide. Hãy tạo slide trước khi chỉnh sửa");
 
         // Validate và upsert ProductComponent nếu có materials
         if (request.UsedMaterials?.Count > 0)
@@ -300,13 +300,13 @@ public class PipelineService : IPipelineService
                 // Resolve MaterialCode → MaterialId
                 var materialId = await _unitOfWork.PipelineRepository
                     .GetMaterialIdByCodeAsync(usedMaterial.MaterialCode)
-                    ?? throw new InvalidOperationException($"Không tìm thấy material với mã '{usedMaterial.MaterialCode}'");
+                    ?? throw new InvalidOperationException($"Không tìm thấy học liệu với mã '{usedMaterial.MaterialCode}'");
 
                 // Kiểm tra Teacher đã mua material này chưa
                 var isOwned = await _unitOfWork.PipelineRepository
                     .IsTeacherOwnsMaterialAsync(teacherId, materialId);
                 if (!isOwned)
-                    throw new InvalidOperationException($"Bạn chưa sở hữu material '{usedMaterial.MaterialCode}'");
+                    throw new InvalidOperationException($"Bạn chưa sở hữu học liệu '{usedMaterial.MaterialCode}'");
 
                 newComponents.Add(new ProductComponent
                 {
@@ -390,7 +390,7 @@ public class PipelineService : IPipelineService
     {
         var project = await _unitOfWork.PipelineRepository
             .GetProjectByCodeAndTeacherAsync(projectCode, teacherId)
-            ?? throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại hoặc không thuộc về bạn");
+            ?? throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại hoặc không thuộc về bạn");
 
         var products = await _unitOfWork.PipelineRepository
             .GetProductsByTeacherAndProjectAsync(teacherId, project.ProjectId);
@@ -415,10 +415,10 @@ public class PipelineService : IPipelineService
     {
         var product = await _unitOfWork.PipelineRepository
             .GetProductByCodeAndTeacherAsync(productCode, teacherId)
-            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+            ?? throw new KeyNotFoundException($"Không tìm thấy nội dung số với mã {productCode}");
 
         if (product.Status == ProductStatusConstants.Deleted)
-            throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+            throw new KeyNotFoundException($"Không tìm thấy nội dung số với mã {productCode}");
 
         var latestProductVideo = await _unitOfWork.PipelineRepository.GetLatestActiveProductVideoAsync(product.ProductId);
 
@@ -449,7 +449,7 @@ public class PipelineService : IPipelineService
     {
         var productVideo = await _unitOfWork.PipelineRepository
             .GetLatestActiveProductVideoByProjectCodeAndTeacherAsync(projectCode, teacherId)
-            ?? throw new KeyNotFoundException($"Project {projectCode} chưa có video nào");
+            ?? throw new KeyNotFoundException($"Dự án {projectCode} chưa có video nào");
 
         return MapToProductVideoDetailDto(productVideo);
     }
@@ -468,7 +468,7 @@ public class PipelineService : IPipelineService
     {
         var project = await _unitOfWork.PipelineRepository
             .GetProjectByCodeAndTeacherAsync(projectCode, teacherId)
-            ?? throw new KeyNotFoundException($"Project {projectCode} không tồn tại hoặc không thuộc về bạn");
+            ?? throw new KeyNotFoundException($"Dự án {projectCode} không tồn tại hoặc không thuộc về bạn");
 
         var productVideos = await _unitOfWork.PipelineRepository
             .GetActiveProductVideosByProjectCodeAndTeacherAsync(project.ProjectCode, teacherId);
@@ -482,11 +482,11 @@ public class PipelineService : IPipelineService
     {
         var product = await _unitOfWork.PipelineRepository
             .GetProductByCodeAndTeacherAsync(productCode, teacherId)
-            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+            ?? throw new KeyNotFoundException($"Không tìm thấy nội dung số với mã {productCode}");
 
         var productVideo = await _unitOfWork.PipelineRepository
             .GetLatestActiveProductVideoAsync(product.ProductId)
-            ?? throw new KeyNotFoundException($"Product {productCode} chưa có video nào");
+            ?? throw new KeyNotFoundException($"Nội dung số {productCode} chưa có video nào");
 
         if (productVideo.Product is null)
             productVideo.Product = product;
@@ -555,14 +555,14 @@ public class PipelineService : IPipelineService
     {
         var product = await _unitOfWork.PipelineRepository
             .GetProductByCodeAndTeacherAsync(productCode, teacherId)
-            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+            ?? throw new KeyNotFoundException($"Không tìm thấy nội dung số với mã {productCode}");
 
         if (product.Status == ProductStatusConstants.Deleted)
-            throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+            throw new KeyNotFoundException($"Không tìm thấy nội dung số với mã {productCode}");
 
         if (product.Status == ProductStatusConstants.Processing ||
             product.Status == ProductStatusConstants.GeneratingSlides)
-            throw new InvalidOperationException("Không thể xóa product đang được xử lý. Vui lòng chờ hoàn tất");
+            throw new InvalidOperationException("Không thể xóa nội dung số đang được xử lý. Vui lòng chờ hoàn tất");
 
         product.Status = ProductStatusConstants.Deleted;
         _unitOfWork.PipelineRepository.UpdateProduct(product);
