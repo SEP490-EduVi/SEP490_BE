@@ -223,7 +223,7 @@ public class MaterialController : ControllerBase
 
     /// <summary>
     /// [Teacher] Browse danh sách materials đã duyệt (có thể lọc theo subject, grade, type, keyword).
-    /// ResourceUrl không trả về cho materials chưa mua.
+    /// ResourceUrl được trả về để Teacher xem đầy đủ nội dung trước khi quyết định mua.
     /// </summary>
     [HttpGet("browse")]
     [Authorize(Roles = "Teacher")]
@@ -246,7 +246,7 @@ public class MaterialController : ControllerBase
     }
 
     /// <summary>
-    /// [Teacher] Xem chi tiết 1 material. Nếu đã mua → trả về ResourceUrl.
+    /// [Teacher] Xem chi tiết 1 material với đầy đủ ResourceUrl để tham khảo trước khi mua.
     /// </summary>
     [HttpGet("{materialCode}")]
     [Authorize(Roles = "Teacher")]

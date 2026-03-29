@@ -208,8 +208,8 @@ public class MaterialService : IMaterialService
         string? subjectCode, string? gradeCode, string? type, string? keyword)
     {
         var materials = await _unitOfWork.TeacherRepository.GetApprovedMaterialsAsync(subjectCode, gradeCode, type, keyword);
-        // Teacher browse → không thấy ResourceUrl (chưa mua)
-        return materials.Select(m => MapToResponseDto(m, includeResourceUrl: false)).ToList();
+        // Teacher browse → được xem đầy đủ nội dung (bao gồm video/hình) để tham khảo trước khi mua.
+        return materials.Select(m => MapToResponseDto(m, includeResourceUrl: true)).ToList();
     }
 
     public async Task<MaterialResponseDto> GetMaterialDetailForTeacherAsync(int teacherId, string materialCode)
@@ -217,10 +217,7 @@ public class MaterialService : IMaterialService
         var material = await _unitOfWork.TeacherRepository.GetApprovedMaterialByCodeAsync(materialCode)
             ?? throw new KeyNotFoundException($"Material '{materialCode}' không tồn tại hoặc chưa được duyệt");
 
-        // Kiểm tra đã mua chưa → nếu mua rồi thì show ResourceUrl
-        var hasPurchased = await _unitOfWork.TeacherRepository.HasTeacherPurchasedAsync(teacherId, material.MaterialId);
-
-        return MapToResponseDto(material, includeResourceUrl: hasPurchased);
+        return MapToResponseDto(material, includeResourceUrl: true);
     }
 
     public async Task<PurchasedMaterialResponseDto> PurchaseMaterialAsync(int teacherId, string materialCode)
