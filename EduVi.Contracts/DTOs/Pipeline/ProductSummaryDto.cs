@@ -8,6 +8,7 @@ public class ProductSummaryDto
     public string ProductCode { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? DocumentCode { get; set; }
     public int Status { get; set; }
     public string StatusName { get; set; } = string.Empty;
 

@@ -120,6 +120,7 @@ public class PipelineRepository : IPipelineRepository
     public async Task<List<Products>> GetProductsByTeacherAsync(int teacherId)
     {
         return await _context.Products
+            .Include(product => product.SourceInput)
             .Where(product => product.TeacherId == teacherId && product.Status != 7) // exclude Deleted
             .OrderByDescending(product => product.ProductId)
             .ToListAsync();
@@ -128,6 +129,7 @@ public class PipelineRepository : IPipelineRepository
     public async Task<List<Products>> GetProductsByTeacherAndProjectAsync(int teacherId, int projectId)
     {
         return await _context.Products
+            .Include(product => product.SourceInput)
             .Where(product =>
                 product.TeacherId == teacherId &&
                 product.ProjectId == projectId &&
