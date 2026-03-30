@@ -51,6 +51,11 @@ public interface IAuthenticationService
     Task<UserInfo?> GetCurrentUserAsync(int userId);
 
     /// <summary>
+    /// Cập nhật thông tin người dùng hiện tại
+    /// </summary>
+    Task<UserInfo> UpdateCurrentUserAsync(int userId, UpdateCurrentUserRequest request);
+
+    /// <summary>
     /// Gửi OTP reset mật khẩu qua email (6 digits, 5 min TTL)
     /// </summary>
     Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);

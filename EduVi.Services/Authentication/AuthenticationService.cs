@@ -506,6 +506,32 @@ public class AuthenticationService : IAuthenticationService
         return MapToUserInfo(user);
     }
 
+    public async Task<UserInfo> UpdateCurrentUserAsync(int userId, UpdateCurrentUserRequest request)
+    {
+        var user = await _unitOfWork.AuthenticationRepository.GetUserByIdAsync(userId)
+            ?? throw new KeyNotFoundException("Không tìm thấy người dùng");
+
+        var hasAnyFieldToUpdate = request.FullName is not null || request.PhoneNumber is not null || request.AvatarUrl is not null;
+        if (!hasAnyFieldToUpdate)
+            throw new InvalidOperationException("Không có thông tin nào để cập nhật");
+
+        if (request.FullName is not null)
+            user.FullName = request.FullName.Trim();
+
+        if (request.PhoneNumber is not null)
+            user.PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+
+        if (request.AvatarUrl is not null)
+            user.AvatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl) ? null : request.AvatarUrl.Trim();
+
+        await _unitOfWork.AuthenticationRepository.UpdateUserAsync(user);
+
+        var updatedUser = await _unitOfWork.AuthenticationRepository.GetUserByIdAsync(userId)
+            ?? throw new KeyNotFoundException("Không tìm thấy người dùng");
+
+        return MapToUserInfo(updatedUser);
+    }
+
     #endregion
 
     #region Password Management
