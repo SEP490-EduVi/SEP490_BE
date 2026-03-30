@@ -11,4 +11,12 @@ public class CreateProjectRequestDto
     [Required(ErrorMessage = "ProjectName is required")]
     [MaxLength(200)]
     public string ProjectName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "SubjectCode is required")]
+    [MaxLength(20)]
+    public string SubjectCode { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "GradeCode is required")]
+    [MaxLength(50)]
+    public string GradeCode { get; set; } = string.Empty;
 }

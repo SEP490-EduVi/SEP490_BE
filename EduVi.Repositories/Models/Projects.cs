@@ -15,6 +15,10 @@ public partial class Projects
 
     public string ProjectName { get; set; }
 
+    public int? SubjectId { get; set; }
+
+    public int? GradeId { get; set; }
+
     public int? Status { get; set; }
 
     public DateTime? CreatedAt { get; set; }
@@ -22,6 +26,10 @@ public partial class Projects
     public virtual ICollection<InputDocuments> InputDocuments { get; set; } = new List<InputDocuments>();
 
     public virtual ICollection<Products> Products { get; set; } = new List<Products>();
+
+    public virtual Subjects Subject { get; set; }
+
+    public virtual Grades Grade { get; set; }
 
     public virtual Teachers Teacher { get; set; }
 }

@@ -16,6 +16,42 @@ public class ProjectService : IProjectService
         _logger = logger;
     }
 
+    public async Task<List<ProjectGroupedBySubjectResponseDto>> GetProjectsByTeacherGroupedAsync(int teacherId)
+    {
+        var projects = await _unitOfWork.PipelineRepository.GetProjectsByTeacherAsync(teacherId);
+
+        return projects
+            .GroupBy(project => new
+            {
+                SubjectCode = project.Subject?.SubjectCode ?? string.Empty,
+                SubjectName = project.Subject?.SubjectName ?? string.Empty
+            })
+            .OrderBy(group => group.Key.SubjectName)
+            .Select(subjectGroup => new ProjectGroupedBySubjectResponseDto
+            {
+                SubjectCode = subjectGroup.Key.SubjectCode,
+                SubjectName = subjectGroup.Key.SubjectName,
+                Grades = subjectGroup
+                    .GroupBy(project => new
+                    {
+                        GradeCode = project.Grade?.GradeCode ?? string.Empty,
+                        GradeName = project.Grade?.GradeName ?? string.Empty
+                    })
+                    .OrderBy(group => group.Key.GradeName)
+                    .Select(gradeGroup => new ProjectGroupedByGradeResponseDto
+                    {
+                        GradeCode = gradeGroup.Key.GradeCode,
+                        GradeName = gradeGroup.Key.GradeName,
+                        Projects = gradeGroup
+                            .OrderByDescending(project => project.CreatedAt)
+                            .Select(MapToProjectResponse)
+                            .ToList()
+                    })
+                    .ToList()
+            })
+            .ToList();
+    }
+
     public async Task<List<ProjectResponseDto>> GetProjectsByTeacherAsync(int teacherId)
     {
         var projects = await _unitOfWork.PipelineRepository.GetProjectsByTeacherAsync(teacherId);
@@ -39,11 +75,18 @@ public class ProjectService : IProjectService
         if (existing is not null)
             throw new InvalidOperationException($"Mã dự án '{request.ProjectCode}' đã tồn tại");
 
+        var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode)
+            ?? throw new InvalidOperationException($"Subject '{request.SubjectCode}' không tồn tại");
+        var grade = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(request.GradeCode)
+            ?? throw new InvalidOperationException($"Grade '{request.GradeCode}' không tồn tại");
+
         var project = new Projects
         {
             TeacherId = teacherId,
             ProjectCode = request.ProjectCode,
             ProjectName = request.ProjectName,
+            SubjectId = subject.SubjectId,
+            GradeId = grade.GradeId,
             Status = ProjectStatusConstants.Active,
             CreatedAt = DateTime.UtcNow
         };
@@ -70,6 +113,20 @@ public class ProjectService : IProjectService
 
         if (request.ProjectName is not null)
             project.ProjectName = request.ProjectName;
+
+        if (request.SubjectCode is not null)
+        {
+            var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode)
+                ?? throw new InvalidOperationException($"Subject '{request.SubjectCode}' không tồn tại");
+            project.SubjectId = subject.SubjectId;
+        }
+
+        if (request.GradeCode is not null)
+        {
+            var grade = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(request.GradeCode)
+                ?? throw new InvalidOperationException($"Grade '{request.GradeCode}' không tồn tại");
+            project.GradeId = grade.GradeId;
+        }
 
         if (request.Status.HasValue)
             project.Status = request.Status.Value;
@@ -106,6 +163,10 @@ public class ProjectService : IProjectService
         {
             ProjectCode = project.ProjectCode,
             ProjectName = project.ProjectName,
+            SubjectCode = project.Subject?.SubjectCode ?? string.Empty,
+            SubjectName = project.Subject?.SubjectName ?? string.Empty,
+            GradeCode = project.Grade?.GradeCode ?? string.Empty,
+            GradeName = project.Grade?.GradeName ?? string.Empty,
             Status = project.Status,
             CreatedAt = project.CreatedAt
         };

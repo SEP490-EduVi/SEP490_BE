@@ -20,6 +20,23 @@ public class ProjectController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet("grouped")]
+    [Authorize(Roles = "Teacher")]
+    public async Task<ActionResult<ApiResponse<List<ProjectGroupedBySubjectResponseDto>>>> GetMyProjectsGrouped()
+    {
+        try
+        {
+            var teacherId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _projectService.GetProjectsByTeacherGroupedAsync(teacherId);
+            return Ok(ApiResponse<List<ProjectGroupedBySubjectResponseDto>>.Success(result));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting grouped projects");
+            return StatusCode(500, ApiResponse<List<ProjectGroupedBySubjectResponseDto>>.Fail("Lỗi khi lấy danh sách dự án theo môn và lớp", 500));
+        }
+    }
+
     [HttpGet]
     [Authorize(Roles = "Teacher")]
     public async Task<ActionResult<ApiResponse<List<ProjectResponseDto>>>> GetMyProjects()
