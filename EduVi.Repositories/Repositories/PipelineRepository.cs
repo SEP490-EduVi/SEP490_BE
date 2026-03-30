@@ -71,6 +71,8 @@ public class PipelineRepository : IPipelineRepository
     public async Task<List<Projects>> GetProjectsByTeacherAsync(int teacherId)
     {
         return await _context.Projects
+            .Include(project => project.Subject)
+            .Include(project => project.Grade)
             .Where(project => project.TeacherId == teacherId && project.Status != 7)
             .OrderByDescending(project => project.ProjectId)
             .ToListAsync();
@@ -81,7 +83,10 @@ public class PipelineRepository : IPipelineRepository
         var query = _context.Projects.AsQueryable();
 
         if (includeRelations)
-            query = query.Include(project => project.Products);
+            query = query
+                .Include(project => project.Products)
+                .Include(project => project.Subject)
+                .Include(project => project.Grade);
 
         return await query.FirstOrDefaultAsync(project => project.ProjectCode == projectCode);
     }
@@ -89,6 +94,8 @@ public class PipelineRepository : IPipelineRepository
     public async Task<Projects?> GetProjectByCodeAndTeacherAsync(string projectCode, int teacherId)
     {
         return await _context.Projects
+            .Include(project => project.Subject)
+            .Include(project => project.Grade)
             .FirstOrDefaultAsync(project =>
                 project.ProjectCode == projectCode
                 && project.TeacherId == teacherId

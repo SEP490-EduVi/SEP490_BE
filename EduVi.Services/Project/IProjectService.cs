@@ -5,6 +5,11 @@ namespace EduVi.Services.Project;
 public interface IProjectService
 {
     /// <summary>
+    /// Lấy danh sách Project của Teacher theo cấu trúc Môn -> Lớp -> Project
+    /// </summary>
+    Task<List<ProjectGroupedBySubjectResponseDto>> GetProjectsByTeacherGroupedAsync(int teacherId);
+
+    /// <summary>
     /// Lấy tất cả Projects của một Teacher
     /// </summary>
     Task<List<ProjectResponseDto>> GetProjectsByTeacherAsync(int teacherId);

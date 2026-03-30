@@ -15,5 +15,7 @@ public partial class Grades
 
     public virtual ICollection<InputDocuments> InputDocuments { get; set; } = new List<InputDocuments>();
 
+    public virtual ICollection<Projects> Projects { get; set; } = new List<Projects>();
+
     public virtual ICollection<Materials> Materials { get; set; } = new List<Materials>();
 }

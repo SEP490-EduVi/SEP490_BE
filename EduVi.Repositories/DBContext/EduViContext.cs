@@ -432,12 +432,22 @@ public partial class EduViContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("ProjectCode");
             entity.Property(e => e.ProjectName).HasMaxLength(200);
+            entity.Property(e => e.SubjectId).HasColumnName("SubjectID");
+            entity.Property(e => e.GradeId).HasColumnName("GradeID");
             entity.Property(e => e.Status).HasDefaultValue(0);
             entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
 
             entity.HasOne(d => d.Teacher).WithMany(p => p.Projects)
                 .HasForeignKey(d => d.TeacherId)
                 .HasConstraintName("FK__Projects__Teache__68487DD7");
+
+            entity.HasOne(d => d.Subject).WithMany(p => p.Projects)
+                .HasForeignKey(d => d.SubjectId)
+                .HasConstraintName("FK_Projects_Subjects");
+
+            entity.HasOne(d => d.Grade).WithMany(p => p.Projects)
+                .HasForeignKey(d => d.GradeId)
+                .HasConstraintName("FK_Projects_Grades");
         });
 
         modelBuilder.Entity<Roles>(entity =>
