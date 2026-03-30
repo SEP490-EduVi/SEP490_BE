@@ -28,20 +28,19 @@ public class MaterialController : ControllerBase
     // =====================================================================
 
     /// <summary>
-    /// [Expert] Upload học liệu dạng file (image, video).
+    /// [Expert] Đăng ký học liệu đã upload lên GCS (image, video).
     /// Trạng thái ban đầu: pending — chờ Staff duyệt.
     /// </summary>
     [HttpPost("file")]
     [Authorize(Policy = "VerifiedExpert")]
-    [Consumes("multipart/form-data")]
     public async Task<ActionResult<ApiResponse<MaterialResponseDto>>> UploadFileMaterial(
-        [FromForm] UploadFileMaterialRequestDto request)
+        [FromBody] UploadFileMaterialRequestDto request)
     {
         try
         {
             var expertId = GetCurrentUserId();
             var result = await _materialService.UploadFileMaterialAsync(expertId, request);
-            return Ok(ApiResponse<MaterialResponseDto>.Success(result, "File học liệu đã được upload thành công. Vui lòng chờ nhân viên kiểm duyệt."));
+            return Ok(ApiResponse<MaterialResponseDto>.Success(result, "Học liệu đã được ghi nhận thành công. Vui lòng chờ nhân viên kiểm duyệt."));
         }
         catch (InvalidOperationException ex)
         {

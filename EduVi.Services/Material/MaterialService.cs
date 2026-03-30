@@ -4,7 +4,6 @@ using EduVi.Repositories.Models;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 
 namespace EduVi.Services.Material;
 
@@ -14,8 +13,8 @@ public class MaterialService : IMaterialService
     private readonly IConfiguration _configuration;
     private readonly ILogger<MaterialService> _logger;
 
-    private const long MaxImageFileSizeBytes = 10 * 1024 * 1024; // 10MB
-    private const long MaxVideoFileSizeBytes = 100 * 1024 * 1024; // 100MB
+    private const ulong MaxImageFileSizeBytes = 10UL * 1024 * 1024; // 10MB
+    private const ulong MaxVideoFileSizeBytes = 100UL * 1024 * 1024; // 100MB
 
     private static readonly string[] AllowedFileTypes = ["image", "video"];
 
@@ -41,18 +40,9 @@ public class MaterialService : IMaterialService
 
     public async Task<MaterialResponseDto> UploadFileMaterialAsync(int expertId, UploadFileMaterialRequestDto request)
     {
-        var type = request.Type.ToLower();
+        var type = request.Type.ToLowerInvariant();
         if (!AllowedFileTypes.Contains(type))
             throw new InvalidOperationException($"Type không hợp lệ cho file upload. Cho phép: {string.Join(", ", AllowedFileTypes)}");
-
-        ValidateFileSizeByType(request.File, type);
-
-        if (!AllowedContentTypesByFileType.TryGetValue(type, out var allowedContentTypes)
-            || !allowedContentTypes.Contains(request.File.ContentType))
-        {
-            throw new InvalidOperationException(
-                $"File không hợp lệ cho loại '{type}'. Cho phép: {string.Join(", ", AllowedContentTypesByFileType[type])}");
-        }
 
         await ValidateExpertIsVerifiedAsync(expertId);
         var (subjectId, gradeId) = await ResolveSubjectGradeAsync(request.SubjectCode, request.GradeCode);
@@ -61,27 +51,29 @@ public class MaterialService : IMaterialService
             ?? throw new InvalidOperationException("GCS BucketName not configured");
         var storageClient = await StorageClient.CreateAsync();
 
+        var resourceObjectName = ParseAndValidateObjectName(request.ResourceUrl, bucketName, expertId, "resource");
+        var resourceObject = await GetObjectOrThrowAsync(storageClient, bucketName, resourceObjectName, "resource");
+        ValidateFileSizeByType(resourceObject.Size, type);
+        ValidateContentTypeByType(resourceObject.ContentType, type);
+
         var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
         var materialCode = $"mat_{expertId}_{type}_{timestamp}";
 
-        // Upload file chính
-        var fileExtension = Path.GetExtension(request.File.FileName);
-        var objectName = $"materials/{expertId}/{materialCode}{fileExtension}";
-        using var stream = request.File.OpenReadStream();
-        var uploadStart = Stopwatch.GetTimestamp();
-        await storageClient.UploadObjectAsync(bucketName, objectName, request.File.ContentType, stream);
-        var resourceUrl = $"gs://{bucketName}/{objectName}";
-        _logger.LogInformation("Material file GCS upload completed in {ElapsedMs}ms for expertId {ExpertId}: {GcsPath}",
-            Stopwatch.GetElapsedTime(uploadStart).TotalMilliseconds, expertId, resourceUrl);
+        var resourceUrl = $"gs://{bucketName}/{resourceObjectName}";
 
-        // Upload preview nếu có
+        // Validate preview object nếu có
         string? previewUrl = null;
-        if (request.PreviewFile != null)
+        if (!string.IsNullOrWhiteSpace(request.PreviewUrl))
         {
-            var previewExt = Path.GetExtension(request.PreviewFile.FileName);
-            var previewObjectName = $"materials/{expertId}/{materialCode}_preview{previewExt}";
-            using var previewStream = request.PreviewFile.OpenReadStream();
-            await storageClient.UploadObjectAsync(bucketName, previewObjectName, request.PreviewFile.ContentType, previewStream);
+            var previewObjectName = ParseAndValidateObjectName(request.PreviewUrl, bucketName, expertId, "preview");
+            var previewObject = await GetObjectOrThrowAsync(storageClient, bucketName, previewObjectName, "preview");
+
+            if (string.IsNullOrWhiteSpace(previewObject.ContentType)
+                || !previewObject.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Preview phải là file ảnh hợp lệ");
+            }
+
             previewUrl = $"gs://{bucketName}/{previewObjectName}";
         }
 
@@ -349,16 +341,98 @@ public class MaterialService : IMaterialService
         };
     }
 
-    private static void ValidateFileSizeByType(Microsoft.AspNetCore.Http.IFormFile file, string type)
+    private static void ValidateFileSizeByType(ulong? fileSizeBytes, string type)
     {
-        if (file.Length <= 0)
+        if (!fileSizeBytes.HasValue || fileSizeBytes.Value <= 0)
             throw new InvalidOperationException("File upload rỗng hoặc không hợp lệ");
 
         var maxFileSizeBytes = type == "video" ? MaxVideoFileSizeBytes : MaxImageFileSizeBytes;
-        if (file.Length > maxFileSizeBytes)
+        if (fileSizeBytes.Value > maxFileSizeBytes)
         {
             var maxFileSizeMb = type == "video" ? 100 : 10;
             throw new InvalidOperationException($"File {type} vượt quá giới hạn {maxFileSizeMb}MB");
+        }
+    }
+
+    private static void ValidateContentTypeByType(string? contentType, string type)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new InvalidOperationException("Không xác định được Content-Type của file trên GCS");
+
+        if (!AllowedContentTypesByFileType.TryGetValue(type, out var allowedContentTypes)
+            || !allowedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"File không hợp lệ cho loại '{type}'. Cho phép: {string.Join(", ", AllowedContentTypesByFileType[type])}");
+        }
+    }
+
+    private static string ParseAndValidateObjectName(string resourceUrl, string expectedBucketName, int expertId, string fieldName)
+    {
+        if (!Uri.TryCreate(resourceUrl, UriKind.Absolute, out var uri))
+            throw new InvalidOperationException($"{fieldName}Url không hợp lệ");
+
+        string bucketName;
+        string objectName;
+
+        if (uri.Scheme.Equals("gs", StringComparison.OrdinalIgnoreCase))
+        {
+            bucketName = uri.Host;
+            objectName = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/'));
+        }
+        else if (uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase)
+                 || uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase))
+        {
+            if (uri.Host.Equals("storage.googleapis.com", StringComparison.OrdinalIgnoreCase))
+            {
+                var pathParts = uri.AbsolutePath.TrimStart('/').Split('/', 2, StringSplitOptions.RemoveEmptyEntries);
+                if (pathParts.Length < 2)
+                    throw new InvalidOperationException($"{fieldName}Url không hợp lệ");
+
+                bucketName = pathParts[0];
+                objectName = Uri.UnescapeDataString(pathParts[1]);
+            }
+            else if (uri.Host.EndsWith(".storage.googleapis.com", StringComparison.OrdinalIgnoreCase))
+            {
+                bucketName = uri.Host[..^".storage.googleapis.com".Length];
+                objectName = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/'));
+            }
+            else
+            {
+                throw new InvalidOperationException($"{fieldName}Url phải thuộc Google Cloud Storage");
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException($"{fieldName}Url phải là gs:// hoặc https://storage.googleapis.com");
+        }
+
+        if (!bucketName.Equals(expectedBucketName, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"{fieldName}Url không thuộc bucket được cấu hình");
+
+        if (string.IsNullOrWhiteSpace(objectName))
+            throw new InvalidOperationException($"{fieldName}Url không chứa object name hợp lệ");
+
+        var expectedPrefix = $"materials/{expertId}/";
+        if (!objectName.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"{fieldName}Url phải thuộc thư mục {expectedPrefix}");
+
+        return objectName;
+    }
+
+    private static async Task<Google.Apis.Storage.v1.Data.Object> GetObjectOrThrowAsync(
+        StorageClient storageClient,
+        string bucketName,
+        string objectName,
+        string fieldName)
+    {
+        try
+        {
+            return await storageClient.GetObjectAsync(bucketName, objectName);
+        }
+        catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new KeyNotFoundException($"Không tìm thấy file {fieldName} trên GCS");
         }
     }
 

@@ -1,21 +1,19 @@
-using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduVi.Contracts.DTOs.Material;
 
 /// <summary>
-/// Expert upload học liệu dạng FILE: image | video
-/// Content-Type: multipart/form-data
+/// Expert gửi metadata của file đã upload lên GCS.
 /// </summary>
 public class UploadFileMaterialRequestDto
 {
     [Required]
-    public IFormFile File { get; set; } = null!;
+    public string ResourceUrl { get; set; } = null!;
 
     /// <summary>
-    /// Thumbnail/preview (optional — nên có cho video)
+    /// Thumbnail/preview URL trên GCS (optional — nên có cho video)
     /// </summary>
-    public IFormFile? PreviewFile { get; set; }
+    public string? PreviewUrl { get; set; }
 
     [Required]
     [MaxLength(200)]
