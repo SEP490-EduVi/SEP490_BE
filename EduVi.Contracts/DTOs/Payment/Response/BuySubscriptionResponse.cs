@@ -10,10 +10,17 @@ public class BuySubscriptionResponse
     public decimal Amount { get; set; }
     public string Status { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Số quota được cộng thêm
-    /// </summary>
-    public int QuotaAdded { get; set; }
+    public int AnalysisQuotaAdded { get; set; }
+
+    public int SlideQuotaAdded { get; set; }
+
+    public int VideoQuotaAdded { get; set; }
+
+    public int AvailableAnalysisQuotaAfter { get; set; }
+
+    public int AvailableSlideQuotaAfter { get; set; }
+
+    public int AvailableVideoQuotaAfter { get; set; }
 
     /// <summary>
     /// Số dư ví sau giao dịch

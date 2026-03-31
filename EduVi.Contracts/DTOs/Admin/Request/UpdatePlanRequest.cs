@@ -21,7 +21,13 @@ public class UpdatePlanRequest
     public int? DurationDays { get; set; }
 
     [Range(0, int.MaxValue)]
-    public int? QuotaAmount { get; set; }
+    public int? AnalysisQuotaAmount { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int? SlideQuotaAmount { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int? VideoQuotaAmount { get; set; }
 
     /// <summary>
     /// Bật/tắt gói (true = đang bán, false = ẩn)

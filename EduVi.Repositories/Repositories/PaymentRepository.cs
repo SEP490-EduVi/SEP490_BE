@@ -125,7 +125,7 @@ public class PaymentRepository : IPaymentRepository
             .FirstOrDefaultAsync(q => q.TeacherId == teacherId);
     }
 
-    public async Task<UserQuotas> CreateOrUpdateQuotaAsync(int teacherId, int quotaToAdd)
+    public async Task<UserQuotas> CreateOrUpdateQuotaAsync(int teacherId, int analysisQuotaToAdd, int slideQuotaToAdd, int videoQuotaToAdd)
     {
         var existing = await _context.UserQuotas
             .FirstOrDefaultAsync(q => q.TeacherId == teacherId);
@@ -135,9 +135,15 @@ public class PaymentRepository : IPaymentRepository
             var quota = new UserQuotas
             {
                 TeacherId = teacherId,
-                TotalQuota = quotaToAdd,
-                AvailableQuota = quotaToAdd,
-                UsedQuota = 0,
+                TotalAnalysisQuota = analysisQuotaToAdd,
+                AvailableAnalysisQuota = analysisQuotaToAdd,
+                UsedAnalysisQuota = 0,
+                TotalSlideQuota = slideQuotaToAdd,
+                AvailableSlideQuota = slideQuotaToAdd,
+                UsedSlideQuota = 0,
+                TotalVideoQuota = videoQuotaToAdd,
+                AvailableVideoQuota = videoQuotaToAdd,
+                UsedVideoQuota = 0,
                 UpdatedAt = DateTime.UtcNow
             };
             await _context.UserQuotas.AddAsync(quota);
@@ -145,12 +151,73 @@ public class PaymentRepository : IPaymentRepository
         }
         else
         {
-            existing.TotalQuota = (existing.TotalQuota ?? 0) + quotaToAdd;
-            existing.AvailableQuota = (existing.AvailableQuota ?? 0) + quotaToAdd;
+            existing.TotalAnalysisQuota = (existing.TotalAnalysisQuota ?? 0) + analysisQuotaToAdd;
+            existing.AvailableAnalysisQuota = (existing.AvailableAnalysisQuota ?? 0) + analysisQuotaToAdd;
+            existing.TotalSlideQuota = (existing.TotalSlideQuota ?? 0) + slideQuotaToAdd;
+            existing.AvailableSlideQuota = (existing.AvailableSlideQuota ?? 0) + slideQuotaToAdd;
+            existing.TotalVideoQuota = (existing.TotalVideoQuota ?? 0) + videoQuotaToAdd;
+            existing.AvailableVideoQuota = (existing.AvailableVideoQuota ?? 0) + videoQuotaToAdd;
             existing.UpdatedAt = DateTime.UtcNow;
             // Context dùng NoTracking mặc định → cần gọi Update() để attach + mark modified
             _context.UserQuotas.Update(existing);
             return existing;
         }
+    }
+
+    public async Task<bool> ConsumeAnalysisQuotaAsync(int teacherId, int amount = 1)
+    {
+        var quota = await _context.UserQuotas
+            .FirstOrDefaultAsync(q => q.TeacherId == teacherId);
+        if (quota == null)
+            return false;
+
+        var availableAnalysisQuota = quota.AvailableAnalysisQuota ?? 0;
+        if (availableAnalysisQuota < amount)
+            return false;
+
+        quota.AvailableAnalysisQuota = availableAnalysisQuota - amount;
+        quota.UsedAnalysisQuota = (quota.UsedAnalysisQuota ?? 0) + amount;
+        quota.UpdatedAt = DateTime.UtcNow;
+
+        _context.UserQuotas.Update(quota);
+        return true;
+    }
+
+    public async Task<bool> ConsumeSlideQuotaAsync(int teacherId, int amount = 1)
+    {
+        var quota = await _context.UserQuotas
+            .FirstOrDefaultAsync(q => q.TeacherId == teacherId);
+        if (quota == null)
+            return false;
+
+        var availableSlideQuota = quota.AvailableSlideQuota ?? 0;
+        if (availableSlideQuota < amount)
+            return false;
+
+        quota.AvailableSlideQuota = availableSlideQuota - amount;
+        quota.UsedSlideQuota = (quota.UsedSlideQuota ?? 0) + amount;
+        quota.UpdatedAt = DateTime.UtcNow;
+
+        _context.UserQuotas.Update(quota);
+        return true;
+    }
+
+    public async Task<bool> ConsumeVideoQuotaAsync(int teacherId, int amount = 1)
+    {
+        var quota = await _context.UserQuotas
+            .FirstOrDefaultAsync(q => q.TeacherId == teacherId);
+        if (quota == null)
+            return false;
+
+        var availableVideoQuota = quota.AvailableVideoQuota ?? 0;
+        if (availableVideoQuota < amount)
+            return false;
+
+        quota.AvailableVideoQuota = availableVideoQuota - amount;
+        quota.UsedVideoQuota = (quota.UsedVideoQuota ?? 0) + amount;
+        quota.UpdatedAt = DateTime.UtcNow;
+
+        _context.UserQuotas.Update(quota);
+        return true;
     }
 }

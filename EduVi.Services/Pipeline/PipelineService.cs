@@ -53,41 +53,60 @@ public class PipelineService : IPipelineService
         var subjectCode = document.Subject?.SubjectCode ?? "Unknown";
         var gradeCode = document.Grade?.GradeCode ?? "Unknown";
 
-        // 4. Reuse existing Product by ProductCode (deterministic key for this project+document pair)
+        // 4. Trừ quota đánh giá + upsert Product trong cùng transaction.
         var productCode = $"prod_{request.ProjectCode}_{request.DocumentCode}";
-        var product = await _unitOfWork.PipelineRepository
-            .GetProductByCodeAndTeacherAsync(productCode, teacherId);
+        Products? product = null;
 
-        if (product is not null)
+        await _unitOfWork.BeginTransactionAsync();
+        try
         {
-            if (product.Status == ProductStatusConstants.New || product.Status == ProductStatusConstants.Processing)
-                throw new InvalidOperationException("Phân tích bài giảng đang được xử lý. Vui lòng chờ hoàn tất trước khi gửi lại");
+            var teacherEntityId = await GetTeacherEntityIdAsync(teacherId);
+            var hasConsumedQuota = await _unitOfWork.PaymentRepository.ConsumeAnalysisQuotaAsync(teacherEntityId, 1);
+            if (!hasConsumedQuota)
+                throw new InvalidOperationException("Bạn đã hết quota đánh giá tài liệu. Vui lòng mua thêm gói subscription");
 
-            product.ProductName = request.ProductName ?? $"Phân tích: {document.Title}";
-            product.Description = $"AI evaluation cho document: {document.Title}";
-            product.ProductCode = productCode;
-            product.Status = ProductStatusConstants.New;
-            product.EvaluationResult = null;
-            product.EvaluatedAt = null;
-            _unitOfWork.PipelineRepository.UpdateProduct(product);
-        }
-        else
-        {
-            product = new Products
+            product = await _unitOfWork.PipelineRepository.GetProductByCodeAndTeacherAsync(productCode, teacherId);
+
+            if (product is not null)
             {
-                ProjectId = project.ProjectId,
-                TeacherId = teacherId,
-                ProductCode = productCode,
-                ProductName = request.ProductName ?? $"Phân tích: {document.Title}",
-                Description = $"AI evaluation cho document: {document.Title}",
-                SourceInputId = document.DocumentId,
-                Status = ProductStatusConstants.New,
-                Price = 0
-            };
-            await _unitOfWork.PipelineRepository.CreateProductAsync(product);
+                if (product.Status == ProductStatusConstants.New || product.Status == ProductStatusConstants.Processing)
+                    throw new InvalidOperationException("Phân tích bài giảng đang được xử lý. Vui lòng chờ hoàn tất trước khi gửi lại");
+
+                product.ProductName = request.ProductName ?? $"Phân tích: {document.Title}";
+                product.Description = $"AI evaluation cho document: {document.Title}";
+                product.ProductCode = productCode;
+                product.Status = ProductStatusConstants.New;
+                product.EvaluationResult = null;
+                product.EvaluatedAt = null;
+                _unitOfWork.PipelineRepository.UpdateProduct(product);
+            }
+            else
+            {
+                product = new Products
+                {
+                    ProjectId = project.ProjectId,
+                    TeacherId = teacherId,
+                    ProductCode = productCode,
+                    ProductName = request.ProductName ?? $"Phân tích: {document.Title}",
+                    Description = $"AI evaluation cho document: {document.Title}",
+                    SourceInputId = document.DocumentId,
+                    Status = ProductStatusConstants.New,
+                    Price = 0
+                };
+                await _unitOfWork.PipelineRepository.CreateProductAsync(product);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
         }
 
-        await _unitOfWork.SaveChangesAsync();
+        if (product is null)
+            throw new InvalidOperationException("Không thể khởi tạo product cho tác vụ phân tích");
 
         // 5. Store task metadata in Redis (TTL 1 hour)
         var db = _redis.GetDatabase();
@@ -151,12 +170,28 @@ public class PipelineService : IPipelineService
         // 2. Deserialize stored data to pass to the Python worker
         var evaluationResult = JsonSerializer.Deserialize<object>(product.EvaluationResult);
 
-        // 3. Update product status to GeneratingSlides
-        product.Status = ProductStatusConstants.GeneratingSlides;
-        product.SlideDocument = null;
-        product.SlideGeneratedAt = null;
-        _unitOfWork.PipelineRepository.UpdateProduct(product);
-        await _unitOfWork.SaveChangesAsync();
+        // 3. Trừ quota slide + cập nhật trạng thái sản phẩm trong cùng transaction.
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var teacherEntityId = await GetTeacherEntityIdAsync(teacherId);
+            var hasConsumedQuota = await _unitOfWork.PaymentRepository.ConsumeSlideQuotaAsync(teacherEntityId, 1);
+            if (!hasConsumedQuota)
+                throw new InvalidOperationException("Bạn đã hết quota slide. Vui lòng mua thêm gói subscription");
+
+            product.Status = ProductStatusConstants.GeneratingSlides;
+            product.SlideDocument = null;
+            product.SlideGeneratedAt = null;
+            _unitOfWork.PipelineRepository.UpdateProduct(product);
+
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
 
         // 4. Store task metadata in Redis (TTL 1 hour)
         var database = _redis.GetDatabase();
@@ -211,21 +246,39 @@ public class PipelineService : IPipelineService
 
         var slideEditedDocumentUrl = request.SlideEditedDocumentUrl.Trim();
 
-        product.SlideEditedDocument = slideEditedDocumentUrl;
-        product.SlideEditedAt = DateTime.UtcNow;
-
-        _unitOfWork.PipelineRepository.UpdateProduct(product);
-
         var productVideoCode = $"video_{product.ProductCode}_{DateTime.UtcNow:yyyyMMddHHmmssfff}";
-        await _unitOfWork.PipelineRepository.CreateProductVideoAsync(new ProductVideos
+
+        // Trừ quota video + lưu bản ghi pipeline trong cùng transaction.
+        await _unitOfWork.BeginTransactionAsync();
+        try
         {
-            ProductId = product.ProductId,
-            ProductVideoCode = productVideoCode,
-            Status = VideoStatusConstants.Queued,
-            SlideDocumentUrl = slideEditedDocumentUrl,
-            CreatedAt = DateTime.UtcNow
-        });
-        await _unitOfWork.SaveChangesAsync();
+            var teacherEntityId = await GetTeacherEntityIdAsync(teacherId);
+            var hasConsumedQuota = await _unitOfWork.PaymentRepository.ConsumeVideoQuotaAsync(teacherEntityId, 1);
+            if (!hasConsumedQuota)
+                throw new InvalidOperationException("Bạn đã hết quota video. Vui lòng mua thêm gói subscription");
+
+            product.SlideEditedDocument = slideEditedDocumentUrl;
+            product.SlideEditedAt = DateTime.UtcNow;
+
+            _unitOfWork.PipelineRepository.UpdateProduct(product);
+
+            await _unitOfWork.PipelineRepository.CreateProductVideoAsync(new ProductVideos
+            {
+                ProductId = product.ProductId,
+                ProductVideoCode = productVideoCode,
+                Status = VideoStatusConstants.Queued,
+                SlideDocumentUrl = slideEditedDocumentUrl,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
 
         var db = _redis.GetDatabase();
         var taskMeta = JsonSerializer.Serialize(new
@@ -360,6 +413,15 @@ public class PipelineService : IPipelineService
 
         return value.StartsWith("gs://", StringComparison.OrdinalIgnoreCase)
             || value.StartsWith("https://storage.googleapis.com/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<int> GetTeacherEntityIdAsync(int userId)
+    {
+        var user = await _unitOfWork.AuthenticationRepository.GetUserByIdAsync(userId)
+            ?? throw new InvalidOperationException("Không tìm thấy người dùng");
+
+        return user.Teachers?.TeacherId
+            ?? throw new InvalidOperationException("Chỉ giáo viên mới có thể sử dụng tính năng pipeline");
     }
 
     #endregion

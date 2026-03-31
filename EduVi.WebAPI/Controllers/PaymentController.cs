@@ -69,6 +69,30 @@ public class PaymentController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Lấy thông tin quota hiện tại của giáo viên đăng nhập.
+    /// </summary>
+    [HttpGet("user-quota")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<UserQuotaResponse>>> GetUserQuota()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var quota = await _paymentService.GetUserQuotaAsync(userId);
+            return Ok(ApiResponse<UserQuotaResponse>.Success(quota));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<UserQuotaResponse>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user quota");
+            return StatusCode(500, ApiResponse<UserQuotaResponse>.Fail("Lỗi khi lấy thông tin quota", 500));
+        }
+    }
+
     // =====================================================================
     // NẠP TIỀN QUA PAYOS
     // =====================================================================

@@ -15,7 +15,11 @@ public partial class SubscriptionPlans
 
     public int? DurationDays { get; set; }
 
-    public int? QuotaAmount { get; set; }
+    public int? AnalysisQuotaAmount { get; set; }
+
+    public int? SlideQuotaAmount { get; set; }
+
+    public int? VideoQuotaAmount { get; set; }
 
     public string Description { get; set; }
 

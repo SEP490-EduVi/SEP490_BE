@@ -39,6 +39,31 @@ public class PaymentService : IPaymentService
         return MapToWalletResponse(wallet);
     }
 
+    public async Task<UserQuotaResponse> GetUserQuotaAsync(int userId)
+    {
+        var teacherId = await GetTeacherIdOrThrowAsync(userId);
+        var quota = await _unitOfWork.PaymentRepository.GetQuotaByTeacherIdAsync(teacherId);
+
+        if (quota == null)
+        {
+            return new UserQuotaResponse
+            {
+                TotalAnalysisQuota = 0,
+                AvailableAnalysisQuota = 0,
+                UsedAnalysisQuota = 0,
+                TotalSlideQuota = 0,
+                AvailableSlideQuota = 0,
+                UsedSlideQuota = 0,
+                TotalVideoQuota = 0,
+                AvailableVideoQuota = 0,
+                UsedVideoQuota = 0,
+                UpdatedAt = null
+            };
+        }
+
+        return MapToUserQuotaResponse(quota);
+    }
+
     #endregion
 
     #region Nạp tiền qua PayOS
@@ -211,7 +236,14 @@ public class PaymentService : IPaymentService
             });
 
             // Cộng quota
-            await _unitOfWork.PaymentRepository.CreateOrUpdateQuotaAsync(teacherId, plan.QuotaAmount ?? 0);
+            var analysisQuotaToAdd = plan.AnalysisQuotaAmount ?? 0;
+            var slideQuotaToAdd = plan.SlideQuotaAmount ?? 0;
+            var videoQuotaToAdd = plan.VideoQuotaAmount ?? 0;
+            var updatedQuota = await _unitOfWork.PaymentRepository.CreateOrUpdateQuotaAsync(
+                teacherId,
+                analysisQuotaToAdd,
+                slideQuotaToAdd,
+                videoQuotaToAdd);
 
             // Lưu transaction lịch sử
             await _unitOfWork.PaymentRepository.CreateTransactionAsync(new WalletTransactions
@@ -239,7 +271,12 @@ public class PaymentService : IPaymentService
                 PlanName = plan.PlanName ?? "",
                 Amount = planPrice,
                 Status = GetStatusName(Status.Completed),
-                QuotaAdded = plan.QuotaAmount ?? 0,
+                AnalysisQuotaAdded = analysisQuotaToAdd,
+                SlideQuotaAdded = slideQuotaToAdd,
+                VideoQuotaAdded = videoQuotaToAdd,
+                AvailableAnalysisQuotaAfter = updatedQuota.AvailableAnalysisQuota ?? 0,
+                AvailableSlideQuotaAfter = updatedQuota.AvailableSlideQuota ?? 0,
+                AvailableVideoQuotaAfter = updatedQuota.AvailableVideoQuota ?? 0,
                 WalletBalanceAfter = newBalance,
                 PurchasedAt = DateTime.UtcNow
             };
@@ -417,7 +454,9 @@ public class PaymentService : IPaymentService
         PlanName = p.PlanName ?? "",
         Price = p.Price ?? 0,
         DurationDays = p.DurationDays ?? 0,
-        QuotaAmount = p.QuotaAmount ?? 0,
+        AnalysisQuotaAmount = p.AnalysisQuotaAmount ?? 0,
+        SlideQuotaAmount = p.SlideQuotaAmount ?? 0,
+        VideoQuotaAmount = p.VideoQuotaAmount ?? 0,
         Description = p.Description,
         IsActive = p.IsActive ?? false
     };
@@ -428,6 +467,20 @@ public class PaymentService : IPaymentService
         UserId = w.UserId ?? 0,
         Balance = w.Balance ?? 0,
         LastUpdated = w.LastUpdated
+    };
+
+    private static UserQuotaResponse MapToUserQuotaResponse(UserQuotas quota) => new()
+    {
+        TotalAnalysisQuota = quota.TotalAnalysisQuota ?? 0,
+        AvailableAnalysisQuota = quota.AvailableAnalysisQuota ?? 0,
+        UsedAnalysisQuota = quota.UsedAnalysisQuota ?? 0,
+        TotalSlideQuota = quota.TotalSlideQuota ?? 0,
+        AvailableSlideQuota = quota.AvailableSlideQuota ?? 0,
+        UsedSlideQuota = quota.UsedSlideQuota ?? 0,
+        TotalVideoQuota = quota.TotalVideoQuota ?? 0,
+        AvailableVideoQuota = quota.AvailableVideoQuota ?? 0,
+        UsedVideoQuota = quota.UsedVideoQuota ?? 0,
+        UpdatedAt = quota.UpdatedAt
     };
 
     private static TransactionHistoryResponse MapToTransactionResponse(WalletTransactions t) => new()

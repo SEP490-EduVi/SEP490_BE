@@ -19,9 +19,17 @@ public class CreatePlanRequest
     [Range(1, 3650, ErrorMessage = "DurationDays must be between 1 and 3650")]
     public int DurationDays { get; set; }
 
-    [Required(ErrorMessage = "QuotaAmount is required")]
+    [Required(ErrorMessage = "AnalysisQuotaAmount is required")]
     [Range(0, int.MaxValue)]
-    public int QuotaAmount { get; set; }
+    public int AnalysisQuotaAmount { get; set; }
+
+    [Required(ErrorMessage = "SlideQuotaAmount is required")]
+    [Range(0, int.MaxValue)]
+    public int SlideQuotaAmount { get; set; }
+
+    [Required(ErrorMessage = "VideoQuotaAmount is required")]
+    [Range(0, int.MaxValue)]
+    public int VideoQuotaAmount { get; set; }
 
     [MaxLength(500)]
     public string? Description { get; set; }

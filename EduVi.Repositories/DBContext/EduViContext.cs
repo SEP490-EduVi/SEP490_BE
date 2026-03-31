@@ -501,6 +501,9 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.PlanName).HasMaxLength(100);
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.AnalysisQuotaAmount).HasDefaultValue(0);
+            entity.Property(e => e.SlideQuotaAmount).HasDefaultValue(0);
+            entity.Property(e => e.VideoQuotaAmount).HasDefaultValue(0);
         });
 
         modelBuilder.Entity<SystemLogs>(entity =>
@@ -572,13 +575,19 @@ public partial class EduViContext : DbContext
             entity.HasIndex(e => e.TeacherId, "UQ__UserQuot__EDF25945AE47A83B").IsUnique();
 
             entity.Property(e => e.UserQuotaId).HasColumnName("UserQuotaID");
-            entity.Property(e => e.AvailableQuota).HasDefaultValue(0);
+            entity.Property(e => e.AvailableAnalysisQuota).HasDefaultValue(0);
+            entity.Property(e => e.AvailableSlideQuota).HasDefaultValue(0);
+            entity.Property(e => e.AvailableVideoQuota).HasDefaultValue(0);
             entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
-            entity.Property(e => e.TotalQuota).HasDefaultValue(0);
+            entity.Property(e => e.TotalAnalysisQuota).HasDefaultValue(0);
+            entity.Property(e => e.TotalSlideQuota).HasDefaultValue(0);
+            entity.Property(e => e.TotalVideoQuota).HasDefaultValue(0);
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.UsedQuota).HasDefaultValue(0);
+            entity.Property(e => e.UsedAnalysisQuota).HasDefaultValue(0);
+            entity.Property(e => e.UsedSlideQuota).HasDefaultValue(0);
+            entity.Property(e => e.UsedVideoQuota).HasDefaultValue(0);
 
             entity.HasOne(d => d.Teacher).WithOne(p => p.UserQuotas)
                 .HasForeignKey<UserQuotas>(d => d.TeacherId)

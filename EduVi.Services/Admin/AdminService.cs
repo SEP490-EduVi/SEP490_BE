@@ -258,7 +258,9 @@ public class AdminService : IAdminService
             PlanName = request.PlanName,
             Price = request.Price,
             DurationDays = request.DurationDays,
-            QuotaAmount = request.QuotaAmount,
+            AnalysisQuotaAmount = request.AnalysisQuotaAmount,
+            SlideQuotaAmount = request.SlideQuotaAmount,
+            VideoQuotaAmount = request.VideoQuotaAmount,
             Description = request.Description,
             IsActive = true
         };
@@ -280,7 +282,9 @@ public class AdminService : IAdminService
         if (request.Description != null) plan.Description = request.Description;
         if (request.Price.HasValue) plan.Price = request.Price.Value;
         if (request.DurationDays.HasValue) plan.DurationDays = request.DurationDays.Value;
-        if (request.QuotaAmount.HasValue) plan.QuotaAmount = request.QuotaAmount.Value;
+        if (request.AnalysisQuotaAmount.HasValue) plan.AnalysisQuotaAmount = request.AnalysisQuotaAmount.Value;
+        if (request.SlideQuotaAmount.HasValue) plan.SlideQuotaAmount = request.SlideQuotaAmount.Value;
+        if (request.VideoQuotaAmount.HasValue) plan.VideoQuotaAmount = request.VideoQuotaAmount.Value;
         if (request.IsActive.HasValue) plan.IsActive = request.IsActive.Value;
 
         await _unitOfWork.AdminRepository.UpdatePlanAsync(plan);
@@ -380,7 +384,9 @@ public class AdminService : IAdminService
         PlanName = p.PlanName ?? "",
         Price = p.Price ?? 0,
         DurationDays = p.DurationDays ?? 0,
-        QuotaAmount = p.QuotaAmount ?? 0,
+        AnalysisQuotaAmount = p.AnalysisQuotaAmount ?? 0,
+        SlideQuotaAmount = p.SlideQuotaAmount ?? 0,
+        VideoQuotaAmount = p.VideoQuotaAmount ?? 0,
         Description = p.Description,
         IsActive = p.IsActive ?? false
     };

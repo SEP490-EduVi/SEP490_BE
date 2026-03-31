@@ -11,11 +11,23 @@ public partial class UserQuotas
 
     public int? TeacherId { get; set; }
 
-    public int? TotalQuota { get; set; }
+    public int? TotalAnalysisQuota { get; set; }
 
-    public int? AvailableQuota { get; set; }
+    public int? AvailableAnalysisQuota { get; set; }
 
-    public int? UsedQuota { get; set; }
+    public int? UsedAnalysisQuota { get; set; }
+
+    public int? TotalSlideQuota { get; set; }
+
+    public int? AvailableSlideQuota { get; set; }
+
+    public int? UsedSlideQuota { get; set; }
+
+    public int? TotalVideoQuota { get; set; }
+
+    public int? AvailableVideoQuota { get; set; }
+
+    public int? UsedVideoQuota { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
 

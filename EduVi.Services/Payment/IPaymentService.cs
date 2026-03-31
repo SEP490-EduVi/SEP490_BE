@@ -19,6 +19,11 @@ public interface IPaymentService
     /// </summary>
     Task<WalletResponse> GetWalletAsync(int userId);
 
+    /// <summary>
+    /// Lấy quota hiện tại của giáo viên đăng nhập.
+    /// </summary>
+    Task<UserQuotaResponse> GetUserQuotaAsync(int userId);
+
     // ============ Nạp tiền qua PayOS ============
     
     /// <summary>
