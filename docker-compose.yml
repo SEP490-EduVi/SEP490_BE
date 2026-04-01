@@ -204,6 +204,40 @@ services:
     restart: unless-stopped
     networks:
       - eduvi
+ 
+  # ── Game Quiz Worker ────────────────────────────────────────────────
+  # Generates gesture-interactive quiz JSON from edited slide content + template.     
+  game-quiz:
+    build:
+      context: .
+      dockerfile: game_quiz/Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      GAME_QUIZ_REQUEST_QUEUE: ${GAME_QUIZ_REQUEST_QUEUE:-game.quiz.requests}
+      GAME_QUIZ_RESULT_QUEUE: ${GAME_QUIZ_RESULT_QUEUE:-game.quiz.results}
+      GAME_QUIZ_PREFETCH_COUNT: ${GAME_QUIZ_PREFETCH_COUNT:-2}
+      GAME_QUIZ_LOG_RESULT_PAYLOAD: ${GAME_QUIZ_LOG_RESULT_PAYLOAD:-true}
+      GAME_QUIZ_LOG_RESULT_MAX_CHARS: ${GAME_QUIZ_LOG_RESULT_MAX_CHARS:-4000}
+      # Google Cloud / Vertex AI
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      VERTEX_AI_LOCATION: ${VERTEX_AI_LOCATION:-us-central1}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/gcp-key.json
+      HELICONE_API_KEY: ${HELICONE_API_KEY:-}
+    volumes:
+      - ./private/gcp-key.json:/app/credentials/gcp-key.json:ro
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    restart: unless-stopped
+    networks:
+      - eduvi
 
   # ── Dozzle (Log Viewer) ─────────────────────────────────────────────
   # NO host ports — access via: ssh -L 9999:localhost:8080 user@VM then open localhost:9999
