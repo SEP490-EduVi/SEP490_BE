@@ -206,11 +206,11 @@ services:
       - eduvi
  
   # ── Game Quiz Worker ────────────────────────────────────────────────
-  # Generates gesture-interactive quiz JSON from edited slide content + template.     
+  # Generates gesture-interactive quiz JSON from edited slide content + template.
+  # Uses explicit GCP key file (not ADC) — required for Vertex AI calls.
   game-quiz:
-    build:
-      context: .
-      dockerfile: game_quiz/Dockerfile
+    image: ghcr.io/${GITHUB_ORG}/game-quiz:latest
+    container_name: game-quiz
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -218,8 +218,8 @@ services:
       # RabbitMQ
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASS: guest
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD}
       GAME_QUIZ_REQUEST_QUEUE: ${GAME_QUIZ_REQUEST_QUEUE:-game.quiz.requests}
       GAME_QUIZ_RESULT_QUEUE: ${GAME_QUIZ_RESULT_QUEUE:-game.quiz.results}
       GAME_QUIZ_PREFETCH_COUNT: ${GAME_QUIZ_PREFETCH_COUNT:-2}
@@ -232,9 +232,6 @@ services:
       HELICONE_API_KEY: ${HELICONE_API_KEY:-}
     volumes:
       - ./private/gcp-key.json:/app/credentials/gcp-key.json:ro
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
     restart: unless-stopped
     networks:
       - eduvi
