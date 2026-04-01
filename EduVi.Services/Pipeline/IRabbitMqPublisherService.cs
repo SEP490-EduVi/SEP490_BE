@@ -25,4 +25,9 @@ public interface IRabbitMqPublisherService
     /// Message format: { taskId, documentId, gcsUri, subjectCode, educationLevel, curriculumYear }
     /// </summary>
     Task PublishCurriculumIngestionTaskAsync(Guid taskId, int documentId, string gcsUri, string subjectCode, string educationLevel, int curriculumYear);
+
+    /// <summary>
+    /// Publish một task tạo game lên RabbitMQ.
+    /// </summary>
+    Task PublishGameGenerationTaskAsync(Guid taskId, object message);
 }

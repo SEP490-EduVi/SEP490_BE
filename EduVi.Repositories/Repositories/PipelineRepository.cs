@@ -246,6 +246,22 @@ public class PipelineRepository : IPipelineRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<Products?> GetLatestProductByDocumentCodeAndTeacherAsync(string documentCode, int teacherId)
+    {
+        return await _context.Products
+            .Where(product =>
+                product.TeacherId == teacherId
+                && product.Status != 7
+                && product.SourceInputId != null
+                && _context.InputDocuments.Any(inputDocument =>
+                    inputDocument.DocumentId == product.SourceInputId
+                    && inputDocument.DocumentCode == documentCode
+                    && inputDocument.TeacherId == teacherId))
+            .OrderByDescending(product => product.SlideEditedAt ?? System.DateTime.MinValue)
+            .ThenByDescending(product => product.ProductId)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<List<ProductVideos>> GetActiveProductVideosByProjectCodeAndTeacherAsync(string projectCode, int teacherId)
     {
         return await _context.ProductVideos

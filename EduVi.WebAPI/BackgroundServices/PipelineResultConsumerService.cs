@@ -101,12 +101,12 @@ public class PipelineResultConsumerService : BackgroundService
                             }
 
                             // Resolve productId from Redis if worker didn't include it
-                            if (progress.ProductId == 0 && progress.TaskId != Guid.Empty)
+                            if (progress.ProductId.GetValueOrDefault() == 0 && progress.TaskId != Guid.Empty)
                             {
                                 if (!existingMeta.IsNullOrEmpty)
                                 {
                                     var originalTask = JsonSerializer.Deserialize<PipelineProgressDto>(existingMeta!, JsonOptions);
-                                    if (originalTask?.ProductId > 0)
+                                    if (originalTask?.ProductId is > 0)
                                         progress.ProductId = originalTask.ProductId;
                                 }
                             }
@@ -117,7 +117,7 @@ public class PipelineResultConsumerService : BackgroundService
                                 .SendAsync("PipelineProgress", BuildSignalRPayload(progress), stoppingToken);
 
                             // Persist to DB when completed or failed
-                            if (progress.Status is "completed" or "failed" && progress.ProductId > 0)
+                            if (progress.Status is "completed" or "failed" && progress.ProductId.GetValueOrDefault() > 0)
                             {
                                 await UpdateProductInDatabaseAsync(progress);
                             }
@@ -207,17 +207,24 @@ public class PipelineResultConsumerService : BackgroundService
     /// </summary>
     private async Task UpdateProductInDatabaseAsync(PipelineProgressDto progress)
     {
+        var productId = progress.ProductId.GetValueOrDefault();
+        if (productId <= 0)
+        {
+            _logger.LogWarning("ProductId missing for task {TaskId}", progress.TaskId);
+            return;
+        }
+
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
             var product = await unitOfWork.PipelineRepository
-                .GetProductByIdAsync(progress.ProductId);
+                .GetProductByIdAsync(productId);
 
             if (product is null)
             {
-                _logger.LogWarning("Product {ProductId} not found for task {TaskId}", progress.ProductId, progress.TaskId);
+                _logger.LogWarning("Product {ProductId} not found for task {TaskId}", productId, progress.TaskId);
                 return;
             }
 
@@ -304,7 +311,7 @@ public class PipelineResultConsumerService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update Product {ProductId} in database for task {TaskId}",
-                progress.ProductId, progress.TaskId);
+                productId, progress.TaskId);
         }
     }
 

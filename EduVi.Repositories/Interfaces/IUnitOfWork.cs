@@ -59,6 +59,11 @@ public interface IUnitOfWork
     /// </summary>
     ICurriculumDocumentRepository CurriculumDocumentRepository { get; }
 
+    /// <summary>
+    /// Repository xử lý GameTemplates
+    /// </summary>
+    IGameTemplateRepository GameTemplateRepository { get; }
+
     // ============ Transaction Management ============
 
     /// <summary>

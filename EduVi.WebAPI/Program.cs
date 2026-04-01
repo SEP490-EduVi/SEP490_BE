@@ -7,6 +7,7 @@ using EduVi.Services.Curriculum;
 using EduVi.Services.CurriculumIngestion;
 using EduVi.Services.Email;
 using EduVi.Services.Expert;
+using EduVi.Services.Games;
 using EduVi.Services.Material;
 using EduVi.Services.Otp;
 using EduVi.Services.Payment;
@@ -110,6 +111,7 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IPipelineService, PipelineService>();
 builder.Services.AddScoped<IInputDocumentService, InputDocumentService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddScoped<IExpertService, ExpertService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
@@ -123,6 +125,7 @@ builder.Services.AddHostedService<PipelineResultConsumerService>();
 
 // Curriculum Ingestion Result Consumer (BackgroundService)
 builder.Services.AddHostedService<CurriculumResultConsumerService>();
+builder.Services.AddHostedService<GameResultConsumerService>();
 
 // SignalR with Redis backplane
 builder.Services.AddSignalR()

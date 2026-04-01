@@ -18,6 +18,7 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
     private const string SlideGenerationQueue = "slide.generation.requests";
     private const string VideoGenerationQueue = "video.generation.requests";
     private const string CurriculumIngestionQueue = "curriculum.ingestion.requests";
+    private const string GameGenerationQueue = "game.quiz.requests";
 
     public RabbitMqPublisherService(IConfiguration configuration, ILogger<RabbitMqPublisherService> logger)
     {
@@ -70,8 +71,15 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
             autoDelete: false,
             arguments: null);
 
-        _logger.LogInformation("RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}', '{VideoQueue}', '{CurriculumQueue}'",
-            LessonAnalysisQueue, SlideGenerationQueue, VideoGenerationQueue, CurriculumIngestionQueue);
+        await _channel.QueueDeclareAsync(
+            queue: GameGenerationQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
+
+        _logger.LogInformation("RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}', '{VideoQueue}', '{CurriculumQueue}', '{GameQueue}'",
+            LessonAnalysisQueue, SlideGenerationQueue, VideoGenerationQueue, CurriculumIngestionQueue, GameGenerationQueue);
     }
 
     public async Task PublishLessonAnalysisTaskAsync(Guid taskId, string userId, int productId, string gcsUri, string subjectCode, string gradeCode, string lessonCode, int? curriculumYear)
@@ -257,6 +265,43 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
                 body: body);
 
             _logger.LogInformation("Published curriculum ingestion task {TaskId} for document {DocumentId}", taskId, documentId);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task PublishGameGenerationTaskAsync(Guid taskId, object message)
+    {
+        await _semaphore.WaitAsync();
+        try
+        {
+            await EnsureConnectedAsync();
+
+            var bodyJson = JsonSerializer.Serialize(message);
+            if (string.IsNullOrWhiteSpace(bodyJson))
+                throw new InvalidOperationException($"Serialized RabbitMQ game message is empty. TaskId={taskId}");
+
+            var body = Encoding.UTF8.GetBytes(bodyJson);
+            if (body.Length <= 0)
+                throw new InvalidOperationException($"Serialized RabbitMQ game message has zero length body. TaskId={taskId}");
+
+            var properties = new BasicProperties
+            {
+                ContentType = "application/json",
+                DeliveryMode = DeliveryModes.Persistent,
+                Persistent = true
+            };
+
+            await _channel!.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: GameGenerationQueue,
+                mandatory: false,
+                basicProperties: properties,
+                body: body);
+
+            _logger.LogInformation("Published game generation task {TaskId}", taskId);
         }
         finally
         {

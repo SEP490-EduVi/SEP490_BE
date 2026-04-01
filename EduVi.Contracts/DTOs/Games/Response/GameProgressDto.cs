@@ -1,14 +1,10 @@
-namespace EduVi.Contracts.DTOs.Pipeline;
+namespace EduVi.Contracts.DTOs.Games.Response;
 
-/// <summary>
-/// DTO tiến trình pipeline — Python worker gửi về qua RabbitMQ, 
-/// .NET push xuống client qua SignalR
-/// </summary>
-public class PipelineProgressDto
+public class GameProgressDto
 {
     public Guid TaskId { get; set; }
     public string UserId { get; set; } = string.Empty;
-    public int? ProductId { get; set; }
+    public string TemplateId { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string Step { get; set; } = string.Empty;
     public int Progress { get; set; }

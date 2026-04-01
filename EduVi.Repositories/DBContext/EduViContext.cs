@@ -29,6 +29,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<Grades> Grades { get; set; }
 
+    public virtual DbSet<GameTemplates> GameTemplates { get; set; }
+
     public virtual DbSet<InputDocuments> InputDocuments { get; set; }
 
     public virtual DbSet<Materials> Materials { get; set; }
@@ -205,6 +207,27 @@ public partial class EduViContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("GradeCode");
             entity.Property(e => e.GradeName).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<GameTemplates>(entity =>
+        {
+            entity.HasKey(e => e.TemplateId).HasName("PK__GameTemp__2F02A8A6A8D4A6E1");
+
+            entity.HasIndex(e => e.TemplateCode, "UQ_GameTemplates_TemplateCode").IsUnique();
+
+            entity.ToTable("GameTemplates");
+
+            entity.Property(e => e.TemplateId)
+                .HasColumnName("id")
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.TemplateCode)
+                .HasColumnName("template_code")
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.TemplateJson)
+                .HasColumnName("template_json")
+                .HasColumnType("nvarchar(max)");
         });
 
         modelBuilder.Entity<InputDocuments>(entity =>
