@@ -207,7 +207,7 @@ services:
  
   # ── Game Quiz Worker ────────────────────────────────────────────────
   # Generates gesture-interactive quiz JSON from edited slide content + template.
-  # Uses explicit GCP key file (not ADC) — required for Vertex AI calls.
+  # NO GOOGLE_APPLICATION_CREDENTIALS — VM service account handles GCP auth via ADC
   game-quiz:
     image: ghcr.io/${GITHUB_ORG}/game-quiz:latest
     container_name: game-quiz
@@ -228,10 +228,7 @@ services:
       # Google Cloud / Vertex AI
       GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
       VERTEX_AI_LOCATION: ${VERTEX_AI_LOCATION:-us-central1}
-      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/gcp-key.json
       HELICONE_API_KEY: ${HELICONE_API_KEY:-}
-    volumes:
-      - ./private/gcp-key.json:/app/credentials/gcp-key.json:ro
     restart: unless-stopped
     networks:
       - eduvi
