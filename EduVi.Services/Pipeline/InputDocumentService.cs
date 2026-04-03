@@ -50,28 +50,6 @@ public class InputDocumentService : IInputDocumentService
             ?? throw new InvalidOperationException("GCS BucketName not configured");
         var storageClient = await StorageClient.CreateAsync();
 
-        var existingDocument = await _unitOfWork.InputDocumentRepository
-            .GetExistingInputDocumentAsync(teacherId, project.ProjectId, subject.SubjectId, grade.GradeId, lessonId);
-
-        if (existingDocument is not null && !string.IsNullOrWhiteSpace(existingDocument.FilePath))
-        {
-            var oldObjectName = ExtractObjectName(bucketName, existingDocument.FilePath);
-            if (!string.IsNullOrWhiteSpace(oldObjectName))
-            {
-                try
-                {
-                    var deleteStart = Stopwatch.GetTimestamp();
-                    await storageClient.DeleteObjectAsync(bucketName, oldObjectName);
-                    var deleteElapsed = Stopwatch.GetElapsedTime(deleteStart);
-                    _logger.LogInformation("GCS delete completed in {ElapsedMs}ms: {OldPath}", deleteElapsed.TotalMilliseconds, existingDocument.FilePath);
-                }
-                catch (Google.GoogleApiException exception) when (exception.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    _logger.LogWarning("Old GCS file not found, skipping delete: {OldPath}", existingDocument.FilePath);
-                }
-            }
-        }
-
         var fileExtension = Path.GetExtension(request.File.FileName);
         var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
         var fileName = $"{request.SubjectCode}_{request.GradeCode}{lessonCodePart}_{timestamp}{fileExtension}";
@@ -91,33 +69,19 @@ public class InputDocumentService : IInputDocumentService
 
         var documentCode = $"doc_{request.ProjectCode}_{request.SubjectCode}_{request.GradeCode}{lessonCodePart}_{timestamp}";
 
-        InputDocuments document;
-        if (existingDocument is not null)
+        var document = new InputDocuments
         {
-            existingDocument.Title = request.Title;
-            existingDocument.FilePath = gcsPath;
-            existingDocument.DocumentCode = documentCode;
-            existingDocument.UploadDate = DateTime.UtcNow;
-            existingDocument.ProjectId = project.ProjectId;
-            _unitOfWork.InputDocumentRepository.UpdateInputDocument(existingDocument);
-            document = existingDocument;
-        }
-        else
-        {
-            document = new InputDocuments
-            {
-                TeacherId = teacherId,
-                ProjectId = project.ProjectId,
-                Title = request.Title,
-                DocumentCode = documentCode,
-                SubjectId = subject.SubjectId,
-                GradeId = grade.GradeId,
-                LessonId = lessonId,
-                FilePath = gcsPath,
-                UploadDate = DateTime.UtcNow
-            };
-            await _unitOfWork.InputDocumentRepository.CreateInputDocumentAsync(document);
-        }
+            TeacherId = teacherId,
+            ProjectId = project.ProjectId,
+            Title = request.Title,
+            DocumentCode = documentCode,
+            SubjectId = subject.SubjectId,
+            GradeId = grade.GradeId,
+            LessonId = lessonId,
+            FilePath = gcsPath,
+            UploadDate = DateTime.UtcNow
+        };
+        await _unitOfWork.InputDocumentRepository.CreateInputDocumentAsync(document);
 
         await _unitOfWork.SaveChangesAsync();
 

@@ -10,8 +10,6 @@ public interface IInputDocumentRepository
 
     Task<InputDocuments?> GetInputDocumentByCodeAndTeacherAsync(string documentCode, int teacherId);
 
-    Task<InputDocuments?> GetExistingInputDocumentAsync(int teacherId, int projectId, int subjectId, int gradeId, int? lessonId);
-
     Task<InputDocuments> CreateInputDocumentAsync(InputDocuments document);
 
     void UpdateInputDocument(InputDocuments document);

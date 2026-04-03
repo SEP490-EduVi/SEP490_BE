@@ -44,21 +44,6 @@ public class InputDocumentRepository : IInputDocumentRepository
             .FirstOrDefaultAsync(document => document.DocumentCode == documentCode && document.TeacherId == teacherId);
     }
 
-    public async Task<InputDocuments?> GetExistingInputDocumentAsync(int teacherId, int projectId, int subjectId, int gradeId, int? lessonId)
-    {
-        return await _context.InputDocuments
-            .Include(document => document.Subject)
-            .Include(document => document.Grade)
-            .Include(document => document.Lesson)
-            .Include(document => document.Project)
-            .FirstOrDefaultAsync(document =>
-                document.TeacherId == teacherId &&
-                document.ProjectId == projectId &&
-                document.SubjectId == subjectId &&
-                document.GradeId == gradeId &&
-                document.LessonId == lessonId);
-    }
-
     public async Task<InputDocuments> CreateInputDocumentAsync(InputDocuments document)
     {
         var entry = await _context.InputDocuments.AddAsync(document);
