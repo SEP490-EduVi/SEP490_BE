@@ -237,7 +237,7 @@ public class AuthenticationService : IAuthenticationService
         // 6. Send OTP email (async, non-blocking)
         try
         {
-            await SendOtpEmailAsync(user.Email, otp, user.FullName);
+            await _emailService.SendEmailVerificationAsync(user.Email, otp, user.FullName);
             _logger.LogInformation("Đã gửi email OTP đến {Email}", user.Email);
         }
         catch (Exception ex)
@@ -357,7 +357,7 @@ public class AuthenticationService : IAuthenticationService
         // 9. Send email
         try
         {
-            await SendOtpEmailAsync(user.Email, otp, user.FullName);
+            await _emailService.SendEmailVerificationAsync(user.Email, otp, user.FullName);
             _logger.LogInformation("Đã gửi lại OTP đến {Email} ({Count}/5)", user.Email, resendCount + 1);
         }
         catch (Exception ex)
@@ -370,101 +370,6 @@ public class AuthenticationService : IAuthenticationService
         {
             CanResendAgainAt = DateTime.UtcNow.AddSeconds(60)
         };
-    }
-
-    private async Task SendOtpEmailAsync(string email, string otp, string fullName)
-    {
-        var subject = "Xác thực Email - EduVi OTP";
-        var body = $@"
-            <html>
-            <body style='font-family: Arial, sans-serif;'>
-                <h2 style='color: #2563eb;'>Chào mừng đến với EduVi, {fullName}!</h2>
-                <p>Cảm ơn bạn đã đăng ký. Vui lòng sử dụng mã OTP bên dưới để xác thực địa chỉ email của bạn.</p>
-                <div style='background-color: #f3f4f6; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center;'>
-                    <h1 style='color: #1f2937; letter-spacing: 8px; margin: 0;'>{otp}</h1>
-                </div>
-                <p style='color: #ef4444;'><strong>⚠️ Mã OTP này sẽ hết hạn sau 5 phút.</strong></p>
-                <p>Nếu bạn không yêu cầu điều này, vui lòng bỏ qua email này.</p>
-                <br/>
-                <p style='color: #6b7280; font-size: 12px;'>
-                    Đây là tin nhắn tự động từ EduVi. Vui lòng không trả lời email này.
-                </p>
-            </body>
-            </html>";
-
-        // Reuse existing email service infrastructure
-        var smtpHost = _configuration["EmailSettings:SmtpHost"]
-            ?? throw new InvalidOperationException("EmailSettings:SmtpHost is not configured");
-        var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var senderEmail = _configuration["EmailSettings:SenderEmail"]
-            ?? throw new InvalidOperationException("EmailSettings:SenderEmail is not configured");
-        var senderPassword = _configuration["EmailSettings:SenderPassword"]
-            ?? throw new InvalidOperationException("EmailSettings:SenderPassword is not configured");
-
-        using var smtpClient = new System.Net.Mail.SmtpClient(smtpHost, smtpPort)
-        {
-            EnableSsl = true,
-            Credentials = new System.Net.NetworkCredential(senderEmail, senderPassword)
-        };
-
-        using var mailMessage = new System.Net.Mail.MailMessage
-        {
-            From = new System.Net.Mail.MailAddress(senderEmail, "EduVi Platform"),
-            Subject = subject,
-            Body = body,
-            IsBodyHtml = true
-        };
-
-        mailMessage.To.Add(email);
-        await smtpClient.SendMailAsync(mailMessage);
-    }
-
-    private async Task SendResetPasswordOtpEmailAsync(string email, string otp, string fullName)
-    {
-        var subject = "Đặt lại Mật khẩu - EduVi OTP";
-        var body = $@"
-            <html>
-            <body style='font-family: Arial, sans-serif;'>
-                <h2 style='color: #ef4444;'>Yêu cầu đặt lại mật khẩu</h2>
-                <p>Xin chào {fullName},</p>
-                <p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu của bạn. Vui lòng sử dụng mã OTP bên dưới để đặt lại mật khẩu.</p>
-                <div style='background-color: #fef2f2; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center; border: 2px solid #ef4444;'>
-                    <h1 style='color: #991b1b; letter-spacing: 8px; margin: 0;'>{otp}</h1>
-                </div>
-                <p style='color: #ef4444;'><strong>⚠️ Mã OTP này sẽ hết hạn sau 5 phút.</strong></p>
-                <p style='color: #dc2626;'><strong>Cảnh báo bảo mật:</strong> Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này hoặc liên hệ hỗ trợ nếu bạn lo lắng về bảo mật tài khoản.</p>
-                <br/>
-                <p style='color: #6b7280; font-size: 12px;'>
-                    Đây là tin nhắn tự động từ EduVi. Vui lòng không trả lời email này.
-                </p>
-            </body>
-            </html>";
-
-        // Reuse existing email service infrastructure
-        var smtpHost = _configuration["EmailSettings:SmtpHost"]
-            ?? throw new InvalidOperationException("EmailSettings:SmtpHost is not configured");
-        var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
-        var senderEmail = _configuration["EmailSettings:SenderEmail"]
-            ?? throw new InvalidOperationException("EmailSettings:SenderEmail is not configured");
-        var senderPassword = _configuration["EmailSettings:SenderPassword"]
-            ?? throw new InvalidOperationException("EmailSettings:SenderPassword is not configured");
-
-        using var smtpClient = new System.Net.Mail.SmtpClient(smtpHost, smtpPort)
-        {
-            EnableSsl = true,
-            Credentials = new System.Net.NetworkCredential(senderEmail, senderPassword)
-        };
-
-        using var mailMessage = new System.Net.Mail.MailMessage
-        {
-            From = new System.Net.Mail.MailAddress(senderEmail, "EduVi Platform"),
-            Subject = subject,
-            Body = body,
-            IsBodyHtml = true
-        };
-
-        mailMessage.To.Add(email);
-        await smtpClient.SendMailAsync(mailMessage);
     }
 
     #endregion
@@ -572,7 +477,7 @@ public class AuthenticationService : IAuthenticationService
         // 5. Gửi email với OTP
         try
         {
-            await SendResetPasswordOtpEmailAsync(user.Email, otp, user.FullName);
+            await _emailService.SendPasswordResetEmailAsync(user.Email, otp, user.FullName);
             _logger.LogInformation("Đã gửi OTP đặt lại mật khẩu đến {Email}", user.Email);
         }
         catch (Exception ex)
@@ -621,7 +526,7 @@ public class AuthenticationService : IAuthenticationService
         // 7. Gửi email OTP mới
         try
         {
-            await SendResetPasswordOtpEmailAsync(user.Email, otp, user.FullName);
+            await _emailService.SendPasswordResetEmailAsync(user.Email, otp, user.FullName);
             _logger.LogInformation("Đã gửi lại OTP đặt lại mật khẩu đến {Email}", user.Email);
         }
         catch (Exception ex)
@@ -662,6 +567,7 @@ public class AuthenticationService : IAuthenticationService
         // 4. Reset mật khẩu
         user.PasswordHash = HashPassword(request.NewPassword);
         await _unitOfWork.AuthenticationRepository.UpdateUserAsync(user);
+        await _unitOfWork.SaveChangesWithTransactionAsync();
 
         // 5. Xóa OTP và failed attempts
         await _otpService.RevokeOtpAsync(user.UserId, keyPrefix: "otp:reset:");

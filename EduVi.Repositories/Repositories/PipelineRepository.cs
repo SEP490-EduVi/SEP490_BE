@@ -1,3 +1,4 @@
+using EduVi.Contracts.Common;
 using EduVi.Repositories.DBContext;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
@@ -8,7 +9,6 @@ namespace EduVi.Repositories.Repositories;
 public class PipelineRepository : IPipelineRepository
 {
     private readonly EduViContext _context;
-    private const int DeletedVideoStatus = 3;
 
     public PipelineRepository(EduViContext context)
     {
@@ -213,7 +213,7 @@ public class PipelineRepository : IPipelineRepository
     public async Task<ProductVideos?> GetLatestActiveProductVideoAsync(int productId)
     {
         return await _context.ProductVideos
-            .Where(productVideo => productVideo.ProductId == productId && productVideo.Status != DeletedVideoStatus)
+            .Where(productVideo => productVideo.ProductId == productId && productVideo.Status != VideoStatusConstants.Deleted)
             .OrderByDescending(productVideo => productVideo.CreatedAt)
             .FirstOrDefaultAsync();
     }
@@ -223,7 +223,7 @@ public class PipelineRepository : IPipelineRepository
         return await _context.ProductVideos
             .Include(productVideo => productVideo.Product)
             .Where(productVideo =>
-                productVideo.Status != DeletedVideoStatus
+                productVideo.Status != VideoStatusConstants.Deleted
                 && productVideo.Product.Project.ProjectCode == projectCode
                 && productVideo.Product.TeacherId == teacherId)
             .OrderByDescending(productVideo => productVideo.CreatedAt)
@@ -235,7 +235,7 @@ public class PipelineRepository : IPipelineRepository
         return await _context.ProductVideos
             .Include(productVideo => productVideo.Product)
             .Where(productVideo =>
-                productVideo.Status != DeletedVideoStatus
+                productVideo.Status != VideoStatusConstants.Deleted
                 && productVideo.Product.TeacherId == teacherId
                 && productVideo.Product.SourceInputId != null
                 && _context.InputDocuments.Any(inputDocument =>
@@ -267,7 +267,7 @@ public class PipelineRepository : IPipelineRepository
         return await _context.ProductVideos
             .Include(productVideo => productVideo.Product)
             .Where(productVideo =>
-                productVideo.Status != DeletedVideoStatus
+                productVideo.Status != VideoStatusConstants.Deleted
                 && productVideo.Product.Project.ProjectCode == projectCode
                 && productVideo.Product.TeacherId == teacherId)
             .OrderByDescending(productVideo => productVideo.CreatedAt)
@@ -279,7 +279,7 @@ public class PipelineRepository : IPipelineRepository
         return await _context.ProductVideos
             .Include(productVideo => productVideo.Product)
             .Where(productVideo =>
-                productVideo.Status != DeletedVideoStatus
+                productVideo.Status != VideoStatusConstants.Deleted
                 && productVideo.Product.TeacherId == teacherId
                 && productVideo.Product.Status != 7)
             .OrderByDescending(productVideo => productVideo.CreatedAt)

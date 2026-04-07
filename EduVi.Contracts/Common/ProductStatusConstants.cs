@@ -1,4 +1,4 @@
-namespace EduVi.Services.Pipeline;
+namespace EduVi.Contracts.Common;
 
 /// <summary>
 /// Hằng số trạng thái cho Pipeline / Product evaluation

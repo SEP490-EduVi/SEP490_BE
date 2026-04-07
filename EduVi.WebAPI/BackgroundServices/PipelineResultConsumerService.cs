@@ -1,3 +1,4 @@
+using EduVi.Contracts.Common;
 using EduVi.Contracts.DTOs.Pipeline;
 using EduVi.Repositories.Interfaces;
 using EduVi.Services.Pipeline;

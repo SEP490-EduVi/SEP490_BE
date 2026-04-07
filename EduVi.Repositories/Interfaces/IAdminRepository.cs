@@ -25,7 +25,7 @@ public interface IAdminRepository
     Task<Users?> GetUserByCodeAsync(string userCode);
 
     /// <summary>
-    /// Cập nhật thông tin cơ bản user (FullName, Email, Phone, Avatar).
+    /// Cập nhật thông tin cơ bản user (FullName, Phone, Avatar).
     /// </summary>
     Task UpdateUserAsync(Users user);
 
