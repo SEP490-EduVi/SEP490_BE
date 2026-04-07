@@ -291,6 +291,15 @@ public class PipelineRepository : IPipelineRepository
         _context.ProductVideos.Update(productVideo);
     }
 
+    public async Task<List<Products>> GetActiveProductsWithVideosBySourceInputIdAsync(int documentId)
+    {
+        return await _context.Products
+            .Include(product => product.ProductVideos)
+            .Where(product => product.SourceInputId == documentId
+                           && product.Status != 7) // 7 = Deleted
+            .ToListAsync();
+    }
+
     public async Task<Products?> GetProductByIdAsync(int productId)
     {
         return await _context.Products

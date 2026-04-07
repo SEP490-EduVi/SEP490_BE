@@ -191,4 +191,9 @@ public interface IPipelineRepository
     /// Cập nhật bản ghi ProductVideo.
     /// </summary>
     void UpdateProductVideo(ProductVideos productVideo);
+
+    /// <summary>
+    /// Lấy tất cả Products (chưa bị xóa) có SourceInputId = documentId, kèm ProductVideos để cascade soft-delete.
+    /// </summary>
+    Task<List<Products>> GetActiveProductsWithVideosBySourceInputIdAsync(int documentId);
 }

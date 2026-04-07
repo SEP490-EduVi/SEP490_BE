@@ -41,7 +41,9 @@ public class InputDocumentRepository : IInputDocumentRepository
             .Include(document => document.Grade)
             .Include(document => document.Lesson)
             .Include(document => document.Project)
-            .FirstOrDefaultAsync(document => document.DocumentCode == documentCode && document.TeacherId == teacherId);
+            .FirstOrDefaultAsync(document => document.DocumentCode == documentCode
+                                          && document.TeacherId == teacherId
+                                          && document.Status != 1); // exclude Deleted
     }
 
     public async Task<InputDocuments> CreateInputDocumentAsync(InputDocuments document)
@@ -57,7 +59,8 @@ public class InputDocumentRepository : IInputDocumentRepository
 
     public void DeleteInputDocument(InputDocuments document)
     {
-        _context.InputDocuments.Remove(document);
+        document.Status = 1; // Deleted (soft delete)
+        _context.InputDocuments.Update(document);
     }
 
     public async Task<List<InputDocuments>> GetInputDocumentsByTeacherAsync(int teacherId)
@@ -67,7 +70,7 @@ public class InputDocumentRepository : IInputDocumentRepository
             .Include(document => document.Grade)
             .Include(document => document.Lesson)
             .Include(document => document.Project)
-            .Where(document => document.TeacherId == teacherId)
+            .Where(document => document.TeacherId == teacherId && document.Status != 1) // exclude Deleted
             .OrderByDescending(document => document.UploadDate)
             .ToListAsync();
     }
@@ -79,7 +82,7 @@ public class InputDocumentRepository : IInputDocumentRepository
             .Include(document => document.Grade)
             .Include(document => document.Lesson)
             .Include(document => document.Project)
-            .Where(document => document.TeacherId == teacherId && document.ProjectId == projectId)
+            .Where(document => document.TeacherId == teacherId && document.ProjectId == projectId && document.Status != 1) // exclude Deleted
             .OrderByDescending(document => document.UploadDate)
             .ToListAsync();
     }

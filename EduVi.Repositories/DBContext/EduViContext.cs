@@ -252,6 +252,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.UploadDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.Status).HasDefaultValue(0);
 
             entity.HasOne(d => d.Lesson).WithMany(p => p.InputDocuments)
                 .HasForeignKey(d => d.LessonId)

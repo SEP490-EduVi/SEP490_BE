@@ -2,7 +2,6 @@ using EduVi.Contracts.DTOs.Pipeline;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using Google.Cloud.Storage.V1;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -149,15 +148,29 @@ public class InputDocumentService : IInputDocumentService
             }
         }
 
+        // Cascade soft-delete: Document → Products → ProductVideos
+        var products = await _unitOfWork.PipelineRepository
+            .GetActiveProductsWithVideosBySourceInputIdAsync(inputDocument.DocumentId);
+
+        foreach (var product in products)
+        {
+            foreach (var video in product.ProductVideos.Where(v => v.Status != VideoStatusConstants.Deleted))
+            {
+                video.Status = VideoStatusConstants.Deleted;
+                video.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.PipelineRepository.UpdateProductVideo(video);
+            }
+
+            product.Status = ProductStatusConstants.Deleted;
+            _unitOfWork.PipelineRepository.UpdateProduct(product);
+        }
+
         _unitOfWork.InputDocumentRepository.DeleteInputDocument(inputDocument);
-        try
-        {
-            await _unitOfWork.SaveChangesAsync();
-        }
-        catch (DbUpdateException exception)
-        {
-            throw new InvalidOperationException("Không thể xóa InputDocument do dữ liệu liên quan", exception);
-        }
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Teacher {TeacherId} soft-deleted InputDocument {DocumentCode} — cascaded to {ProductCount} product(s)",
+            teacherId, documentCode, products.Count);
     }
 
     private static string ExtractObjectName(string bucketName, string gcsPath)

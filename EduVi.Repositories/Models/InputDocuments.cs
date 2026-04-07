@@ -29,6 +29,8 @@ public partial class InputDocuments
 
     public DateTime? UploadDate { get; set; }
 
+    public int Status { get; set; }
+
     public virtual Lessons Lesson { get; set; }
 
     public virtual Grades Grade { get; set; }

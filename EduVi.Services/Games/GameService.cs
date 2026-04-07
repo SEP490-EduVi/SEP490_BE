@@ -13,6 +13,7 @@ public class GameService : IGameService
 {
     private const string TemplateHoverSelect = "HOVER_SELECT";
     private const string TemplateDragDrop = "DRAG_DROP";
+    private const string TemplateSnakeDuel = "SNAKE_DUEL";
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRabbitMqPublisherService _publisher;
@@ -101,7 +102,9 @@ public class GameService : IGameService
 
     private static bool IsSupportedTemplate(string templateId)
     {
-        return templateId == TemplateHoverSelect || templateId == TemplateDragDrop;
+        return templateId == TemplateHoverSelect
+            || templateId == TemplateDragDrop
+            || templateId == TemplateSnakeDuel;
     }
 
     private static bool IsSupportedGcsUrl(string value)
