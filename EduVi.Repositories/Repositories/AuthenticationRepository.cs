@@ -102,7 +102,10 @@ public class AuthenticationRepository : IAuthenticationRepository
         if (user == null)
             throw new ArgumentNullException(nameof(user));
 
-        _context.Users.Update(user);
+        // Use Entry().State instead of Update() to avoid marking the entire navigation
+        // property graph (Role, Experts, Admins, etc.) as Modified, which can cause
+        // unexpected UPDATE statements on related tables and silently roll back SaveChanges.
+        _context.Entry(user).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
         await _context.SaveChangesAsync();
 
         return user;
