@@ -111,4 +111,22 @@ public interface IAdminRepository
     Task<SubscriptionPlans> CreatePlanAsync(SubscriptionPlans plan);
     Task UpdatePlanAsync(SubscriptionPlans plan);
     Task<bool> DeletePlanAsync(int planId);
+
+    // ============ Platform Wallet ============
+
+    /// <summary>
+    /// Lấy ví của Admin (platform) để cộng phần doanh thu 30% từ material.
+    /// Trả về ví của Admin đầu tiên (RoleId = 1) có ví hợp lệ.
+    /// </summary>
+    Task<Wallets?> GetAdminWalletAsync();
+
+    /// <summary>
+    /// Cập nhật số dư ví Admin sau khi nhận doanh thu.
+    /// </summary>
+    void UpdateWallet(Wallets wallet);
+
+    /// <summary>
+    /// Tạo giao dịch ví cho Admin (MATERIAL_PLATFORM_FEE).
+    /// </summary>
+    Task CreateWalletTransactionAsync(WalletTransactions transaction);
 }

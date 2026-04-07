@@ -132,7 +132,9 @@ public class AuthenticationService : IAuthenticationService
                 try
                 {
                     await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
-                    _logger.LogInformation("Đã tạo hồ sơ Teacher cho UserId={UserId} qua Google Login", user.UserId);
+                    await _unitOfWork.AuthenticationRepository.CreateWalletAsync(user.UserId);
+                    await _unitOfWork.SaveChangesWithTransactionAsync();
+                    _logger.LogInformation("Đã tạo hồ sơ Teacher và Wallet cho UserId={UserId} qua Google Login", user.UserId);
                 }
                 catch (Exception ex)
                 {
@@ -215,6 +217,7 @@ public class AuthenticationService : IAuthenticationService
                     break;
             }
 
+            await _unitOfWork.AuthenticationRepository.CreateWalletAsync(user.UserId);
             await _unitOfWork.CommitTransactionAsync();
             _logger.LogInformation("User registered successfully. UserId={UserId}, RoleId={RoleId}", user.UserId, user.RoleId);
         }
@@ -289,6 +292,20 @@ public class AuthenticationService : IAuthenticationService
             await _otpService.ResetFailedAttemptsAsync(request.UserId);
 
             _logger.LogInformation("Đã xác thực email thành công cho UserId={UserId}", request.UserId);
+
+            // 6. Gửi welcome email (async, non-blocking)
+            var roleName = user.Role?.RoleName ?? "user";
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendWelcomeEmailAsync(user.Email, user.FullName, roleName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Không thể gửi welcome email đến {Email}", user.Email);
+                }
+            });
 
             return new VerifyOtpResponse
             {

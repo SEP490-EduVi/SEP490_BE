@@ -13,7 +13,7 @@ public interface IEmailService
     Task<bool> SendEmailVerificationAsync(string email, string verificationToken, string fullName);
     
     /// <summary>
-    /// Send welcome email after successful registration
+    /// Send welcome email after successful email verification
     /// </summary>
-    Task<bool> SendWelcomeEmailAsync(string email, string fullName);
+    Task<bool> SendWelcomeEmailAsync(string email, string fullName, string roleName);
 }

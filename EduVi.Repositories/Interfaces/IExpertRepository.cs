@@ -69,4 +69,24 @@ public interface IExpertRepository
     /// Lấy Grade theo GradeCode — resolve FK khi Expert tạo/sửa material.
     /// </summary>
     Task<Grades?> GetGradeByCodeAsync(string gradeCode);
+
+    /// <summary>
+    /// Đếm số materials đang chờ duyệt (ApprovalStatus = 0) của Expert — dùng để giới hạn upload.
+    /// </summary>
+    Task<int> CountPendingMaterialsAsync(int expertId);
+
+    /// <summary>
+    /// Lấy Wallet của Expert theo UserId — dùng để cộng tiền khi Teacher mua material.
+    /// </summary>
+    Task<Wallets?> GetWalletByUserIdAsync(int userId);
+
+    /// <summary>
+    /// Cập nhật số dư ví Expert sau khi nhận doanh thu.
+    /// </summary>
+    void UpdateWallet(Wallets wallet);
+
+    /// <summary>
+    /// Tạo giao dịch ví cho Expert (MATERIAL_REVENUE).
+    /// </summary>
+    Task CreateWalletTransactionAsync(WalletTransactions transaction);
 }

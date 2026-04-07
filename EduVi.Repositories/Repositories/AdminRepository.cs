@@ -303,4 +303,23 @@ public class AdminRepository : IAdminRepository
         _context.SubscriptionPlans.Update(plan);
         return true;
     }
+
+    // ── Platform Wallet ─────────────────────────────────────────────────────────
+
+    public async Task<Wallets?> GetAdminWalletAsync()
+    {
+        return await _context.Wallets
+            .Include(w => w.User)
+            .FirstOrDefaultAsync(w => w.User != null && w.User.RoleId == 1);
+    }
+
+    public void UpdateWallet(Wallets wallet)
+    {
+        _context.Wallets.Update(wallet);
+    }
+
+    public async Task CreateWalletTransactionAsync(WalletTransactions transaction)
+    {
+        await _context.WalletTransactions.AddAsync(transaction);
+    }
 }

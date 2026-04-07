@@ -93,4 +93,26 @@ public class ExpertRepository : IExpertRepository
         return await _context.Grades
             .FirstOrDefaultAsync(g => g.GradeCode == gradeCode);
     }
+
+    public async Task<int> CountPendingMaterialsAsync(int expertId)
+    {
+        return await _context.Materials
+            .CountAsync(m => m.ExpertId == expertId && m.ApprovalStatus == 0);
+    }
+
+    public async Task<Wallets?> GetWalletByUserIdAsync(int userId)
+    {
+        return await _context.Wallets
+            .FirstOrDefaultAsync(w => w.UserId == userId);
+    }
+
+    public void UpdateWallet(Wallets wallet)
+    {
+        _context.Wallets.Update(wallet);
+    }
+
+    public async Task CreateWalletTransactionAsync(WalletTransactions transaction)
+    {
+        await _context.WalletTransactions.AddAsync(transaction);
+    }
 }

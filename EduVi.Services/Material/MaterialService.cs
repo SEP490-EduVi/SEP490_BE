@@ -45,6 +45,7 @@ public class MaterialService : IMaterialService
             throw new InvalidOperationException($"Type không hợp lệ cho file upload. Cho phép: {string.Join(", ", AllowedFileTypes)}");
 
         await ValidateExpertIsVerifiedAsync(expertId);
+        await ValidateExpertPendingLimitAsync(expertId);
         var (subjectId, gradeId) = await ResolveSubjectGradeAsync(request.SubjectCode, request.GradeCode);
 
         var bucketName = _configuration["GCS:BucketName"]
@@ -256,6 +257,55 @@ public class MaterialService : IMaterialService
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.TeacherRepository.CreateWalletTransactionAsync(transaction);
+
+                // ── Phân chia doanh thu 70/30 ─────────────────────────────────
+                var expertRevenue = Math.Round(price * 0.7m, 0);
+                var platformFee = price - expertRevenue; // = 30%, dùng hiệu để tránh rounding mismatch
+
+                // ExpertId == UserId trong model (FK đã map 1-1)
+                var expertWallet = await _unitOfWork.ExpertRepository.GetWalletByUserIdAsync(material.ExpertId!.Value)
+                    ?? throw new InvalidOperationException("Expert chưa có ví. Liên hệ hỗ trợ.");
+
+                var expertBalanceBefore = expertWallet.Balance ?? 0;
+                expertWallet.Balance = expertBalanceBefore + expertRevenue;
+                expertWallet.LastUpdated = DateTime.UtcNow;
+                _unitOfWork.ExpertRepository.UpdateWallet(expertWallet);
+
+                var expertTransaction = new WalletTransactions
+                {
+                    WalletId = expertWallet.WalletId,
+                    OrderCode = orderCode,
+                    TransactionType = "MATERIAL_REVENUE",
+                    Amount = expertRevenue,
+                    BalanceBefore = expertBalanceBefore,
+                    BalanceAfter = expertWallet.Balance,
+                    Status = 1,
+                    Description = $"Doanh thu material (70%): {material.Title} ({materialCode})",
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.ExpertRepository.CreateWalletTransactionAsync(expertTransaction);
+
+                var adminWallet = await _unitOfWork.AdminRepository.GetAdminWalletAsync()
+                    ?? throw new InvalidOperationException("Không tìm thấy ví nền tảng Admin. Liên hệ hỗ trợ.");
+
+                var adminBalanceBefore = adminWallet.Balance ?? 0;
+                adminWallet.Balance = adminBalanceBefore + platformFee;
+                adminWallet.LastUpdated = DateTime.UtcNow;
+                _unitOfWork.AdminRepository.UpdateWallet(adminWallet);
+
+                var adminTransaction = new WalletTransactions
+                {
+                    WalletId = adminWallet.WalletId,
+                    OrderCode = orderCode,
+                    TransactionType = "MATERIAL_PLATFORM_FEE",
+                    Amount = platformFee,
+                    BalanceBefore = adminBalanceBefore,
+                    BalanceAfter = adminWallet.Balance,
+                    Status = 1,
+                    Description = $"Phí nền tảng material (30%): {material.Title} ({materialCode})",
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.AdminRepository.CreateWalletTransactionAsync(adminTransaction);
             }
 
             // Tạo bản ghi TeacherMaterials
@@ -295,6 +345,14 @@ public class MaterialService : IMaterialService
 
         if (expert.IsVerified != true)
             throw new InvalidOperationException("Expert chưa được xác thực. Vui lòng hoàn tất xác thực trước khi upload material");
+    }
+
+    private async Task ValidateExpertPendingLimitAsync(int expertId)
+    {
+        const int MaxPendingMaterials = 3;
+        var pendingCount = await _unitOfWork.ExpertRepository.CountPendingMaterialsAsync(expertId);
+        if (pendingCount >= MaxPendingMaterials)
+            throw new InvalidOperationException($"Bạn đang có {pendingCount} material chờ duyệt. Tối đa {MaxPendingMaterials} material pending cùng lúc. Vui lòng chờ Staff duyệt trước khi upload thêm.");
     }
 
     private async Task<(int? subjectId, int? gradeId)> ResolveSubjectGradeAsync(string? subjectCode, string? gradeCode)

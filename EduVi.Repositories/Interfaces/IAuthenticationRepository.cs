@@ -70,6 +70,11 @@ public interface IAuthenticationRepository
     Task<Staffs> CreateStaffAsync(int userId);
 
     /// <summary>
+    /// Tạo Wallet record với số dư ban đầu = 0 cho người dùng mới
+    /// </summary>
+    Task<Wallets> CreateWalletAsync(int userId);
+
+    /// <summary>
     /// Generate unique code for role-specific table
     /// </summary>
     Task<string> GenerateUniqueCodeAsync(string prefix);

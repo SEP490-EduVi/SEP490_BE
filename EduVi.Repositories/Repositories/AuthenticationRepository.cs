@@ -213,6 +213,24 @@ public class AuthenticationRepository : IAuthenticationRepository
     }
 
     /// <summary>
+    /// Tạo Wallet record với số dư ban đầu = 0 cho người dùng mới
+    /// </summary>
+    public Task<Wallets> CreateWalletAsync(int userId)
+    {
+        var wallet = new Wallets
+        {
+            UserId = userId,
+            Balance = 0,
+            LastUpdated = DateTime.UtcNow
+        };
+
+        _context.Wallets.Add(wallet);
+        // SaveChanges is called by the service via UnitOfWork after all records are staged.
+
+        return Task.FromResult(wallet);
+    }
+
+    /// <summary>
     /// Tạo Staff record với auto-generated StaffCode
     /// </summary>
     public async Task<Staffs> CreateStaffAsync(int userId)
