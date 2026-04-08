@@ -99,4 +99,13 @@ public class TeacherRepository : ITeacherRepository
     {
         await _context.WalletTransactions.AddAsync(transaction);
     }
+
+    // ── Profile ────────────────────────────────────────────────────────────────
+
+    public async Task<Teachers?> GetProfileByUserIdAsync(int userId)
+    {
+        return await _context.Teachers
+            .Include(t => t.Teacher) // Users navigation
+            .FirstOrDefaultAsync(t => t.TeacherId == userId);
+    }
 }

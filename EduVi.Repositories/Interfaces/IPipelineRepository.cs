@@ -110,35 +110,6 @@ public interface IPipelineRepository
     /// </summary>
     void DeleteProduct(Products product);
 
-    // ============ ProductComponents ============
-
-    /// <summary>
-    /// Lấy danh sách components hiện tại của một Product
-    /// </summary>
-    Task<List<ProductComponent>> GetProductComponentsAsync(int productId);
-
-    /// <summary>
-    /// Xóa toàn bộ components của một Product (để upsert lại)
-    /// </summary>
-    void DeleteProductComponents(List<ProductComponent> components);
-
-    /// <summary>
-    /// Thêm danh sách ProductComponent mới
-    /// </summary>
-    Task AddProductComponentsAsync(List<ProductComponent> components);
-
-    // ============ Materials ============
-
-    /// <summary>
-    /// Lấy MaterialId theo MaterialCode (để map từ Code → ID nội bộ)
-    /// </summary>
-    Task<int?> GetMaterialIdByCodeAsync(string materialCode);
-
-    /// <summary>
-    /// Kiểm tra Teacher đã mua Material này chưa
-    /// </summary>
-    Task<bool> IsTeacherOwnsMaterialAsync(int teacherId, int materialId);
-
     // ============ ProductVideos ============
 
     /// <summary>
@@ -196,4 +167,16 @@ public interface IPipelineRepository
     /// Lấy tất cả Products (chưa bị xóa) có SourceInputId = documentId, kèm ProductVideos để cascade soft-delete.
     /// </summary>
     Task<List<Products>> GetActiveProductsWithVideosBySourceInputIdAsync(int documentId);
+
+    // ============ Ownership Validation ============
+
+    /// <summary>
+    /// Kiểm tra Teacher đã mua Material này chưa (dùng để validate ownership khi save slide).
+    /// </summary>
+    Task<bool> IsTeacherOwnsMaterialAsync(int teacherId, int materialId);
+
+    /// <summary>
+    /// Lấy MaterialId theo MaterialCode — dùng để resolve Code → ID khi validate ownership.
+    /// </summary>
+    Task<int?> GetMaterialIdByCodeAsync(string materialCode);
 }

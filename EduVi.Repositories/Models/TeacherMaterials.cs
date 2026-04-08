@@ -15,7 +15,5 @@ public partial class TeacherMaterials
 
     public virtual Materials Material { get; set; }
 
-    public virtual ICollection<ProductComponent> ProductComponent { get; set; } = new List<ProductComponent>();
-
     public virtual Teachers Teacher { get; set; }
 }

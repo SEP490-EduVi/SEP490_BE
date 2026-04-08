@@ -53,4 +53,12 @@ public interface ITeacherRepository
     /// Tạo giao dịch ví (BUY_MATERIAL).
     /// </summary>
     Task CreateWalletTransactionAsync(WalletTransactions transaction);
+
+    // ── Profile ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Lấy thông tin Teacher kèm Users navigation để hiển thị hoặc cập nhật profile.
+    /// TeacherId = UserId (FK).
+    /// </summary>
+    Task<Teachers?> GetProfileByUserIdAsync(int userId);
 }

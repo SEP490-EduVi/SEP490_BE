@@ -47,6 +47,13 @@ public class ExpertRepository : IExpertRepository
             .FirstOrDefaultAsync(e => e.ExpertId == expertId);
     }
 
+    public async Task<Experts?> GetProfileByUserIdAsync(int userId)
+    {
+        return await _context.Experts
+            .Include(e => e.Expert) // Users navigation
+            .FirstOrDefaultAsync(e => e.ExpertId == userId);
+    }
+
     // ── Materials ───────────────────────────────────────────────────────────────
 
     public async Task CreateMaterialAsync(Materials material)

@@ -40,8 +40,6 @@ public partial class Users
 
     public virtual Staffs Staffs { get; set; }
 
-    public virtual ICollection<SystemLogs> SystemLogs { get; set; } = new List<SystemLogs>();
-
     public virtual Teachers Teachers { get; set; }
 
     public virtual Wallets Wallets { get; set; }

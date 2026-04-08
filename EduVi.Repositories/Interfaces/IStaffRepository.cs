@@ -55,4 +55,12 @@ public interface IStaffRepository
     /// Cập nhật trạng thái duyệt material (approve/reject).
     /// </summary>
     void UpdateMaterial(Materials material);
+
+    // ── Profile ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Lấy Staff kèm Users navigation để hiển thị hoặc cập nhật profile.
+    /// StaffId = UserId (FK).
+    /// </summary>
+    Task<Staffs?> GetProfileByUserIdAsync(int userId);
 }

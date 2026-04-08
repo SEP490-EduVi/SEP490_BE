@@ -13,14 +13,6 @@ public partial class Experts
 
     public string Bio { get; set; }
 
-    public string IdentityCardNumber { get; set; }
-
-    public string TaxCode { get; set; }
-
-    public string BankAccount { get; set; }
-
-    public string BankName { get; set; }
-
     public bool? IsVerified { get; set; }
 
     public virtual Users Expert { get; set; }

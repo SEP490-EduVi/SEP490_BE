@@ -13,8 +13,6 @@ public partial class Teachers
 
     public string SchoolName { get; set; }
 
-    public string Degree { get; set; }
-
     public virtual ICollection<InputDocuments> InputDocuments { get; set; } = new List<InputDocuments>();
 
     public virtual ICollection<Orders> Orders { get; set; } = new List<Orders>();

@@ -1,4 +1,5 @@
 using EduVi.Contracts.DTOs.Expert;
+using EduVi.Contracts.DTOs.Profile;
 
 namespace EduVi.Services.Expert;
 
@@ -42,4 +43,16 @@ public interface IExpertService
     /// Khi reject: ghi RejectionReason, Expert.IsVerified vẫn giữ nguyên hoặc set = false.
     /// </summary>
     Task ReviewVerificationAsync(int staffId, string verificationCode, ReviewVerificationRequestDto request);
+
+    // ── Expert: profile ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Lấy thông tin profile của Expert đang đăng nhập.
+    /// </summary>
+    Task<ExpertProfileResponse> GetProfileAsync(int userId);
+
+    /// <summary>
+    /// Cập nhật thông tin profile (FullName, PhoneNumber, Bio).
+    /// </summary>
+    Task UpdateProfileAsync(int userId, UpdateExpertProfileRequest request);
 }

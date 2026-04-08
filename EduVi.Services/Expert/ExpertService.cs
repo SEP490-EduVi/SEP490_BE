@@ -1,4 +1,5 @@
 using EduVi.Contracts.DTOs.Expert;
+using EduVi.Contracts.DTOs.Profile;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using Google.Cloud.Storage.V1;
@@ -260,6 +261,42 @@ public class ExpertService : IExpertService
             ReviewedAt = verification.ReviewedAt,
             FileUrl = fileUrl
         };
+    }
+
+    // ── Profile ───────────────────────────────────────────────────────────────
+
+    public async Task<ExpertProfileResponse> GetProfileAsync(int userId)
+    {
+        var expert = await _unitOfWork.ExpertRepository.GetProfileByUserIdAsync(userId)
+            ?? throw new KeyNotFoundException("Không tìm thấy thông tin chuyên gia.");
+
+        return new ExpertProfileResponse
+        {
+            UserCode    = expert.Expert.UserCode,
+            FullName    = expert.Expert.FullName,
+            Email       = expert.Expert.Email,
+            PhoneNumber = expert.Expert.PhoneNumber,
+            AvatarUrl   = expert.Expert.AvatarUrl,
+            Bio         = expert.Bio,
+            IsVerified  = expert.IsVerified,
+        };
+    }
+
+    public async Task UpdateProfileAsync(int userId, UpdateExpertProfileRequest request)
+    {
+        var expert = await _unitOfWork.ExpertRepository.GetProfileByUserIdAsync(userId)
+            ?? throw new KeyNotFoundException("Không tìm thấy thông tin chuyên gia.");
+
+        if (request.FullName is not null)
+            expert.Expert.FullName = request.FullName;
+
+        if (request.PhoneNumber is not null)
+            expert.Expert.PhoneNumber = request.PhoneNumber;
+
+        if (request.Bio is not null)
+            expert.Bio = request.Bio;
+
+        await _unitOfWork.SaveChangesAsync();
     }
 }
 

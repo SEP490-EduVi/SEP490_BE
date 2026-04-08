@@ -151,36 +151,6 @@ public class PipelineRepository : IPipelineRepository
         return entry.Entity;
     }
 
-    public async Task<List<ProductComponent>> GetProductComponentsAsync(int productId)
-    {
-        return await _context.ProductComponent
-            .Where(productComponent => productComponent.ProductId == productId)
-            .ToListAsync();
-    }
-
-    public void DeleteProductComponents(List<ProductComponent> components)
-    {
-        _context.ProductComponent.RemoveRange(components);
-    }
-
-    public async Task AddProductComponentsAsync(List<ProductComponent> components)
-    {
-        await _context.ProductComponent.AddRangeAsync(components);
-    }
-
-    public async Task<int?> GetMaterialIdByCodeAsync(string materialCode)
-    {
-        var material = await _context.Materials
-            .FirstOrDefaultAsync(material => material.MaterialCode == materialCode);
-        return material?.MaterialId;
-    }
-
-    public async Task<bool> IsTeacherOwnsMaterialAsync(int teacherId, int materialId)
-    {
-        return await _context.TeacherMaterials
-            .AnyAsync(teacherMaterial => teacherMaterial.TeacherId == teacherId && teacherMaterial.MaterialId == materialId);
-    }
-
     public async Task<ProductVideos> CreateProductVideoAsync(ProductVideos productVideo)
     {
         var entry = await _context.ProductVideos.AddAsync(productVideo);
@@ -298,6 +268,19 @@ public class PipelineRepository : IPipelineRepository
             .Where(product => product.SourceInputId == documentId
                            && product.Status != 7) // 7 = Deleted
             .ToListAsync();
+    }
+
+    public async Task<bool> IsTeacherOwnsMaterialAsync(int teacherId, int materialId)
+    {
+        return await _context.TeacherMaterials
+            .AnyAsync(teacherMaterial => teacherMaterial.TeacherId == teacherId && teacherMaterial.MaterialId == materialId);
+    }
+
+    public async Task<int?> GetMaterialIdByCodeAsync(string materialCode)
+    {
+        var material = await _context.Materials
+            .FirstOrDefaultAsync(material => material.MaterialCode == materialCode);
+        return material?.MaterialId;
     }
 
     public async Task<Products?> GetProductByIdAsync(int productId)

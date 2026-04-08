@@ -1,5 +1,6 @@
 using EduVi.Contracts.Common;
 using EduVi.Contracts.DTOs.Expert;
+using EduVi.Contracts.DTOs.Profile;
 using EduVi.Services.Expert;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -103,5 +104,51 @@ public class ExpertController : ControllerBase
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
         return userId;
+    }
+
+    /// <summary>
+    /// Xem thông tin profile của Expert đang đăng nhập.
+    /// </summary>
+    [HttpGet("profile")]
+    public async Task<ActionResult<ApiResponse<ExpertProfileResponse>>> GetProfile()
+    {
+        try
+        {
+            var expertId = GetCurrentUserId();
+            var result = await _expertService.GetProfileAsync(expertId);
+            return Ok(ApiResponse<ExpertProfileResponse>.Success(result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<ExpertProfileResponse>.Fail(ex.Message, 404));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting profile for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(500, ApiResponse<ExpertProfileResponse>.Fail("Đã xảy ra lỗi khi lấy thông tin", 500));
+        }
+    }
+
+    /// <summary>
+    /// Cập nhật thông tin profile (FullName, PhoneNumber, Bio).
+    /// </summary>
+    [HttpPut("profile")]
+    public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateExpertProfileRequest request)
+    {
+        try
+        {
+            var expertId = GetCurrentUserId();
+            await _expertService.UpdateProfileAsync(expertId, request);
+            return Ok(ApiResponse<object>.Success(null, "Cập nhật thông tin thành công."));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating profile for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi cập nhật thông tin", 500));
+        }
     }
 }

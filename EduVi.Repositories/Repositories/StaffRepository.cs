@@ -85,4 +85,11 @@ public class StaffRepository : IStaffRepository
     {
         _context.Materials.Update(material);
     }
+
+    public async Task<Staffs?> GetProfileByUserIdAsync(int userId)
+    {
+        return await _context.Staffs
+            .Include(s => s.Staff) // Users navigation
+            .FirstOrDefaultAsync(s => s.StaffId == userId);
+    }
 }

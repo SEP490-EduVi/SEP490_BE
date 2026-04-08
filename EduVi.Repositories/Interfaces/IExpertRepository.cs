@@ -33,6 +33,12 @@ public interface IExpertRepository
     /// </summary>
     Task<Experts?> GetExpertByIdAsync(int expertId);
 
+    /// <summary>
+    /// Lấy Expert kèm Users navigation để hiển thị hoặc cập nhật profile.
+    /// ExpertId = UserId (FK).
+    /// </summary>
+    Task<Experts?> GetProfileByUserIdAsync(int userId);
+
     // ── Materials ───────────────────────────────────────────────────────────────
 
     /// <summary>

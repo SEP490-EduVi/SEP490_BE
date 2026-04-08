@@ -1,6 +1,8 @@
 using EduVi.Contracts.Common;
 using EduVi.Contracts.DTOs.Expert;
+using EduVi.Contracts.DTOs.Profile;
 using EduVi.Services.Expert;
+using EduVi.Services.Staff;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -16,11 +18,16 @@ namespace EduVi.WebAPI.Controllers;
 public class StaffController : ControllerBase
 {
     private readonly IExpertService _expertService;
+    private readonly IStaffProfileService _staffProfileService;
     private readonly ILogger<StaffController> _logger;
 
-    public StaffController(IExpertService expertService, ILogger<StaffController> logger)
+    public StaffController(
+        IExpertService expertService,
+        IStaffProfileService staffProfileService,
+        ILogger<StaffController> logger)
     {
         _expertService = expertService;
+        _staffProfileService = staffProfileService;
         _logger = logger;
     }
 
@@ -107,5 +114,51 @@ public class StaffController : ControllerBase
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
         return userId;
+    }
+
+    /// <summary>
+    /// Xem thông tin profile của Staff đang đăng nhập.
+    /// </summary>
+    [HttpGet("profile")]
+    public async Task<ActionResult<ApiResponse<StaffProfileResponse>>> GetProfile()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _staffProfileService.GetProfileAsync(userId);
+            return Ok(ApiResponse<StaffProfileResponse>.Success(result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<StaffProfileResponse>.Fail(ex.Message, 404));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting profile for staff {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(500, ApiResponse<StaffProfileResponse>.Fail("Đã xảy ra lỗi khi lấy thông tin", 500));
+        }
+    }
+
+    /// <summary>
+    /// Cập nhật thông tin profile (FullName, PhoneNumber, Department).
+    /// </summary>
+    [HttpPut("profile")]
+    public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateStaffProfileRequest request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            await _staffProfileService.UpdateProfileAsync(userId, request);
+            return Ok(ApiResponse<object>.Success(null, "Cập nhật thông tin thành công."));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating profile for staff {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi cập nhật thông tin", 500));
+        }
     }
 }

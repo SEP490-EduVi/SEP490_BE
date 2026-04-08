@@ -44,8 +44,6 @@ public partial class Products
 
     public virtual ICollection<ProductVideos> ProductVideos { get; set; } = new List<ProductVideos>();
 
-    public virtual ICollection<ProductComponent> ProductComponent { get; set; } = new List<ProductComponent>();
-
     public virtual Projects Project { get; set; }
 
     public virtual Teachers Teacher { get; set; }

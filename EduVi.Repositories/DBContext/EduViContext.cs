@@ -37,8 +37,6 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<Orders> Orders { get; set; }
 
-    public virtual DbSet<ProductComponent> ProductComponent { get; set; }
-
     public virtual DbSet<Products> Products { get; set; }
 
     public virtual DbSet<ProductVideos> ProductVideos { get; set; }
@@ -54,8 +52,6 @@ public partial class EduViContext : DbContext
     public virtual DbSet<Subjects> Subjects { get; set; }
 
     public virtual DbSet<SubscriptionPlans> SubscriptionPlans { get; set; }
-
-    public virtual DbSet<SystemLogs> SystemLogs { get; set; }
 
     public virtual DbSet<TeacherMaterials> TeacherMaterials { get; set; }
 
@@ -147,17 +143,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.ExpertCode)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.BankAccount)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.BankName).HasMaxLength(100);
-            entity.Property(e => e.IdentityCardNumber)
-                .HasMaxLength(20)
-                .IsUnicode(false);
             entity.Property(e => e.IsVerified).HasDefaultValue(false);
-            entity.Property(e => e.TaxCode)
-                .HasMaxLength(20)
-                .IsUnicode(false);
 
             entity.HasOne(d => d.Expert).WithOne(p => p.Experts)
                 .HasForeignKey<Experts>(d => d.ExpertId)
@@ -342,39 +328,6 @@ public partial class EduViContext : DbContext
                 .HasConstraintName("FK__Orders__TeacherI__08B54D69");
         });
 
-        modelBuilder.Entity<ProductComponent>(entity =>
-        {
-            entity.HasKey(e => new { e.ProductId, e.MaterialId }).HasName("PK__ProductC__D85CA7DC61DABA12");
-
-            entity.Property(e => e.ProductId).HasColumnName("ProductID");
-            entity.Property(e => e.MaterialId).HasColumnName("MaterialID");
-            entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
-            entity.Property(e => e.ComponentCode)
-                .HasMaxLength(100)
-                .IsUnicode(false)
-                .HasColumnName("ComponentCode");
-            entity.Property(e => e.CardId)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.BlockId)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.AddedAt)
-                .HasColumnType("datetime2")
-                .HasDefaultValueSql("GETUTCDATE()");
-
-            entity.HasOne(d => d.Products).WithMany(p => p.ProductComponent)
-                .HasPrincipalKey(p => new { p.ProductId, p.TeacherId })
-                .HasForeignKey(d => new { d.ProductId, d.TeacherId })
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PC_Products");
-
-            entity.HasOne(d => d.TeacherMaterials).WithMany(p => p.ProductComponent)
-                .HasForeignKey(d => new { d.TeacherId, d.MaterialId })
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PC_TeacherMaterials");
-        });
-
         modelBuilder.Entity<Products>(entity =>
         {
             entity.HasKey(e => e.ProductId).HasName("PK__Products__B40CC6ED21E0E3A0");
@@ -531,26 +484,6 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.VideoQuotaAmount).HasDefaultValue(0);
         });
 
-        modelBuilder.Entity<SystemLogs>(entity =>
-        {
-            entity.HasKey(e => e.LogId).HasName("PK__SystemLo__5E5499A841E26CA0");
-
-            entity.Property(e => e.LogId).HasColumnName("LogID");
-            entity.Property(e => e.Action).HasMaxLength(100);
-            entity.Property(e => e.Ipaddress)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("IPAddress");
-            entity.Property(e => e.Timestamp)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.UserId).HasColumnName("UserID");
-
-            entity.HasOne(d => d.User).WithMany(p => p.SystemLogs)
-                .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__SystemLog__UserI__0C85DE4D");
-        });
-
         modelBuilder.Entity<TeacherMaterials>(entity =>
         {
             entity.HasKey(e => new { e.TeacherId, e.MaterialId }).HasName("PK__TeacherM__81A2387567765723");
@@ -584,7 +517,6 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.TeacherCode)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.Degree).HasMaxLength(100);
             entity.Property(e => e.SchoolName).HasMaxLength(100);
 
             entity.HasOne(d => d.Teacher).WithOne(p => p.Teachers)
