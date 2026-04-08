@@ -25,7 +25,7 @@ public interface IWithdrawalService
     /// Admin: xem tất cả yêu cầu, lọc theo status.
     /// </summary>
     Task<(List<AdminWithdrawalResponse> Items, int TotalCount)> GetAllWithdrawalsAsync(
-        string? status, int page, int pageSize);
+        int? status, int page, int pageSize);
 
     /// <summary>
     /// Step 7+8: Admin duyệt hoặc từ chối — trừ tiền thật (SUCCESS) hoặc unlock (REJECTED).

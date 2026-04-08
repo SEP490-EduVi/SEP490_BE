@@ -8,7 +8,8 @@ public class WithdrawalResponse
     public string BankAccountNumber { get; set; }
     public string BankName { get; set; }
     public string AccountHolderName { get; set; }
-    public string Status { get; set; }
+    /// <summary>0 = Pending, 1 = Confirmed, 2 = Success, 3 = Rejected</summary>
+    public int Status { get; set; }
     public string? AdminNote { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

@@ -29,6 +29,7 @@ public partial class InputDocuments
 
     public DateTime? UploadDate { get; set; }
 
+    /// <summary>0 = Uploaded (sẵn sàng phân tích)</summary>
     public int Status { get; set; }
 
     public virtual Lessons Lesson { get; set; }

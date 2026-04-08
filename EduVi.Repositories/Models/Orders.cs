@@ -15,6 +15,7 @@ public partial class Orders
 
     public DateTime? OrderDate { get; set; }
 
+    /// <summary>0 = Pending, 1 = Completed, 2 = Failed, 3 = Cancelled</summary>
     public int? Status { get; set; }
 
     public string PaymentMethod { get; set; }

@@ -19,7 +19,7 @@ public class StaffRepository : IStaffRepository
         return await _context.ExpertVerifications
             .Include(v => v.Expert)
                 .ThenInclude(e => e.Expert) // Users navigation
-            .Where(v => v.Status == "pending")
+            .Where(v => v.Status == 0) // Pending
             .OrderBy(v => v.UploadedAt)
             .ToListAsync();
     }
@@ -54,7 +54,7 @@ public class StaffRepository : IStaffRepository
         return await _context.ExpertVerifications
             .AnyAsync(v => v.ExpertId == expertId
                         && v.VerificationCode != excludeVerificationCode
-                        && v.Status == "approved");
+                        && v.Status == 1); // Approved
     }
 
     // ── Kiểm duyệt Materials ──────────────────────────────────────────────────

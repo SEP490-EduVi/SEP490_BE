@@ -24,8 +24,8 @@ public class WithdrawalRequests
 
     public string AccountHolderName { get; set; }
 
-    /// <summary>PENDING | CONFIRMED | SUCCESS | REJECTED</summary>
-    public string Status { get; set; }
+    /// <summary>0 = Pending, 1 = Confirmed (tiền bị freeze), 2 = Success (đã chuyển khoản), 3 = Rejected (tiền unlock)</summary>
+    public int Status { get; set; }
 
     /// <summary>Ghi chú của Admin khi duyệt/từ chối</summary>
     public string AdminNote { get; set; }

@@ -23,6 +23,7 @@ public partial class Users
 
     public string AvatarUrl { get; set; }
 
+    /// <summary>0 = Banned, 1 = Active</summary>
     public int? Status { get; set; }
 
     public bool IsEmailVerified { get; set; }

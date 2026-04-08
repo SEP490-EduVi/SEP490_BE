@@ -32,6 +32,8 @@ public class MaterialResponseDto
     /// </summary>
     public int ApprovalStatus { get; set; }
 
+    public string? RejectionReason { get; set; }
+
     public string? ExpertCode { get; set; }
     public string? ExpertName { get; set; }
 

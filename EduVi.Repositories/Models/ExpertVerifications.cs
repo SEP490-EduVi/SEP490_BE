@@ -17,7 +17,8 @@ public partial class ExpertVerifications
 
     public string Description { get; set; }
 
-    public string Status { get; set; }
+    /// <summary>0 = Pending, 1 = Approved, 2 = Rejected</summary>
+    public int Status { get; set; }
 
     public string RejectionReason { get; set; }
 

@@ -44,14 +44,14 @@ public class WithdrawalRepository : IWithdrawalRepository
     }
 
     public async Task<(List<WithdrawalRequests> Items, int TotalCount)> GetAllAsync(
-        string? status, int page, int pageSize)
+        int? status, int page, int pageSize)
     {
         var query = _context.WithdrawalRequests
             .Include(w => w.User)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(w => w.Status == status);
+        if (status.HasValue)
+            query = query.Where(w => w.Status == status.Value);
 
         query = query.OrderByDescending(w => w.CreatedAt);
 

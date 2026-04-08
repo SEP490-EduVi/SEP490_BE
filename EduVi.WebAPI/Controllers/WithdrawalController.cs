@@ -118,7 +118,7 @@ public class WithdrawalController : ControllerBase
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<object>>> GetAllWithdrawals(
-        [FromQuery] string? status,
+        [FromQuery] int? status,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {

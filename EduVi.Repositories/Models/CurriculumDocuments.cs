@@ -19,6 +19,7 @@ public partial class CurriculumDocuments
 
     public string FileUrl { get; set; }
 
+    /// <summary>0 = Pending, 1 = Processing, 2 = Completed, 3 = Failed — xem CurriculumDocumentStatusConstants</summary>
     public int Status { get; set; }
 
     public string Note { get; set; }

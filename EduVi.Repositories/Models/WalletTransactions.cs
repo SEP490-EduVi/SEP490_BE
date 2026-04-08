@@ -23,6 +23,7 @@ public partial class WalletTransactions
 
     public decimal? BalanceAfter { get; set; }
 
+    /// <summary>0 = Pending, 1 = Completed, 2 = Failed, 3 = Cancelled — xem PaymentConstants.Status</summary>
     public int? Status { get; set; }
 
     public string Description { get; set; }

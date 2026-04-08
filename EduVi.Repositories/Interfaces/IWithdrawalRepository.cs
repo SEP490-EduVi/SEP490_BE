@@ -18,7 +18,7 @@ public interface IWithdrawalRepository
     /// Admin: danh sách tất cả yêu cầu, có thể lọc theo status (phân trang)
     /// </summary>
     Task<(List<WithdrawalRequests> Items, int TotalCount)> GetAllAsync(
-        string? status, int page, int pageSize);
+        int? status, int page, int pageSize);
 
     Task UpdateAsync(WithdrawalRequests request);
 }

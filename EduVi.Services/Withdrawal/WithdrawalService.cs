@@ -145,7 +145,7 @@ public class WithdrawalService : IWithdrawalService
     // ─────────────────────────────────────────────────────────────────────────────
 
     public async Task<(List<AdminWithdrawalResponse> Items, int TotalCount)> GetAllWithdrawalsAsync(
-        string? status, int page, int pageSize)
+        int? status, int page, int pageSize)
     {
         var (items, totalCount) = await _unitOfWork.WithdrawalRepository.GetAllAsync(status, page, pageSize);
         return (items.Select(MapToAdminResponse).ToList(), totalCount);
@@ -163,7 +163,7 @@ public class WithdrawalService : IWithdrawalService
 
         if (withdrawal.Status != WithdrawalStatus.Confirmed)
             throw new InvalidOperationException(
-                $"Yêu cầu này đang ở trạng thái '{withdrawal.Status}', không thể xử lý.");
+                $"Yêu cầu này đang ở trạng thái {WithdrawalStatus.GetStatusName(withdrawal.Status)}, không thể xử lý.");
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -263,8 +263,17 @@ public class WithdrawalService : IWithdrawalService
 /// <summary>Hằng số trạng thái WithdrawalRequest</summary>
 public static class WithdrawalStatus
 {
-    public const string Pending = "PENDING";
-    public const string Confirmed = "CONFIRMED";
-    public const string Success = "SUCCESS";
-    public const string Rejected = "REJECTED";
+    public const int Pending = 0;
+    public const int Confirmed = 1;
+    public const int Success = 2;
+    public const int Rejected = 3;
+
+    public static string GetStatusName(int status) => status switch
+    {
+        Pending => "PENDING",
+        Confirmed => "CONFIRMED",
+        Success => "SUCCESS",
+        Rejected => "REJECTED",
+        _ => "UNKNOWN"
+    };
 }

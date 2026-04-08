@@ -26,21 +26,17 @@ public class EmailService : IEmailService
                 title: "Đặt lại mật khẩu",
                 preheader: "Yêu cầu đặt lại mật khẩu tài khoản EduVi của bạn.",
                 content: $"""
-                    <p style="margin:0 0 16px;font-size:16px;color:#374151;">Xin chào <strong>{fullName}</strong>,</p>
-                    <p style="margin:0 0 16px;font-size:15px;color:#6b7280;">
+                    <p style="margin:0 0 16px;font-size:15px;color:#0f172a;">Xin chào <strong>{fullName}</strong>,</p>
+                    <p style="margin:0 0 20px;font-size:14px;color:#475569;">
                         Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản EduVi của bạn.
                         Nhập mã bên dưới để tiếp tục.
                     </p>
-                    <div style="background:#f0f9ff;border:2px dashed #0ea5e9;border-radius:12px;padding:24px;text-align:center;margin:24px 0;">
-                        <p style="margin:0 0 8px;font-size:13px;color:#0369a1;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Mã xác nhận</p>
-                        <p style="margin:0;font-size:36px;font-weight:700;letter-spacing:8px;color:#0c4a6e;font-family:monospace;">{resetToken}</p>
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:24px;text-align:center;margin:0 0 20px;">
+                        <p style="margin:0 0 4px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Mã xác nhận</p>
+                        <p style="margin:0;font-size:32px;font-weight:700;letter-spacing:8px;color:#0f172a;font-family:monospace;">{resetToken}</p>
                     </div>
-                    <div style="background:#fef2f2;border-left:4px solid #ef4444;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 20px;">
-                        <p style="margin:0;font-size:14px;color:#b91c1c;">
-                            ⏱ Mã có hiệu lực trong <strong>15 phút</strong>. Không chia sẻ mã này với bất kỳ ai.
-                        </p>
-                    </div>
-                    <p style="margin:0;font-size:14px;color:#9ca3af;">
+                    <p style="margin:0 0 16px;font-size:13px;color:#ef4444;">Mã có hiệu lực trong <strong>15 phút</strong>. Không chia sẻ mã này với bất kỳ ai.</p>
+                    <p style="margin:0;font-size:13px;color:#94a3b8;">
                         Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này — tài khoản của bạn vẫn an toàn.
                     </p>
                 """);
@@ -63,21 +59,17 @@ public class EmailService : IEmailService
                 title: "Xác thực địa chỉ email",
                 preheader: "Nhập mã OTP để kích hoạt tài khoản EduVi của bạn.",
                 content: $"""
-                    <p style="margin:0 0 16px;font-size:16px;color:#374151;">Xin chào <strong>{fullName}</strong>,</p>
-                    <p style="margin:0 0 16px;font-size:15px;color:#6b7280;">
+                    <p style="margin:0 0 16px;font-size:15px;color:#0f172a;">Xin chào <strong>{fullName}</strong>,</p>
+                    <p style="margin:0 0 20px;font-size:14px;color:#475569;">
                         Cảm ơn bạn đã đăng ký tài khoản EduVi! Vui lòng nhập mã OTP bên dưới
                         để xác thực địa chỉ email và kích hoạt tài khoản.
                     </p>
-                    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:2px solid #3b82f6;border-radius:16px;padding:28px;text-align:center;margin:24px 0;">
-                        <p style="margin:0 0 8px;font-size:13px;color:#1d4ed8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Mã OTP của bạn</p>
-                        <p style="margin:0;font-size:42px;font-weight:700;letter-spacing:10px;color:#1e3a8a;font-family:monospace;">{verificationToken}</p>
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:24px;text-align:center;margin:0 0 20px;">
+                        <p style="margin:0 0 4px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Mã OTP của bạn</p>
+                        <p style="margin:0;font-size:36px;font-weight:700;letter-spacing:10px;color:#0f172a;font-family:monospace;">{verificationToken}</p>
                     </div>
-                    <div style="background:#fef2f2;border-left:4px solid #ef4444;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 20px;">
-                        <p style="margin:0;font-size:14px;color:#b91c1c;">
-                            ⏱ Mã hết hạn sau <strong>5 phút</strong>. Không chia sẻ mã này với bất kỳ ai.
-                        </p>
-                    </div>
-                    <p style="margin:0;font-size:14px;color:#9ca3af;">
+                    <p style="margin:0 0 16px;font-size:13px;color:#ef4444;">Mã hết hạn sau <strong>5 phút</strong>. Không chia sẻ mã này với bất kỳ ai.</p>
+                    <p style="margin:0;font-size:13px;color:#94a3b8;">
                         Nếu bạn không thực hiện đăng ký, vui lòng bỏ qua email này.
                     </p>
                 """);
@@ -95,11 +87,10 @@ public class EmailService : IEmailService
     {
         try
         {
-            var (roleLabel, roleIcon, roleDesc, roleFeatures) = roleName.ToLower() switch
+            var (roleLabel, roleDesc, roleFeatures) = roleName.ToLower() switch
             {
                 "expert" or "chuyên gia" => (
                     "Chuyên gia",
-                    "🎓",
                     "Bạn có thể đăng tải học liệu, chia sẻ kiến thức và nhận doanh thu từ các giáo viên trên nền tảng.",
                     new[]
                     {
@@ -110,7 +101,6 @@ public class EmailService : IEmailService
                     }),
                 "teacher" or "giáo viên" => (
                     "Giáo viên",
-                    "👩‍🏫",
                     "Bạn có thể khám phá kho học liệu phong phú, mua tài liệu chất lượng và sử dụng các công cụ AI hỗ trợ giảng dạy.",
                     new[]
                     {
@@ -121,7 +111,6 @@ public class EmailService : IEmailService
                     }),
                 _ => (
                     roleName,
-                    "👤",
                     "Chào mừng bạn đến với EduVi — nền tảng giáo dục hàng đầu.",
                     new[] { "Khám phá nền tảng EduVi" })
             };
@@ -131,31 +120,25 @@ public class EmailService : IEmailService
 
             var subject = $"Chào mừng đến với EduVi, {fullName}!";
             var body = BuildEmailLayout(
-                title: $"{roleIcon} Tài khoản đã được kích hoạt!",
+                title: "Tài khoản đã được kích hoạt",
                 preheader: $"Chào mừng {fullName} — tài khoản {roleLabel} EduVi của bạn đã sẵn sàng.",
                 content: $"""
-                    <div style="text-align:center;margin-bottom:24px;">
-                        <div style="display:inline-block;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:50%;width:72px;height:72px;line-height:72px;font-size:36px;">{roleIcon}</div>
-                    </div>
-                    <p style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827;text-align:center;">Chào mừng, {fullName}!</p>
-                    <p style="margin:0 0 24px;font-size:14px;color:#6b7280;text-align:center;">Tài khoản <strong>{roleLabel}</strong> của bạn đã được xác thực thành công.</p>
-
-                    <div style="background:#f8fafc;border-radius:12px;padding:20px 24px;margin:0 0 24px;">
-                        <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;">Bạn có thể làm gì?</p>
-                        <p style="margin:0 0 12px;font-size:14px;color:#6b7280;">{roleDesc}</p>
-                        <ul style="margin:0;padding-left:20px;">
-                            {featuresHtml}
-                        </ul>
-                    </div>
-
-                    <div style="background:linear-gradient(135deg,#eff6ff,#f5f3ff);border-radius:12px;padding:16px 20px;margin:0 0 20px;border:1px solid #e0e7ff;">
-                        <p style="margin:0;font-size:14px;color:#4338ca;">
-                                <strong>Bước tiếp theo:</strong> Đăng nhập vào EduVi và hoàn thiện hồ sơ của bạn để trải nghiệm đầy đủ tính năng.
+                    <p style="margin:0 0 16px;font-size:16px;color:#0f172a;">Xin chào <strong>{fullName}</strong>,</p>
+                    <p style="margin:0 0 20px;font-size:15px;color:#475569;">
+                        Tài khoản <strong>{roleLabel}</strong> của bạn đã được xác thực thành công. Dưới đây là những gì bạn có thể làm trên EduVi.
+                    </p>
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Tính năng dành cho bạn</p>
+                    <p style="margin:0 0 12px;font-size:14px;color:#475569;">{roleDesc}</p>
+                    <ul style="margin:0 0 24px;padding-left:20px;">
+                        {featuresHtml}
+                    </ul>
+                    <div style="background:#f8fafc;border-left:3px solid #3b82f6;border-radius:0 4px 4px 0;padding:12px 16px;margin:0 0 20px;">
+                        <p style="margin:0;font-size:14px;color:#334155;">
+                            <strong>Bước tiếp theo:</strong> Đăng nhập vào EduVi và hoàn thiện hồ sơ để trải nghiệm đầy đủ tính năng.
                         </p>
                     </div>
-
-                    <p style="margin:0;font-size:13px;color:#9ca3af;text-align:center;">
-                        Nếu bạn có bất kỳ câu hỏi nào, đội ngũ hỗ trợ EduVi luôn sẵn sàng giúp đỡ.
+                    <p style="margin:0;font-size:13px;color:#94a3b8;">
+                        Nếu bạn có câu hỏi, đội ngũ hỗ trợ EduVi luôn sẵn sàng giúp đỡ.
                     </p>
                 """);
 
@@ -177,21 +160,17 @@ public class EmailService : IEmailService
                 title: "Xác nhận rút tiền",
                 preheader: "Mã OTP xác nhận yêu cầu rút tiền từ ví EduVi của bạn.",
                 content: $"""
-                    <p style="margin:0 0 16px;font-size:16px;color:#374151;">Xin chào <strong>{fullName}</strong>,</p>
-                    <p style="margin:0 0 16px;font-size:15px;color:#6b7280;">
+                    <p style="margin:0 0 16px;font-size:15px;color:#0f172a;">Xin chào <strong>{fullName}</strong>,</p>
+                    <p style="margin:0 0 20px;font-size:14px;color:#475569;">
                         Chúng tôi nhận được yêu cầu rút <strong>{amount:N0} VND</strong> từ ví EduVi của bạn.
                         Nhập mã OTP bên dưới để xác nhận giao dịch.
                     </p>
-                    <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #22c55e;border-radius:16px;padding:28px;text-align:center;margin:24px 0;">
-                        <p style="margin:0 0 8px;font-size:13px;color:#15803d;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Mã OTP xác nhận rút tiền</p>
-                        <p style="margin:0;font-size:42px;font-weight:700;letter-spacing:10px;color:#14532d;font-family:monospace;">{otp}</p>
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:24px;text-align:center;margin:0 0 20px;">
+                        <p style="margin:0 0 4px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Mã OTP xác nhận rút tiền</p>
+                        <p style="margin:0;font-size:36px;font-weight:700;letter-spacing:10px;color:#0f172a;font-family:monospace;">{otp}</p>
                     </div>
-                    <div style="background:#fef2f2;border-left:4px solid #ef4444;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 20px;">
-                        <p style="margin:0;font-size:14px;color:#b91c1c;">
-                            ⏱ Mã hết hạn sau <strong>5 phút</strong>. Không chia sẻ mã này với bất kỳ ai.
-                        </p>
-                    </div>
-                    <p style="margin:0;font-size:14px;color:#9ca3af;">
+                    <p style="margin:0 0 16px;font-size:13px;color:#ef4444;">Mã hết hạn sau <strong>5 phút</strong>. Không chia sẻ mã này với bất kỳ ai.</p>
+                    <p style="margin:0;font-size:13px;color:#94a3b8;">
                         Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email này và liên hệ hỗ trợ ngay.
                     </p>
                 """);
@@ -217,38 +196,33 @@ public class EmailService : IEmailService
                 <meta name="viewport" content="width=device-width,initial-scale=1.0">
                 <title>{title}</title>
             </head>
-            <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                <!-- Preheader (hidden preview text) -->
+            <body style="margin:0;padding:0;background-color:#f6f8fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
                 <span style="display:none;max-height:0;overflow:hidden;">{preheader}</span>
 
-                <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:40px 16px;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8fa;padding:40px 16px;">
                   <tr>
                     <td align="center">
-                      <table width="100%" style="max-width:560px;" cellpadding="0" cellspacing="0">
+                      <table width="100%" style="max-width:520px;" cellpadding="0" cellspacing="0">
 
-                        <!-- Logo/Header -->
+                        <!-- Header -->
                         <tr>
-                          <td align="center" style="padding-bottom:24px;">
-                            <div style="display:inline-flex;align-items:center;gap:8px;">
-                              <div style="background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:10px;width:40px;height:40px;line-height:40px;text-align:center;font-size:22px;">🎓</div>
-                              <span style="font-size:24px;font-weight:800;color:#1e3a8a;letter-spacing:-0.5px;">EduVi</span>
-                            </div>
+                          <td align="center" style="padding-bottom:20px;">
+                            <span style="font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-0.3px;">EduVi</span>
                           </td>
                         </tr>
 
                         <!-- Card -->
                         <tr>
-                          <td style="background:#ffffff;border-radius:20px;padding:36px 40px;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
-                            <!-- Title -->
-                            <h1 style="margin:0 0 28px;font-size:22px;font-weight:700;color:#111827;border-bottom:2px solid #f0f4ff;padding-bottom:20px;">{title}</h1>
-                            <!-- Dynamic content -->
+                          <td style="background:#ffffff;border-radius:8px;padding:32px 40px;border:1px solid #e2e8f0;">
+                            <h1 style="margin:0 0 20px;font-size:18px;font-weight:600;color:#0f172a;">{title}</h1>
+                            <hr style="margin:0 0 24px;border:none;border-top:1px solid #e2e8f0;">
                             {content}
                           </td>
                         </tr>
 
                         <!-- Footer -->
                         <tr>
-                          <td align="center" style="padding-top:24px;">
+                          <td align="center" style="padding-top:20px;">
                             <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">© 2026 EduVi Platform. All rights reserved.</p>
                             <p style="margin:0;font-size:12px;color:#cbd5e1;">Email này được gửi tự động, vui lòng không trả lời.</p>
                           </td>

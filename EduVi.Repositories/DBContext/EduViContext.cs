@@ -180,9 +180,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.FileType).HasMaxLength(50);
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasDefaultValue("pending");
+                .HasDefaultValue(0);
             entity.Property(e => e.RejectionReason).HasMaxLength(500);
             entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETUTCDATE()");
 
@@ -283,6 +281,7 @@ public partial class EduViContext : DbContext
 
             entity.Property(e => e.MaterialId).HasColumnName("MaterialID");
             entity.Property(e => e.ApprovalStatus).HasDefaultValue(0);
+            entity.Property(e => e.RejectionReason).HasMaxLength(500);
             entity.Property(e => e.ApproverId).HasColumnName("ApproverID");
             entity.Property(e => e.MaterialCode)
                 .HasMaxLength(100)
@@ -766,9 +765,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.BankName).HasMaxLength(100);
             entity.Property(e => e.AccountHolderName).HasMaxLength(100);
             entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasDefaultValue("PENDING");
+                .HasDefaultValue(0);
             entity.Property(e => e.AdminNote).HasMaxLength(500);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()")

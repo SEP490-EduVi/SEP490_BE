@@ -76,7 +76,7 @@ public class ExpertService : IExpertService
             FileUrl = gcsPath,
             FileType = request.FileType.ToLower(),
             Description = request.Description,
-            Status = "pending",
+            Status = VerificationStatus.Pending,
             UploadedAt = DateTime.UtcNow
         };
 
@@ -100,7 +100,7 @@ public class ExpertService : IExpertService
         if (verification.ExpertId != expertId)
             throw new InvalidOperationException("Hồ sơ không thuộc về bạn");
 
-        if (verification.Status == "approved")
+        if (verification.Status == VerificationStatus.Approved)
             throw new InvalidOperationException("Không thể xóa hồ sơ đã được duyệt");
 
         var bucketName = _configuration["GCS:BucketName"]
@@ -170,10 +170,10 @@ public class ExpertService : IExpertService
         var verification = await _unitOfWork.StaffRepository.GetVerificationByCodeAsync(verificationCode)
             ?? throw new KeyNotFoundException($"Verification '{verificationCode}' không tồn tại");
 
-        if (verification.Status != "pending")
-            throw new InvalidOperationException($"Hồ sơ này đã được xử lý với trạng thái '{verification.Status}'");
+        if (verification.Status != VerificationStatus.Pending)
+            throw new InvalidOperationException($"Hồ sơ này đã được xử lý (trạng thái: {VerificationStatus.GetStatusName(verification.Status)})");
 
-        verification.Status = request.Approved ? "approved" : "rejected";
+        verification.Status = request.Approved ? VerificationStatus.Approved : VerificationStatus.Rejected;
         verification.RejectionReason = request.Approved ? null : request.RejectionReason;
         verification.ReviewedAt = DateTime.UtcNow;
         verification.ReviewedByStaffId = staffId;
@@ -261,4 +261,20 @@ public class ExpertService : IExpertService
             FileUrl = fileUrl
         };
     }
+}
+
+/// <summary>Hằng số trạng thái ExpertVerification</summary>
+public static class VerificationStatus
+{
+    public const int Pending = 0;
+    public const int Approved = 1;
+    public const int Rejected = 2;
+
+    public static string GetStatusName(int status) => status switch
+    {
+        Pending => "PENDING",
+        Approved => "APPROVED",
+        Rejected => "REJECTED",
+        _ => "UNKNOWN"
+    };
 }

@@ -126,6 +126,7 @@ public class MaterialService : IMaterialService
 
         // Reset approval khi sửa → phải duyệt lại
         material.ApprovalStatus = 0;
+        material.RejectionReason = null;
         material.ApproverId = null;
 
         _unitOfWork.ExpertRepository.UpdateMaterial(material);
@@ -178,6 +179,7 @@ public class MaterialService : IMaterialService
         if (request.Approved)
         {
             material.ApprovalStatus = 1; // Approved
+            material.RejectionReason = null;
         }
         else
         {
@@ -185,6 +187,7 @@ public class MaterialService : IMaterialService
                 throw new InvalidOperationException("Phải cung cấp lý do khi từ chối material");
 
             material.ApprovalStatus = 2; // Rejected
+            material.RejectionReason = request.RejectionReason;
         }
 
         material.ApproverId = staffId;
@@ -515,6 +518,7 @@ public class MaterialService : IMaterialService
             GradeCode = material.Grade?.GradeCode,
             GradeName = material.Grade?.GradeName,
             ApprovalStatus = material.ApprovalStatus ?? 0,
+            RejectionReason = material.RejectionReason,
             ExpertCode = material.Expert?.ExpertCode,
             ExpertName = material.Expert?.Expert?.FullName, // Expert → Users.FullName
             CreatedAt = material.CreatedAt

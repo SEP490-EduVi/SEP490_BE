@@ -10,9 +10,9 @@ public class ExpertVerificationDto
     public string? Description { get; set; }
 
     /// <summary>
-    /// pending | approved | rejected
+    /// 0 = Pending, 1 = Approved, 2 = Rejected
     /// </summary>
-    public string Status { get; set; } = null!;
+    public int Status { get; set; }
 
     public string? RejectionReason { get; set; }
     public DateTime UploadedAt { get; set; }
@@ -30,7 +30,8 @@ public class ExpertVerificationStaffDto
     public string ExpertEmail { get; set; } = null!;
     public string FileType { get; set; } = null!;
     public string? Description { get; set; }
-    public string Status { get; set; } = null!;
+    /// <summary>0 = Pending, 1 = Approved, 2 = Rejected</summary>
+    public int Status { get; set; }
     public string? RejectionReason { get; set; }
     public DateTime UploadedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
