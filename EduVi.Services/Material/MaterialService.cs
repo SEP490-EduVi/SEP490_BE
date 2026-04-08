@@ -243,11 +243,12 @@ public class MaterialService : IMaterialService
                 _unitOfWork.TeacherRepository.UpdateWallet(wallet);
 
                 // Tạo transaction record
-                var orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                // +0/+1/+2 để 3 rows cùng batch đều unique, vẫn traceable theo cùng base
+                var baseOrderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 100 + Random.Shared.Next(10, 99);
                 var transaction = new WalletTransactions
                 {
                     WalletId = wallet.WalletId,
-                    OrderCode = orderCode,
+                    OrderCode = baseOrderCode,
                     TransactionType = "BUY_MATERIAL",
                     Amount = -price,
                     BalanceBefore = balanceBefore,
@@ -274,7 +275,7 @@ public class MaterialService : IMaterialService
                 var expertTransaction = new WalletTransactions
                 {
                     WalletId = expertWallet.WalletId,
-                    OrderCode = orderCode,
+                    OrderCode = baseOrderCode + 1,
                     TransactionType = "MATERIAL_REVENUE",
                     Amount = expertRevenue,
                     BalanceBefore = expertBalanceBefore,
@@ -296,7 +297,7 @@ public class MaterialService : IMaterialService
                 var adminTransaction = new WalletTransactions
                 {
                     WalletId = adminWallet.WalletId,
-                    OrderCode = orderCode,
+                    OrderCode = baseOrderCode + 2,
                     TransactionType = "MATERIAL_PLATFORM_FEE",
                     Amount = platformFee,
                     BalanceBefore = adminBalanceBefore,
