@@ -493,6 +493,8 @@ public class PaymentService : IPaymentService
         BalanceAfter = t.BalanceAfter ?? 0,
         Status = GetStatusName(t.Status),
         Description = t.Description,
+        PlanName = t.Plan?.PlanName,
+        MaterialTitle = t.Material?.Title,
         CreatedAt = t.CreatedAt ?? DateTime.MinValue
     };
 

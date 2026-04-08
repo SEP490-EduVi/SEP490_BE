@@ -29,9 +29,12 @@ public partial class WalletTransactions
 
     public int? PlanId { get; set; }
 
+    public int? MaterialId { get; set; }
+
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
     public virtual Wallets Wallet { get; set; }
     public virtual SubscriptionPlans Plan { get; set; }
+    public virtual Materials Material { get; set; }
 }

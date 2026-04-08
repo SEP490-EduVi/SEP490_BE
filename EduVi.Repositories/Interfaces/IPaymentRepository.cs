@@ -41,6 +41,11 @@ public interface IPaymentRepository
     // ============ Orders ============
     Task<Orders> CreateOrderAsync(Orders order);
 
+    // ============ Materials ============
+    Task<Materials?> GetMaterialByCodeAsync(string materialCode);
+    Task<bool> HasTeacherPurchasedMaterialAsync(int teacherId, int materialId);
+    Task CreateTeacherMaterialAsync(TeacherMaterials teacherMaterial);
+
     // ============ UserQuotas ============
     Task<UserQuotas?> GetQuotaByTeacherIdAsync(int teacherId);
     Task<UserQuotas> CreateOrUpdateQuotaAsync(int teacherId, int analysisQuotaToAdd, int slideQuotaToAdd, int videoQuotaToAdd);

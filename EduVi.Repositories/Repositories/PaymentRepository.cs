@@ -80,6 +80,8 @@ public class PaymentRepository : IPaymentRepository
         int walletId, int page, int pageSize)
     {
         var query = _context.WalletTransactions
+            .Include(t => t.Plan)
+            .Include(t => t.Material)
             .Where(t => t.WalletId == walletId)
             .OrderByDescending(t => t.CreatedAt);
 
@@ -219,5 +221,25 @@ public class PaymentRepository : IPaymentRepository
 
         _context.UserQuotas.Update(quota);
         return true;
+    }
+
+    // ============ Materials ============
+
+    public async Task<Materials?> GetMaterialByCodeAsync(string materialCode)
+    {
+        return await _context.Materials
+            .FirstOrDefaultAsync(m => m.MaterialCode == materialCode && m.ApprovalStatus == 1);
+    }
+
+    public async Task<bool> HasTeacherPurchasedMaterialAsync(int teacherId, int materialId)
+    {
+        return await _context.TeacherMaterials
+            .AnyAsync(tm => tm.TeacherId == teacherId && tm.MaterialId == materialId);
+    }
+
+    public async Task CreateTeacherMaterialAsync(TeacherMaterials teacherMaterial)
+    {
+        await _context.TeacherMaterials.AddAsync(teacherMaterial);
+        // Không gọi SaveChanges — để UnitOfWork quản lý
     }
 }

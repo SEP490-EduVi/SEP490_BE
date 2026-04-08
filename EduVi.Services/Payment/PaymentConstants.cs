@@ -23,6 +23,7 @@ public static class PaymentConstants
     {
         public const string TopUp = "TOP_UP";
         public const string BuySubscription = "BUY_SUBSCRIPTION";
+        public const string BuyMaterial = "BUY_MATERIAL";
     }
 
     /// <summary>
