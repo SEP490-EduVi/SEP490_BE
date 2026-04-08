@@ -16,4 +16,9 @@ public interface IEmailService
     /// Send welcome email after successful email verification
     /// </summary>
     Task<bool> SendWelcomeEmailAsync(string email, string fullName, string roleName);
+
+    /// <summary>
+    /// Send OTP email for withdrawal confirmation
+    /// </summary>
+    Task<bool> SendWithdrawalOtpEmailAsync(string email, string fullName, string otp, decimal amount);
 }

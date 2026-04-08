@@ -14,6 +14,7 @@ using EduVi.Services.Payment;
 using EduVi.Services.Pipeline;
 using EduVi.Services.Project;
 using EduVi.Services.RateLimit;
+using EduVi.Services.Withdrawal;
 using EduVi.WebAPI.BackgroundServices;
 using EduVi.WebAPI.Hubs;
 using EduVi.WebAPI.Middleware;
@@ -116,6 +117,7 @@ builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddScoped<IExpertService, ExpertService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ICurriculumIngestionService, CurriculumIngestionService>();
+builder.Services.AddScoped<IWithdrawalService, WithdrawalService>();
 
 // RabbitMQ Publisher
 builder.Services.AddSingleton<IRabbitMqPublisherService, RabbitMqPublisherService>();

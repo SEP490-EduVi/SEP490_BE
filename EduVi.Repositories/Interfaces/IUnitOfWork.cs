@@ -64,6 +64,11 @@ public interface IUnitOfWork
     /// </summary>
     IGameTemplateRepository GameTemplateRepository { get; }
 
+    /// <summary>
+    /// Repository xử lý WithdrawalRequests: yêu cầu rút tiền của Expert
+    /// </summary>
+    IWithdrawalRepository WithdrawalRepository { get; }
+
     // ============ Transaction Management ============
 
     /// <summary>

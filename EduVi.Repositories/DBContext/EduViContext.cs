@@ -69,6 +69,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<WalletTransactions> WalletTransactions { get; set; }
 
+    public virtual DbSet<WithdrawalRequests> WithdrawalRequests { get; set; }
+
     public static string GetConnectionString(string connectionStringName)
     {
         var config = new ConfigurationBuilder()
@@ -750,6 +752,41 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()")
                 .HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<WithdrawalRequests>(entity =>
+        {
+            entity.HasKey(e => e.WithdrawalId).HasName("PK_WithdrawalRequests");
+
+            entity.ToTable("WithdrawalRequests");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.LockedAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.BankAccountNumber).HasMaxLength(30);
+            entity.Property(e => e.BankName).HasMaxLength(100);
+            entity.Property(e => e.AccountHolderName).HasMaxLength(100);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("PENDING");
+            entity.Property(e => e.AdminNote).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasIndex(e => e.UserId, "IX_WithdrawalRequests_UserId");
+            entity.HasIndex(e => e.Status, "IX_WithdrawalRequests_Status");
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_WithdrawalRequests_Users");
+
+            entity.HasOne(d => d.ProcessedByAdmin).WithMany()
+                .HasForeignKey(d => d.ProcessedByAdminId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_WithdrawalRequests_Admins");
         });
 
         OnModelCreatingPartial(modelBuilder);

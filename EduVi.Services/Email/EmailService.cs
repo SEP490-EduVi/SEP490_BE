@@ -168,6 +168,43 @@ public class EmailService : IEmailService
         }
     }
 
+    public async Task<bool> SendWithdrawalOtpEmailAsync(string email, string fullName, string otp, decimal amount)
+    {
+        try
+        {
+            var subject = "Xác nhận yêu cầu rút tiền — EduVi";
+            var body = BuildEmailLayout(
+                title: "Xác nhận rút tiền",
+                preheader: "Mã OTP xác nhận yêu cầu rút tiền từ ví EduVi của bạn.",
+                content: $"""
+                    <p style="margin:0 0 16px;font-size:16px;color:#374151;">Xin chào <strong>{fullName}</strong>,</p>
+                    <p style="margin:0 0 16px;font-size:15px;color:#6b7280;">
+                        Chúng tôi nhận được yêu cầu rút <strong>{amount:N0} VND</strong> từ ví EduVi của bạn.
+                        Nhập mã OTP bên dưới để xác nhận giao dịch.
+                    </p>
+                    <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #22c55e;border-radius:16px;padding:28px;text-align:center;margin:24px 0;">
+                        <p style="margin:0 0 8px;font-size:13px;color:#15803d;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Mã OTP xác nhận rút tiền</p>
+                        <p style="margin:0;font-size:42px;font-weight:700;letter-spacing:10px;color:#14532d;font-family:monospace;">{otp}</p>
+                    </div>
+                    <div style="background:#fef2f2;border-left:4px solid #ef4444;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 20px;">
+                        <p style="margin:0;font-size:14px;color:#b91c1c;">
+                            ⏱ Mã hết hạn sau <strong>5 phút</strong>. Không chia sẻ mã này với bất kỳ ai.
+                        </p>
+                    </div>
+                    <p style="margin:0;font-size:14px;color:#9ca3af;">
+                        Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email này và liên hệ hỗ trợ ngay.
+                    </p>
+                """);
+
+            return await SendEmailAsync(email, subject, body);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send withdrawal OTP email to {Email}", email);
+            return false;
+        }
+    }
+
     // ── Shared layout ────────────────────────────────────────────────────────────
 
     private static string BuildEmailLayout(string title, string preheader, string content)

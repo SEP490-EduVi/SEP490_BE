@@ -20,6 +20,7 @@ public class UnitOfWork : IUnitOfWork
     private TeacherRepository? _teacherRepository;
     private CurriculumDocumentRepository? _curriculumDocumentRepository;
     private GameTemplateRepository? _gameTemplateRepository;
+    private WithdrawalRepository? _withdrawalRepository;
     private IDbContextTransaction? _currentTransaction;
 
     public UnitOfWork(EduViContext context)
@@ -84,6 +85,11 @@ public class UnitOfWork : IUnitOfWork
     public IGameTemplateRepository GameTemplateRepository
     {
         get => _gameTemplateRepository ??= new GameTemplateRepository(_context);
+    }
+
+    public IWithdrawalRepository WithdrawalRepository
+    {
+        get => _withdrawalRepository ??= new WithdrawalRepository(_context);
     }
 
     // ============ Transaction Management ============
