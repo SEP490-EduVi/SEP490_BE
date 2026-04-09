@@ -258,6 +258,7 @@ public class MaterialService : IMaterialService
                     BalanceAfter = wallet.Balance,
                     Status = 1, // COMPLETED
                     Description = $"Mua material: {material.Title} ({materialCode})",
+                    MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.TeacherRepository.CreateWalletTransactionAsync(transaction);
@@ -285,6 +286,7 @@ public class MaterialService : IMaterialService
                     BalanceAfter = expertWallet.Balance,
                     Status = 1,
                     Description = $"Doanh thu material (70%): {material.Title} ({materialCode})",
+                    MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.ExpertRepository.CreateWalletTransactionAsync(expertTransaction);
@@ -307,6 +309,7 @@ public class MaterialService : IMaterialService
                     BalanceAfter = adminWallet.Balance,
                     Status = 1,
                     Description = $"Phí nền tảng material (30%): {material.Title} ({materialCode})",
+                    MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.AdminRepository.CreateWalletTransactionAsync(adminTransaction);

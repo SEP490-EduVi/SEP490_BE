@@ -1,7 +1,8 @@
 namespace EduVi.Contracts.DTOs.Expert;
 
 /// <summary>
-/// Thông tin hồ sơ verification trả về cho Expert (không chứa Signed URL).
+/// Thông tin hồ sơ verification trả về cho Expert.
+/// FileUrl là URL proxy nội bộ để Expert xem lại file đã nộp.
 /// </summary>
 public class ExpertVerificationDto
 {
@@ -17,6 +18,11 @@ public class ExpertVerificationDto
     public string? RejectionReason { get; set; }
     public DateTime UploadedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+
+    /// <summary>
+    /// URL proxy nội bộ để xem lại file đã nộp: GET /api/expert/verifications/{code}/file
+    /// </summary>
+    public string FileUrl { get; set; } = null!;
 }
 
 /// <summary>

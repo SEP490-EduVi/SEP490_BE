@@ -84,13 +84,40 @@ public class ExpertService : IExpertService
         await _unitOfWork.ExpertRepository.CreateVerificationAsync(verification);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToExpertDto(verification);
+        return MapToExpertDto(verification, $"/api/expert/verifications/{verificationCode}/file");
     }
 
     public async Task<List<ExpertVerificationDto>> GetMyVerificationsAsync(int expertId)
     {
         var verifications = await _unitOfWork.ExpertRepository.GetVerificationsByExpertAsync(expertId);
-        return verifications.Select(MapToExpertDto).ToList();
+        return verifications
+            .Select(verification => MapToExpertDto(verification, $"/api/expert/verifications/{verification.VerificationCode}/file"))
+            .ToList();
+    }
+
+    public async Task<ExpertVerificationFileDto> GetMyVerificationFileAsync(int expertId, string verificationCode)
+    {
+        var verification = await _unitOfWork.ExpertRepository.GetVerificationByCodeAsync(verificationCode)
+            ?? throw new KeyNotFoundException($"Verification '{verificationCode}' không tồn tại");
+
+        if (verification.ExpertId != expertId)
+            throw new InvalidOperationException("Hồ sơ không thuộc về bạn");
+
+        var (bucketName, objectName) = ParseGcsPath(verification.FileUrl);
+        var storageClient = await StorageClient.CreateAsync();
+        var googleStorageObject = await storageClient.GetObjectAsync(bucketName, objectName);
+
+        await using var memoryStream = new MemoryStream();
+        await storageClient.DownloadObjectAsync(googleStorageObject, memoryStream);
+
+        return new ExpertVerificationFileDto
+        {
+            FileBytes = memoryStream.ToArray(),
+            ContentType = string.IsNullOrWhiteSpace(googleStorageObject.ContentType)
+                ? "application/octet-stream"
+                : googleStorageObject.ContentType,
+            FileName = Path.GetFileName(objectName)
+        };
     }
 
     public async Task DeleteVerificationAsync(int expertId, string verificationCode)
@@ -231,7 +258,7 @@ public class ExpertService : IExpertService
         return (bucketName, objectName);
     }
 
-    private static ExpertVerificationDto MapToExpertDto(ExpertVerifications verification)
+    private static ExpertVerificationDto MapToExpertDto(ExpertVerifications verification, string fileUrl)
     {
         return new ExpertVerificationDto
         {
@@ -241,7 +268,8 @@ public class ExpertService : IExpertService
             Status = verification.Status,
             RejectionReason = verification.RejectionReason,
             UploadedAt = verification.UploadedAt,
-            ReviewedAt = verification.ReviewedAt
+            ReviewedAt = verification.ReviewedAt,
+            FileUrl = fileUrl
         };
     }
 

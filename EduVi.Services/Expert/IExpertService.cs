@@ -24,6 +24,11 @@ public interface IExpertService
     /// </summary>
     Task DeleteVerificationAsync(int expertId, string verificationCode);
 
+    /// <summary>
+    /// Expert stream file đã nộp về client để xem lại. Kiểm tra ownership trước khi trả file.
+    /// </summary>
+    Task<ExpertVerificationFileDto> GetMyVerificationFileAsync(int expertId, string verificationCode);
+
     // ── Staff: kiểm duyệt hồ sơ ─────────────────────────────────────────────
 
     /// <summary>

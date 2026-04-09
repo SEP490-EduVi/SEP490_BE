@@ -54,6 +54,7 @@ public class ExpertController : ControllerBase
 
     /// <summary>
     /// Xem danh sách hồ sơ đã nộp và trạng thái kiểm duyệt.
+    /// Mỗi hồ sơ có FileUrl để xem lại file đã nộp.
     /// </summary>
     [HttpGet("verifications")]
     public async Task<ActionResult<ApiResponse<List<ExpertVerificationDto>>>> GetMyVerifications()
@@ -68,6 +69,34 @@ public class ExpertController : ControllerBase
         {
             _logger.LogError(ex, "Error getting verifications for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
             return StatusCode(500, ApiResponse<List<ExpertVerificationDto>>.Fail("Đã xảy ra lỗi khi lấy danh sách hồ sơ", 500));
+        }
+    }
+
+    /// <summary>
+    /// Xem lại file chứng chỉ/bằng cấp đã nộp. Chỉ Expert sở hữu hồ sơ mới được truy cập.
+    /// </summary>
+    [HttpGet("verifications/{verificationCode}/file")]
+    public async Task<IActionResult> GetMyVerificationFile(string verificationCode)
+    {
+        try
+        {
+            var expertId = GetCurrentUserId();
+            var fileDto = await _expertService.GetMyVerificationFileAsync(expertId, verificationCode);
+            return File(fileDto.FileBytes, fileDto.ContentType, fileDto.FileName);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error streaming verification file {VerificationCode} for expert {ExpertId}",
+                verificationCode, User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi tải file", 500));
         }
     }
 
