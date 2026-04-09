@@ -37,6 +37,5 @@ public class ProductDetailDto
     public double? VideoDuration { get; set; }
     public string? ProductVideoCode { get; set; }
     public JsonElement? VideoInteractions { get; set; }
-    public JsonElement? VideoPausePoints { get; set; }
     public DateTime? VideoGeneratedAt { get; set; }
 }

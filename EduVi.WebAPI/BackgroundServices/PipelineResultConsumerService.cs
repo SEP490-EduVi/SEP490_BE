@@ -411,7 +411,6 @@ public class PipelineResultConsumerService : BackgroundService
 
         return resultElement.TryGetProperty("video_url", out _)
             || resultElement.TryGetProperty("request_id", out _)
-            || resultElement.TryGetProperty("pause_points", out _)
             || resultElement.TryGetProperty("interactions", out _);
     }
 
@@ -462,9 +461,6 @@ public class PipelineResultConsumerService : BackgroundService
 
             if (videoResultElement.TryGetProperty("interactions", out var interactionsElement))
                 productVideo.Interactions = interactionsElement.GetRawText();
-
-            if (videoResultElement.TryGetProperty("pause_points", out var pausePointsElement))
-                productVideo.PausePoints = pausePointsElement.GetRawText();
         }
 
         unitOfWork.PipelineRepository.UpdateProductVideo(productVideo);

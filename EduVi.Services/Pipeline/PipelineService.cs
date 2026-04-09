@@ -475,7 +475,6 @@ public class PipelineService : IPipelineService
             VideoDuration = latestProductVideo?.Duration,
             ProductVideoCode = latestProductVideo?.ProductVideoCode,
             VideoInteractions = ParseJson(latestProductVideo?.Interactions),
-            VideoPausePoints = ParseJson(latestProductVideo?.PausePoints),
             VideoGeneratedAt = latestProductVideo?.CompletedAt
         };
     }
@@ -559,7 +558,6 @@ public class PipelineService : IPipelineService
             VideoUrl = productVideo.VideoUrl,
             Duration = productVideo.Duration,
             Interactions = ParseJson(productVideo.Interactions),
-            PausePoints = ParseJson(productVideo.PausePoints),
             ErrorMessage = productVideo.ErrorMessage,
             CreatedAt = productVideo.CreatedAt,
             UpdatedAt = productVideo.UpdatedAt,

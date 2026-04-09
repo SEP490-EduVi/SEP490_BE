@@ -23,8 +23,6 @@ public partial class ProductVideos
 
     public string Interactions { get; set; }
 
-    public string PausePoints { get; set; }
-
     public string ErrorMessage { get; set; }
 
     public DateTime CreatedAt { get; set; }

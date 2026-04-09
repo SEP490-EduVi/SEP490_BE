@@ -19,6 +19,8 @@ public partial class EduViContext : DbContext
     {
     }
 
+    public virtual DbSet<Classrooms> Classrooms { get; set; }
+
     public virtual DbSet<Admins> Admins { get; set; }
 
     public virtual DbSet<Lessons> Lessons { get; set; }
@@ -383,7 +385,6 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.VideoUrl).HasMaxLength(1000);
             entity.Property(e => e.Duration).HasColumnType("float");
             entity.Property(e => e.Interactions).HasColumnType("nvarchar(max)");
-            entity.Property(e => e.PausePoints).HasColumnType("nvarchar(max)");
             entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
             entity.Property(e => e.CreatedAt)
                 .HasColumnType("datetime2")
@@ -716,6 +717,29 @@ public partial class EduViContext : DbContext
                 .HasForeignKey(d => d.ProcessedByAdminId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_WithdrawalRequests_Admins");
+        });
+
+        modelBuilder.Entity<Classrooms>(entity =>
+        {
+            entity.HasKey(e => e.ClassroomId).HasName("PK_Classrooms");
+
+            entity.HasIndex(e => e.ClassroomCode, "UQ_Classrooms_ClassroomCode").IsUnique();
+            entity.HasIndex(e => e.TeacherId, "IX_Classrooms_TeacherId");
+
+            entity.Property(e => e.ClassroomCode).HasMaxLength(100).IsUnicode(false);
+            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.GradeLabel).HasMaxLength(100);
+            entity.Property(e => e.SchoolYear).HasMaxLength(20).IsUnicode(false);
+            entity.Property(e => e.Students).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+
+            entity.HasOne(d => d.Teacher).WithMany(p => p.Classrooms)
+                .HasForeignKey(d => d.TeacherId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Classrooms_Teachers");
         });
 
         OnModelCreatingPartial(modelBuilder);

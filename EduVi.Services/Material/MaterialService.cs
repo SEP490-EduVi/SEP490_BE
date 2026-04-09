@@ -257,7 +257,7 @@ public class MaterialService : IMaterialService
                     BalanceBefore = balanceBefore,
                     BalanceAfter = wallet.Balance,
                     Status = 1, // COMPLETED
-                    Description = $"Mua material: {material.Title} ({materialCode})",
+                    Description = $"Mua material: {material.Title}",
                     MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -285,7 +285,7 @@ public class MaterialService : IMaterialService
                     BalanceBefore = expertBalanceBefore,
                     BalanceAfter = expertWallet.Balance,
                     Status = 1,
-                    Description = $"Doanh thu material (70%): {material.Title} ({materialCode})",
+                    Description = $"Doanh thu material (70%): {material.Title}",
                     MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -308,7 +308,7 @@ public class MaterialService : IMaterialService
                     BalanceBefore = adminBalanceBefore,
                     BalanceAfter = adminWallet.Balance,
                     Status = 1,
-                    Description = $"Phí nền tảng material (30%): {material.Title} ({materialCode})",
+                    Description = $"Phí nền tảng material (30%): {material.Title}",
                     MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
