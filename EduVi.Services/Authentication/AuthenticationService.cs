@@ -52,16 +52,18 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        // 0. Rate Limiting - 5 attempts per 5 minutes per username
-        var isAllowed = await _rateLimitService.IsAllowedAsync($"login:{request.Username}", 5, 5);
+        // 0. Rate Limiting - 5 attempts per 5 minutes per username/email
+        var rateLimitKey = $"login:{request.Username}";
+        var isAllowed = await _rateLimitService.IsAllowedAsync(rateLimitKey, 5, 5);
         if (!isAllowed)
         {
-            var remaining = await _rateLimitService.GetRemainingAttemptsAsync($"login:{request.Username}", 5, 5);
+            var remaining = await _rateLimitService.GetRemainingAttemptsAsync(rateLimitKey, 5, 5);
             throw new UnauthorizedAccessException($"Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 5 phút. Số lần còn lại: {remaining}");
         }
 
-        // 1. Tìm người dùng
-        var user = await _unitOfWork.AuthenticationRepository.GetUserByUsernameAsync(request.Username);
+        // 1. Tìm người dùng theo username, nếu không có thì thử theo email
+        var user = await _unitOfWork.AuthenticationRepository.GetUserByUsernameAsync(request.Username)
+                   ?? await _unitOfWork.AuthenticationRepository.GetUserByEmailAsync(request.Username);
         if (user == null)
             throw new UnauthorizedAccessException("Đăng nhập thất bại. Tên đăng nhập hoặc mật khẩu không đúng");
 
@@ -78,7 +80,7 @@ public class AuthenticationService : IAuthenticationService
             throw new UnauthorizedAccessException("Vui lòng xác thực email trước khi đăng nhập. Kiểm tra hộp thư đến để lấy mã OTP.");
 
         // 5. Login thành công - reset rate limit
-        await _rateLimitService.ResetAsync($"login:{request.Username}");
+        await _rateLimitService.ResetAsync(rateLimitKey);
 
         // 6. Tạo JWT Token
         var token = GenerateJwtToken(user);
@@ -120,7 +122,7 @@ public class AuthenticationService : IAuthenticationService
                     FullName = payload.Name,
                     AvatarUrl = payload.Picture,
                     PasswordHash = HashPassword(Guid.NewGuid().ToString()), // Random password
-                    RoleId = 5, // Default: Teacher role (customize theo nhu cầu)
+                    RoleId = 4, // Default: Teacher role
                     Status = 1, // Active
                     IsEmailVerified = true, // Google email đã được verify
                     CreatedAt = DateTime.UtcNow
