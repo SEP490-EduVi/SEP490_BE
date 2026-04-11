@@ -133,10 +133,17 @@ public class AuthenticationService : IAuthenticationService
                 // Tự động tạo role-specific record (default Teacher)
                 try
                 {
-                    await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
+                    var teacher = await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
                     await _unitOfWork.AuthenticationRepository.CreateWalletAsync(user.UserId);
+                    // Cấp quota miễn phí ban đầu cho giáo viên mới qua Google
+                    await _unitOfWork.PaymentRepository.CreateOrUpdateQuotaAsync(
+                        teacher.TeacherId,
+                        analysisQuotaToAdd: 2,
+                        slideQuotaToAdd: 1,
+                        videoQuotaToAdd: 1,
+                        gameQuotaToAdd: 2);
                     await _unitOfWork.SaveChangesWithTransactionAsync();
-                    _logger.LogInformation("Đã tạo hồ sơ Teacher và Wallet cho UserId={UserId} qua Google Login", user.UserId);
+                    _logger.LogInformation("Đã tạo hồ sơ Teacher, Wallet và Quota cho UserId={UserId} qua Google Login", user.UserId);
                 }
                 catch (Exception ex)
                 {
@@ -215,7 +222,14 @@ public class AuthenticationService : IAuthenticationService
                     break;
 
                 case 4: // Teacher
-                    await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
+                    var teacher = await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
+                    // Cấp quota miễn phí ban đầu cho giáo viên mới
+                    await _unitOfWork.PaymentRepository.CreateOrUpdateQuotaAsync(
+                        teacher.TeacherId,
+                        analysisQuotaToAdd: 2,
+                        slideQuotaToAdd: 1,
+                        videoQuotaToAdd: 1,
+                        gameQuotaToAdd: 2);
                     break;
             }
 

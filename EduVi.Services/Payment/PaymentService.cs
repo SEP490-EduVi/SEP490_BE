@@ -57,6 +57,9 @@ public class PaymentService : IPaymentService
                 TotalVideoQuota = 0,
                 AvailableVideoQuota = 0,
                 UsedVideoQuota = 0,
+                TotalGameQuota = 0,
+                AvailableGameQuota = 0,
+                UsedGameQuota = 0,
                 UpdatedAt = null
             };
         }
@@ -239,11 +242,13 @@ public class PaymentService : IPaymentService
             var analysisQuotaToAdd = plan.AnalysisQuotaAmount ?? 0;
             var slideQuotaToAdd = plan.SlideQuotaAmount ?? 0;
             var videoQuotaToAdd = plan.VideoQuotaAmount ?? 0;
+            var gameQuotaToAdd = plan.GameQuotaAmount ?? 0;
             var updatedQuota = await _unitOfWork.PaymentRepository.CreateOrUpdateQuotaAsync(
                 teacherId,
                 analysisQuotaToAdd,
                 slideQuotaToAdd,
-                videoQuotaToAdd);
+                videoQuotaToAdd,
+                gameQuotaToAdd);
 
             // Lưu transaction lịch sử
             await _unitOfWork.PaymentRepository.CreateTransactionAsync(new WalletTransactions
@@ -274,9 +279,11 @@ public class PaymentService : IPaymentService
                 AnalysisQuotaAdded = analysisQuotaToAdd,
                 SlideQuotaAdded = slideQuotaToAdd,
                 VideoQuotaAdded = videoQuotaToAdd,
+                GameQuotaAdded = gameQuotaToAdd,
                 AvailableAnalysisQuotaAfter = updatedQuota.AvailableAnalysisQuota ?? 0,
                 AvailableSlideQuotaAfter = updatedQuota.AvailableSlideQuota ?? 0,
                 AvailableVideoQuotaAfter = updatedQuota.AvailableVideoQuota ?? 0,
+                AvailableGameQuotaAfter = updatedQuota.AvailableGameQuota ?? 0,
                 WalletBalanceAfter = newBalance,
                 PurchasedAt = DateTime.UtcNow
             };
@@ -457,6 +464,7 @@ public class PaymentService : IPaymentService
         AnalysisQuotaAmount = p.AnalysisQuotaAmount ?? 0,
         SlideQuotaAmount = p.SlideQuotaAmount ?? 0,
         VideoQuotaAmount = p.VideoQuotaAmount ?? 0,
+        GameQuotaAmount = p.GameQuotaAmount ?? 0,
         Description = p.Description,
         IsActive = p.IsActive ?? false
     };
@@ -480,6 +488,9 @@ public class PaymentService : IPaymentService
         TotalVideoQuota = quota.TotalVideoQuota ?? 0,
         AvailableVideoQuota = quota.AvailableVideoQuota ?? 0,
         UsedVideoQuota = quota.UsedVideoQuota ?? 0,
+        TotalGameQuota = quota.TotalGameQuota ?? 0,
+        AvailableGameQuota = quota.AvailableGameQuota ?? 0,
+        UsedGameQuota = quota.UsedGameQuota ?? 0,
         UpdatedAt = quota.UpdatedAt
     };
 

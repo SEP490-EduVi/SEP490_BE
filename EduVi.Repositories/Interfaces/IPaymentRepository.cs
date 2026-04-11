@@ -48,8 +48,9 @@ public interface IPaymentRepository
 
     // ============ UserQuotas ============
     Task<UserQuotas?> GetQuotaByTeacherIdAsync(int teacherId);
-    Task<UserQuotas> CreateOrUpdateQuotaAsync(int teacherId, int analysisQuotaToAdd, int slideQuotaToAdd, int videoQuotaToAdd);
+    Task<UserQuotas> CreateOrUpdateQuotaAsync(int teacherId, int analysisQuotaToAdd, int slideQuotaToAdd, int videoQuotaToAdd, int gameQuotaToAdd = 0);
     Task<bool> ConsumeAnalysisQuotaAsync(int teacherId, int amount = 1);
     Task<bool> ConsumeSlideQuotaAsync(int teacherId, int amount = 1);
     Task<bool> ConsumeVideoQuotaAsync(int teacherId, int amount = 1);
+    Task<bool> ConsumeGameQuotaAsync(int teacherId, int amount = 1);
 }

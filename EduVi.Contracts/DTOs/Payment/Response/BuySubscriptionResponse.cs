@@ -16,11 +16,15 @@ public class BuySubscriptionResponse
 
     public int VideoQuotaAdded { get; set; }
 
+    public int GameQuotaAdded { get; set; }
+
     public int AvailableAnalysisQuotaAfter { get; set; }
 
     public int AvailableSlideQuotaAfter { get; set; }
 
     public int AvailableVideoQuotaAfter { get; set; }
+
+    public int AvailableGameQuotaAfter { get; set; }
 
     /// <summary>
     /// Số dư ví sau giao dịch

@@ -21,6 +21,8 @@ public partial class SubscriptionPlans
 
     public int? VideoQuotaAmount { get; set; }
 
+    public int? GameQuotaAmount { get; set; }
+
     public string Description { get; set; }
 
     public bool? IsActive { get; set; }

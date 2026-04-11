@@ -45,7 +45,13 @@ public class GameService : IGameService
 
         var taskId = Guid.NewGuid();
 
-        await GetTeacherEntityIdAsync(userId);
+        var teacherId = await GetTeacherEntityIdAsync(userId);
+
+        var consumed = await _unitOfWork.PaymentRepository.ConsumeGameQuotaAsync(teacherId, amount: 1);
+        if (!consumed)
+            throw new InvalidOperationException("Bạn không còn đủ lượt tạo game. Vui lòng mua thêm gói để tiếp tục.");
+
+        await _unitOfWork.SaveChangesAsync();
 
         var message = new GameGenerationRequestMessage
         {

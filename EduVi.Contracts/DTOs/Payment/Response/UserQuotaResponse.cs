@@ -17,5 +17,9 @@ public class UserQuotaResponse
     public int AvailableVideoQuota { get; set; }
     public int UsedVideoQuota { get; set; }
 
+    public int TotalGameQuota { get; set; }
+    public int AvailableGameQuota { get; set; }
+    public int UsedGameQuota { get; set; }
+
     public DateTime? UpdatedAt { get; set; }
 }

@@ -127,7 +127,7 @@ public class PaymentRepository : IPaymentRepository
             .FirstOrDefaultAsync(q => q.TeacherId == teacherId);
     }
 
-    public async Task<UserQuotas> CreateOrUpdateQuotaAsync(int teacherId, int analysisQuotaToAdd, int slideQuotaToAdd, int videoQuotaToAdd)
+    public async Task<UserQuotas> CreateOrUpdateQuotaAsync(int teacherId, int analysisQuotaToAdd, int slideQuotaToAdd, int videoQuotaToAdd, int gameQuotaToAdd = 0)
     {
         var existing = await _context.UserQuotas
             .FirstOrDefaultAsync(q => q.TeacherId == teacherId);
@@ -146,6 +146,9 @@ public class PaymentRepository : IPaymentRepository
                 TotalVideoQuota = videoQuotaToAdd,
                 AvailableVideoQuota = videoQuotaToAdd,
                 UsedVideoQuota = 0,
+                TotalGameQuota = gameQuotaToAdd,
+                AvailableGameQuota = gameQuotaToAdd,
+                UsedGameQuota = 0,
                 UpdatedAt = DateTime.UtcNow
             };
             await _context.UserQuotas.AddAsync(quota);
@@ -159,6 +162,8 @@ public class PaymentRepository : IPaymentRepository
             existing.AvailableSlideQuota = (existing.AvailableSlideQuota ?? 0) + slideQuotaToAdd;
             existing.TotalVideoQuota = (existing.TotalVideoQuota ?? 0) + videoQuotaToAdd;
             existing.AvailableVideoQuota = (existing.AvailableVideoQuota ?? 0) + videoQuotaToAdd;
+            existing.TotalGameQuota = (existing.TotalGameQuota ?? 0) + gameQuotaToAdd;
+            existing.AvailableGameQuota = (existing.AvailableGameQuota ?? 0) + gameQuotaToAdd;
             existing.UpdatedAt = DateTime.UtcNow;
             // Context dùng NoTracking mặc định → cần gọi Update() để attach + mark modified
             _context.UserQuotas.Update(existing);
@@ -217,6 +222,25 @@ public class PaymentRepository : IPaymentRepository
 
         quota.AvailableVideoQuota = availableVideoQuota - amount;
         quota.UsedVideoQuota = (quota.UsedVideoQuota ?? 0) + amount;
+        quota.UpdatedAt = DateTime.UtcNow;
+
+        _context.UserQuotas.Update(quota);
+        return true;
+    }
+
+    public async Task<bool> ConsumeGameQuotaAsync(int teacherId, int amount = 1)
+    {
+        var quota = await _context.UserQuotas
+            .FirstOrDefaultAsync(q => q.TeacherId == teacherId);
+        if (quota == null)
+            return false;
+
+        var availableGameQuota = quota.AvailableGameQuota ?? 0;
+        if (availableGameQuota < amount)
+            return false;
+
+        quota.AvailableGameQuota = availableGameQuota - amount;
+        quota.UsedGameQuota = (quota.UsedGameQuota ?? 0) + amount;
         quota.UpdatedAt = DateTime.UtcNow;
 
         _context.UserQuotas.Update(quota);

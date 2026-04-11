@@ -29,6 +29,12 @@ public partial class UserQuotas
 
     public int? UsedVideoQuota { get; set; }
 
+    public int? TotalGameQuota { get; set; }
+
+    public int? AvailableGameQuota { get; set; }
+
+    public int? UsedGameQuota { get; set; }
+
     public DateTime? UpdatedAt { get; set; }
 
     public virtual Teachers Teacher { get; set; }
