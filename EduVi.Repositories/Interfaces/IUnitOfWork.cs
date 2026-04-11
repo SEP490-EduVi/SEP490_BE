@@ -60,6 +60,11 @@ public interface IUnitOfWork
     ICurriculumDocumentRepository CurriculumDocumentRepository { get; }
 
     /// <summary>
+    /// Repository xử lý TextbookDocuments: upload/quản lý sách giáo khoa
+    /// </summary>
+    ITextbookDocumentRepository TextbookDocumentRepository { get; }
+
+    /// <summary>
     /// Repository xử lý Classrooms: quản lý lớp học và danh sách học sinh
     /// </summary>
     IClassroomRepository ClassroomRepository { get; }

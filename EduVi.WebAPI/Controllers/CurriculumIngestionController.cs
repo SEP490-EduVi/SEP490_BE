@@ -100,4 +100,28 @@ public class CurriculumIngestionController : ControllerBase
             throw new UnauthorizedAccessException("User ID not found in token");
         return userId;
     }
+
+    /// <summary>
+    /// Xóa dữ liệu curriculum khỏi Neo4j — gửi deletion task vào RabbitMQ.
+    /// DB record được giữ lại cho mục đích audit.
+    /// </summary>
+    [HttpDelete("{documentCode}/neo4j")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ApiResponse<object>>> DeleteCurriculumNeo4j(string documentCode)
+    {
+        try
+        {
+            await _curriculumIngestionService.DeleteCurriculumNeo4jAsync(documentCode);
+            return Accepted(ApiResponse<object>.Success(null, "Yêu cầu xóa dữ liệu Neo4j đã được gửi"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting curriculum Neo4j data for document {DocumentCode}", documentCode);
+            return StatusCode(500, ApiResponse<object>.Fail("Lỗi khi xóa dữ liệu chương trình khỏi Neo4j", 500));
+        }
+    }
 }

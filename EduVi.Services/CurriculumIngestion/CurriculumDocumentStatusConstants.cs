@@ -25,12 +25,24 @@ public static class CurriculumDocumentStatusConstants
     /// </summary>
     public const int Failed = 3;
 
+    /// <summary>
+    /// Đang xóa dữ liệu khỏi Neo4j
+    /// </summary>
+    public const int Deleting = 4;
+
+    /// <summary>
+    /// Dữ liệu Neo4j đã được xóa thành công
+    /// </summary>
+    public const int Deleted = 5;
+
     public static string GetStatusName(int? status) => status switch
     {
-        Pending => "PENDING",
+        Pending    => "PENDING",
         Processing => "PROCESSING",
-        Completed => "COMPLETED",
-        Failed => "FAILED",
-        _ => "UNKNOWN"
+        Completed  => "COMPLETED",
+        Failed     => "FAILED",
+        Deleting   => "DELETING",
+        Deleted    => "DELETED",
+        _          => "UNKNOWN"
     };
 }

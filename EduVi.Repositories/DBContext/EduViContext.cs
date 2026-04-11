@@ -45,6 +45,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<CurriculumDocuments> CurriculumDocuments { get; set; }
 
+    public virtual DbSet<TextbookDocuments> TextbookDocuments { get; set; }
+
     public virtual DbSet<Projects> Projects { get; set; }
 
     public virtual DbSet<Roles> Roles { get; set; }
@@ -744,6 +746,42 @@ public partial class EduViContext : DbContext
                 .HasForeignKey(d => d.TeacherId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Classrooms_Teachers");
+        });
+
+        modelBuilder.Entity<TextbookDocuments>(entity =>
+        {
+            entity.HasKey(e => e.TextbookDocumentId).HasName("PK_TextbookDocuments");
+
+            entity.HasIndex(e => e.DocumentCode, "UQ_TextbookDocuments_DocumentCode").IsUnique();
+
+            entity.Property(e => e.TextbookDocumentId).HasColumnName("TextbookDocumentID");
+            entity.Property(e => e.DocumentCode)
+                .IsRequired()
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.SubjectCode)
+                .IsRequired()
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.GradeCode)
+                .IsRequired()
+                .HasMaxLength(10)
+                .IsUnicode(false);
+            entity.Property(e => e.Publisher).HasMaxLength(200);
+            entity.Property(e => e.OriginalFileName)
+                .IsRequired()
+                .HasMaxLength(500);
+            entity.Property(e => e.FileUrl)
+                .IsRequired()
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.Status).HasDefaultValue(0);
+            entity.Property(e => e.Note).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.Stats).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.ErrorMessage).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .HasColumnType("datetime");
         });
 
         OnModelCreatingPartial(modelBuilder);

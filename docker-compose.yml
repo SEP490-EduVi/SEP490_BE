@@ -204,6 +204,29 @@ services:
     restart: unless-stopped
     networks:
       - eduvi
+
+  # ── Textbook Ingestion Worker ────────────────────────────────────────
+  # NO GOOGLE_APPLICATION_CREDENTIALS — VM service account handles GCP auth via ADC
+  textbook-ingestion:
+    image: ghcr.io/${GITHUB_ORG}/textbook-ingestion:latest
+    container_name: textbook-ingestion
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      NEO4J_URI: ${NEO4J_URI}
+      NEO4J_USER: ${NEO4J_USER}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      TEXTBOOK_PREFETCH_COUNT: ${TEXTBOOK_PREFETCH_COUNT:-1}
+    restart: unless-stopped
+    networks:
+      - eduvi
  
   # ── Game Quiz Worker ────────────────────────────────────────────────
   # Generates gesture-interactive quiz JSON from edited slide content + template.

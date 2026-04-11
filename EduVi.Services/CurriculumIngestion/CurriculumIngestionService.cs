@@ -142,4 +142,27 @@ public class CurriculumIngestionService : ICurriculumIngestionService
         if (string.IsNullOrEmpty(value)) return null;
         return JsonSerializer.Deserialize<JsonElement>(value);
     }
+
+    public async Task DeleteCurriculumNeo4jAsync(string documentCode)
+    {
+        var document = await _unitOfWork.CurriculumDocumentRepository.GetByDocumentCodeAsync(documentCode)
+            ?? throw new KeyNotFoundException($"Curriculum document '{documentCode}' không tồn tại");
+
+        document.Status = CurriculumDocumentStatusConstants.Deleting;
+        _unitOfWork.CurriculumDocumentRepository.Update(document);
+        await _unitOfWork.SaveChangesAsync();
+
+        var taskId = Guid.NewGuid();
+        var publishStart = Stopwatch.GetTimestamp();
+        await _publisher.PublishCurriculumDeletionTaskAsync(
+            taskId,
+            document.CurriculumDocumentId,
+            document.SubjectCode,
+            document.EducationLevel,
+            document.CurriculumYear);
+        var publishElapsed = Stopwatch.GetElapsedTime(publishStart);
+        _logger.LogInformation(
+            "RabbitMQ curriculum deletion task published in {ElapsedMs}ms for document {DocumentCode}, taskId {TaskId}",
+            publishElapsed.TotalMilliseconds, documentCode, taskId);
+    }
 }

@@ -18,6 +18,9 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
     private const string SlideGenerationQueue = "slide.generation.requests";
     private const string VideoGenerationQueue = "video.generation.requests";
     private const string CurriculumIngestionQueue = "curriculum.ingestion.requests";
+    private const string CurriculumDeletionQueue  = "curriculum.deletion.requests";
+    private const string TextbookIngestionQueue   = "textbook.ingestion.requests";
+    private const string TextbookDeletionQueue    = "textbook.deletion.requests";
     private const string GameGenerationQueue = "game.quiz.requests";
 
     public RabbitMqPublisherService(IConfiguration configuration, ILogger<RabbitMqPublisherService> logger)
@@ -72,14 +75,36 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
             arguments: null);
 
         await _channel.QueueDeclareAsync(
+            queue: CurriculumDeletionQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
+
+        await _channel.QueueDeclareAsync(
+            queue: TextbookIngestionQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
+
+        await _channel.QueueDeclareAsync(
+            queue: TextbookDeletionQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            arguments: null);
+
+        await _channel.QueueDeclareAsync(
             queue: GameGenerationQueue,
             durable: true,
             exclusive: false,
             autoDelete: false,
             arguments: null);
 
-        _logger.LogInformation("RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}', '{VideoQueue}', '{CurriculumQueue}', '{GameQueue}'",
-            LessonAnalysisQueue, SlideGenerationQueue, VideoGenerationQueue, CurriculumIngestionQueue, GameGenerationQueue);
+        _logger.LogInformation(
+            "RabbitMQ publisher connected and queues declared: '{LessonQueue}', '{SlideQueue}', '{VideoQueue}', '{CurriculumIngestionQueue}', '{CurriculumDeletionQueue}', '{TextbookIngestionQueue}', '{TextbookDeletionQueue}', '{GameQueue}'",
+            LessonAnalysisQueue, SlideGenerationQueue, VideoGenerationQueue, CurriculumIngestionQueue, CurriculumDeletionQueue, TextbookIngestionQueue, TextbookDeletionQueue, GameGenerationQueue);
     }
 
     public async Task PublishLessonAnalysisTaskAsync(Guid taskId, string userId, int productId, string gcsUri, string subjectCode, string gradeCode, string lessonCode, int? curriculumYear)
@@ -302,6 +327,122 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
                 body: body);
 
             _logger.LogInformation("Published game generation task {TaskId}", taskId);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task PublishCurriculumDeletionTaskAsync(Guid taskId, int documentId, string subjectCode, string educationLevel, int? curriculumYear)
+    {
+        await _semaphore.WaitAsync();
+        try
+        {
+            await EnsureConnectedAsync();
+
+            var message = new
+            {
+                taskId = taskId.ToString(),
+                documentId,
+                subjectCode,
+                educationLevel,
+                curriculumYear
+            };
+
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                ContentType = "application/json"
+            };
+
+            await _channel!.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: CurriculumDeletionQueue,
+                mandatory: false,
+                basicProperties: properties,
+                body: body);
+
+            _logger.LogInformation("Published curriculum deletion task {TaskId} for document {DocumentId}", taskId, documentId);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task PublishTextbookIngestionTaskAsync(Guid taskId, int documentId, string gcsUri, string subjectCode, string gradeCode)
+    {
+        await _semaphore.WaitAsync();
+        try
+        {
+            await EnsureConnectedAsync();
+
+            var message = new
+            {
+                taskId = taskId.ToString(),
+                documentId,
+                gcsUri,
+                subjectCode,
+                gradeCode
+            };
+
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                ContentType = "application/json"
+            };
+
+            await _channel!.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: TextbookIngestionQueue,
+                mandatory: false,
+                basicProperties: properties,
+                body: body);
+
+            _logger.LogInformation("Published textbook ingestion task {TaskId} for document {DocumentId}", taskId, documentId);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task PublishTextbookDeletionTaskAsync(Guid taskId, int documentId, string subjectCode, string gradeCode)
+    {
+        await _semaphore.WaitAsync();
+        try
+        {
+            await EnsureConnectedAsync();
+
+            var message = new
+            {
+                taskId = taskId.ToString(),
+                documentId,
+                subjectCode,
+                gradeCode
+            };
+
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                ContentType = "application/json"
+            };
+
+            await _channel!.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: TextbookDeletionQueue,
+                mandatory: false,
+                basicProperties: properties,
+                body: body);
+
+            _logger.LogInformation("Published textbook deletion task {TaskId} for document {DocumentId}", taskId, documentId);
         }
         finally
         {

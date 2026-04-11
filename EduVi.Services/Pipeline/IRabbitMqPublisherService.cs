@@ -27,6 +27,24 @@ public interface IRabbitMqPublisherService
     Task PublishCurriculumIngestionTaskAsync(Guid taskId, int documentId, string gcsUri, string subjectCode, string educationLevel, int curriculumYear);
 
     /// <summary>
+    /// Publish một task xóa curriculum khỏi Neo4j lên RabbitMQ.
+    /// Message format: { taskId, documentId, subjectCode, educationLevel, curriculumYear }
+    /// </summary>
+    Task PublishCurriculumDeletionTaskAsync(Guid taskId, int documentId, string subjectCode, string educationLevel, int? curriculumYear);
+
+    /// <summary>
+    /// Publish một task textbook ingestion lên RabbitMQ.
+    /// Message format: { taskId, documentId, gcsUri, subjectCode, gradeCode }
+    /// </summary>
+    Task PublishTextbookIngestionTaskAsync(Guid taskId, int documentId, string gcsUri, string subjectCode, string gradeCode);
+
+    /// <summary>
+    /// Publish một task xóa textbook khỏi Neo4j lên RabbitMQ.
+    /// Message format: { taskId, documentId, subjectCode, gradeCode }
+    /// </summary>
+    Task PublishTextbookDeletionTaskAsync(Guid taskId, int documentId, string subjectCode, string gradeCode);
+
+    /// <summary>
     /// Publish một task tạo game lên RabbitMQ.
     /// </summary>
     Task PublishGameGenerationTaskAsync(Guid taskId, object message);

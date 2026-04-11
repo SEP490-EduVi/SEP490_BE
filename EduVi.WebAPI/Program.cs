@@ -5,6 +5,7 @@ using EduVi.Services.Admin;
 using EduVi.Services.Authentication;
 using EduVi.Services.Curriculum;
 using EduVi.Services.CurriculumIngestion;
+using EduVi.Services.TextbookIngestion;
 using EduVi.Services.Email;
 using EduVi.Services.Expert;
 using EduVi.Services.Games;
@@ -123,6 +124,7 @@ builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<IStaffProfileService, StaffProfileService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ICurriculumIngestionService, CurriculumIngestionService>();
+builder.Services.AddScoped<ITextbookIngestionService, TextbookIngestionService>();
 builder.Services.AddScoped<IWithdrawalService, WithdrawalService>();
 
 // RabbitMQ Publisher
@@ -133,6 +135,7 @@ builder.Services.AddHostedService<PipelineResultConsumerService>();
 
 // Curriculum Ingestion Result Consumer (BackgroundService)
 builder.Services.AddHostedService<CurriculumResultConsumerService>();
+builder.Services.AddHostedService<TextbookResultConsumerService>();
 builder.Services.AddHostedService<GameResultConsumerService>();
 
 // SignalR with Redis backplane

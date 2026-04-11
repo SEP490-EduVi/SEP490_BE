@@ -19,6 +19,7 @@ public class UnitOfWork : IUnitOfWork
     private StaffRepository? _staffRepository;
     private TeacherRepository? _teacherRepository;
     private CurriculumDocumentRepository? _curriculumDocumentRepository;
+    private TextbookDocumentRepository? _textbookDocumentRepository;
     private GameTemplateRepository? _gameTemplateRepository;
     private ClassroomRepository? _classroomRepository;
     private WithdrawalRepository? _withdrawalRepository;
@@ -81,6 +82,11 @@ public class UnitOfWork : IUnitOfWork
     public ICurriculumDocumentRepository CurriculumDocumentRepository
     {
         get => _curriculumDocumentRepository ??= new CurriculumDocumentRepository(_context);
+    }
+
+    public ITextbookDocumentRepository TextbookDocumentRepository
+    {
+        get => _textbookDocumentRepository ??= new TextbookDocumentRepository(_context);
     }
 
     public IGameTemplateRepository GameTemplateRepository

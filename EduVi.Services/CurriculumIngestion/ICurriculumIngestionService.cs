@@ -18,4 +18,9 @@ public interface ICurriculumIngestionService
     /// Xem chi tiết một curriculum document theo DocumentCode (polling status)
     /// </summary>
     Task<CurriculumDocumentResponseDto> GetCurriculumDocumentByCodeAsync(string documentCode);
+
+    /// <summary>
+    /// Xóa dữ liệu curriculum khỏi Neo4j — đặt status Deleting → publish deletion task
+    /// </summary>
+    Task DeleteCurriculumNeo4jAsync(string documentCode);
 }
