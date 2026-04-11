@@ -19,11 +19,7 @@ public partial class Products
 
     public string Description { get; set; }
 
-    public decimal? Price { get; set; }
-
     public int? SourceInputId { get; set; }
-
-    public bool? IsFreeForSubscribers { get; set; }
 
     /// <summary>0 = New, 1 = Processing, 2 = Evaluated, 3 = Failed, 4 = GeneratingSlides, 5 = SlidesGenerated, 6 = SlidesFailed, 7 = Deleted — xem ProductStatusConstants</summary>
     public int? Status { get; set; }

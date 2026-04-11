@@ -91,8 +91,7 @@ public class PipelineService : IPipelineService
                     ProductName = request.ProductName ?? $"Phân tích: {document.Title}",
                     Description = $"AI evaluation cho document: {document.Title}",
                     SourceInputId = document.DocumentId,
-                    Status = ProductStatusConstants.New,
-                    Price = 0
+                    Status = ProductStatusConstants.New
                 };
                 await _unitOfWork.PipelineRepository.CreateProductAsync(product);
             }

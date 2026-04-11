@@ -21,8 +21,6 @@ public partial class InputDocuments
 
     public string DocumentCode { get; set; }
 
-    public string Raw { get; set; }
-
     public string Title { get; set; }
 
     public string FilePath { get; set; }

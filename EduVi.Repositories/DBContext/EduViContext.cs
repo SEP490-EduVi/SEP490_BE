@@ -234,7 +234,7 @@ public partial class EduViContext : DbContext
                 .HasMaxLength(500)
                 .IsUnicode(false);
             entity.Property(e => e.GradeId).HasColumnName("GradeID");
-            entity.Property(e => e.Raw).HasMaxLength(500);
+
             entity.Property(e => e.SubjectId).HasColumnName("SubjectID");
             entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
             entity.Property(e => e.ProjectId).HasColumnName("ProjectID");
@@ -343,8 +343,6 @@ public partial class EduViContext : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("ProductCode");
-            entity.Property(e => e.IsFreeForSubscribers).HasDefaultValue(false);
-            entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ProductName).HasMaxLength(200);
             entity.Property(e => e.ProjectId).HasColumnName("ProjectID");
             entity.Property(e => e.SourceInputId).HasColumnName("SourceInputID");
