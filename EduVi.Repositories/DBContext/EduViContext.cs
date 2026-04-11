@@ -483,6 +483,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.AnalysisQuotaAmount).HasDefaultValue(0);
             entity.Property(e => e.SlideQuotaAmount).HasDefaultValue(0);
             entity.Property(e => e.VideoQuotaAmount).HasDefaultValue(0);
+            entity.Property(e => e.GameQuotaAmount).HasDefaultValue(0);
         });
 
         modelBuilder.Entity<TeacherMaterials>(entity =>
@@ -546,6 +547,9 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.UsedAnalysisQuota).HasDefaultValue(0);
             entity.Property(e => e.UsedSlideQuota).HasDefaultValue(0);
             entity.Property(e => e.UsedVideoQuota).HasDefaultValue(0);
+            entity.Property(e => e.TotalGameQuota).HasDefaultValue(0);
+            entity.Property(e => e.AvailableGameQuota).HasDefaultValue(0);
+            entity.Property(e => e.UsedGameQuota).HasDefaultValue(0);
 
             entity.HasOne(d => d.Teacher).WithOne(p => p.UserQuotas)
                 .HasForeignKey<UserQuotas>(d => d.TeacherId)
