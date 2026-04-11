@@ -62,6 +62,7 @@ services:
       GCS__Folders__ExpertVerifications: ${GCS__Folders__ExpertVerifications}
       GCS__Folders__EditedSlides: ${GCS__Folders__EditedSlides}
       GCS__Folders__Curricula: ${GCS__Folders__Curricula}
+      GCS__Folders__Textbooks: ${GCS__Folders__Textbooks}
 
       # Email
       EmailSettings__SmtpHost: ${EmailSettings__SmtpHost}
