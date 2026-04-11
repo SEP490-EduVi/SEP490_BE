@@ -106,10 +106,10 @@ public interface IAdminRepository
 
     // ============ Subscription Plans ============
 
-    Task<List<SubscriptionPlans>> GetAllPlansAsync();
-    Task<SubscriptionPlans?> GetPlanByIdAsync(int planId);
-    Task<SubscriptionPlans> CreatePlanAsync(SubscriptionPlans plan);
-    Task UpdatePlanAsync(SubscriptionPlans plan);
+    Task<List<QuotaPlans>> GetAllPlansAsync();
+    Task<QuotaPlans?> GetPlanByIdAsync(int planId);
+    Task<QuotaPlans> CreatePlanAsync(QuotaPlans plan);
+    Task UpdatePlanAsync(QuotaPlans plan);
     Task<bool> DeletePlanAsync(int planId);
 
     // ============ Platform Wallet ============

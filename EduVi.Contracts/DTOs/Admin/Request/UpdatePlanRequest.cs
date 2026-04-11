@@ -17,9 +17,6 @@ public class UpdatePlanRequest
     [Range(0, double.MaxValue)]
     public decimal? Price { get; set; }
 
-    [Range(1, 3650)]
-    public int? DurationDays { get; set; }
-
     [Range(0, int.MaxValue)]
     public int? AnalysisQuotaAmount { get; set; }
 
@@ -28,6 +25,9 @@ public class UpdatePlanRequest
 
     [Range(0, int.MaxValue)]
     public int? VideoQuotaAmount { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int? GameQuotaAmount { get; set; }
 
     /// <summary>
     /// Bật/tắt gói (true = đang bán, false = ẩn)

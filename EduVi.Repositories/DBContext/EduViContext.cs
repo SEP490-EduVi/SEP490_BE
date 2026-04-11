@@ -55,7 +55,7 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<Subjects> Subjects { get; set; }
 
-    public virtual DbSet<SubscriptionPlans> SubscriptionPlans { get; set; }
+    public virtual DbSet<QuotaPlans> QuotaPlans { get; set; }
 
     public virtual DbSet<TeacherMaterials> TeacherMaterials { get; set; }
 
@@ -472,7 +472,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.SubjectName).HasMaxLength(100);
         });
 
-        modelBuilder.Entity<SubscriptionPlans>(entity =>
+        modelBuilder.Entity<QuotaPlans>(entity =>
         {
             entity.HasKey(e => e.PlanId).HasName("PK__Subscrip__755C22D74FC00743");
 

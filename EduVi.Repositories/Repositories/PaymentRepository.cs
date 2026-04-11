@@ -94,19 +94,19 @@ public class PaymentRepository : IPaymentRepository
         return (items, totalCount);
     }
 
-    // ============ SubscriptionPlans ============
+    // ============ QuotaPlans ============
 
-    public async Task<List<SubscriptionPlans>> GetAllActivePlansAsync()
+    public async Task<List<QuotaPlans>> GetAllActivePlansAsync()
     {
-        return await _context.SubscriptionPlans
+        return await _context.QuotaPlans
             .Where(p => p.IsActive == true)
             .OrderBy(p => p.Price)
             .ToListAsync();
     }
 
-    public async Task<SubscriptionPlans?> GetPlanByIdAsync(int planId)
+    public async Task<QuotaPlans?> GetPlanByIdAsync(int planId)
     {
-        return await _context.SubscriptionPlans
+        return await _context.QuotaPlans
             .FirstOrDefaultAsync(p => p.PlanId == planId && p.IsActive == true);
     }
 

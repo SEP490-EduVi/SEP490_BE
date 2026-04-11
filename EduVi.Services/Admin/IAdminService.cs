@@ -111,10 +111,10 @@ public class PlanResponse
     public int PlanId { get; set; }
     public string PlanName { get; set; } = string.Empty;
     public decimal Price { get; set; }
-    public int DurationDays { get; set; }
     public int AnalysisQuotaAmount { get; set; }
     public int SlideQuotaAmount { get; set; }
     public int VideoQuotaAmount { get; set; }
+    public int GameQuotaAmount { get; set; }
     public string? Description { get; set; }
     public bool IsActive { get; set; }
 }

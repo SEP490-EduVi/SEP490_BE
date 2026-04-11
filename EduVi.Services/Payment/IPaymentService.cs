@@ -10,7 +10,7 @@ public interface IPaymentService
     /// <summary>
     /// Lấy danh sách gói subscription đang active
     /// </summary>
-    Task<List<SubscriptionPlanResponse>> GetAllPlansAsync();
+    Task<List<QuotaPlanResponse>> GetAllPlansAsync();
 
     // ============ Ví EduCoin ============
     

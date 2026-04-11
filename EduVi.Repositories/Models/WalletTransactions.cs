@@ -36,6 +36,6 @@ public partial class WalletTransactions
     public DateTime? UpdatedAt { get; set; }
 
     public virtual Wallets Wallet { get; set; }
-    public virtual SubscriptionPlans Plan { get; set; }
+    public virtual QuotaPlans Plan { get; set; }
     public virtual Materials Material { get; set; }
 }

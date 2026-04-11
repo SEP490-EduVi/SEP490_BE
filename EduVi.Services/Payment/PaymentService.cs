@@ -23,7 +23,7 @@ public class PaymentService : IPaymentService
 
     #region Gói Subscription
 
-    public async Task<List<SubscriptionPlanResponse>> GetAllPlansAsync()
+    public async Task<List<QuotaPlanResponse>> GetAllPlansAsync()
     {
         var plans = await _unitOfWork.PaymentRepository.GetAllActivePlansAsync();
         return plans.Select(MapToPlanResponse).ToList();
@@ -455,12 +455,11 @@ public class PaymentService : IPaymentService
 
     #region Mapping
 
-    private static SubscriptionPlanResponse MapToPlanResponse(SubscriptionPlans p) => new()
+    private static QuotaPlanResponse MapToPlanResponse(QuotaPlans p) => new()
     {
         PlanId = p.PlanId,
         PlanName = p.PlanName ?? "",
         Price = p.Price ?? 0,
-        DurationDays = p.DurationDays ?? 0,
         AnalysisQuotaAmount = p.AnalysisQuotaAmount ?? 0,
         SlideQuotaAmount = p.SlideQuotaAmount ?? 0,
         VideoQuotaAmount = p.VideoQuotaAmount ?? 0,

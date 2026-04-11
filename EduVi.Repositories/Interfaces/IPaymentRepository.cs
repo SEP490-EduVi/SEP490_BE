@@ -34,9 +34,9 @@ public interface IPaymentRepository
     Task<(List<WalletTransactions> Items, int TotalCount)> GetTransactionsByWalletIdAsync(
         int walletId, int page, int pageSize);
 
-    // ============ SubscriptionPlans ============
-    Task<List<SubscriptionPlans>> GetAllActivePlansAsync();
-    Task<SubscriptionPlans?> GetPlanByIdAsync(int planId);
+    // ============ QuotaPlans ============
+    Task<List<QuotaPlans>> GetAllActivePlansAsync();
+    Task<QuotaPlans?> GetPlanByIdAsync(int planId);
 
     // ============ Orders ============
     Task<Orders> CreateOrderAsync(Orders order);

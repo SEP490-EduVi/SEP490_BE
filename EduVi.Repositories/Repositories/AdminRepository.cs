@@ -267,40 +267,40 @@ public class AdminRepository : IAdminRepository
         return (total, completed);
     }
 
-    // ============ Subscription Plans ============
+    // ============ Quota Plans ============
 
-    public async Task<List<SubscriptionPlans>> GetAllPlansAsync()
+    public async Task<List<QuotaPlans>> GetAllPlansAsync()
     {
-        return await _context.SubscriptionPlans
+        return await _context.QuotaPlans
             .OrderBy(p => p.Price)
             .ToListAsync();
     }
 
-    public async Task<SubscriptionPlans?> GetPlanByIdAsync(int planId)
+    public async Task<QuotaPlans?> GetPlanByIdAsync(int planId)
     {
-        return await _context.SubscriptionPlans
+        return await _context.QuotaPlans
             .FirstOrDefaultAsync(p => p.PlanId == planId);
     }
 
-    public async Task<SubscriptionPlans> CreatePlanAsync(SubscriptionPlans plan)
+    public async Task<QuotaPlans> CreatePlanAsync(QuotaPlans plan)
     {
-        await _context.SubscriptionPlans.AddAsync(plan);
+        await _context.QuotaPlans.AddAsync(plan);
         return plan;
     }
 
-    public async Task UpdatePlanAsync(SubscriptionPlans plan)
+    public async Task UpdatePlanAsync(QuotaPlans plan)
     {
-        _context.SubscriptionPlans.Update(plan);
+        _context.QuotaPlans.Update(plan);
     }
 
     public async Task<bool> DeletePlanAsync(int planId)
     {
-        var plan = await _context.SubscriptionPlans.FindAsync(planId);
+        var plan = await _context.QuotaPlans.FindAsync(planId);
         if (plan == null) return false;
 
         // Soft delete: chỉ ẩn, không xóa
         plan.IsActive = false;
-        _context.SubscriptionPlans.Update(plan);
+        _context.QuotaPlans.Update(plan);
         return true;
     }
 

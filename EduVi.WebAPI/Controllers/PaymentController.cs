@@ -31,17 +31,17 @@ public class PaymentController : ControllerBase
     /// </summary>
     [HttpGet("plans")]
     [AllowAnonymous]
-    public async Task<ActionResult<ApiResponse<List<SubscriptionPlanResponse>>>> GetPlans()
+    public async Task<ActionResult<ApiResponse<List<QuotaPlanResponse>>>> GetPlans()
     {
         try
         {
             var plans = await _paymentService.GetAllPlansAsync();
-            return Ok(ApiResponse<List<SubscriptionPlanResponse>>.Success(plans));
+            return Ok(ApiResponse<List<QuotaPlanResponse>>.Success(plans));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting subscription plans");
-            return StatusCode(500, ApiResponse<List<SubscriptionPlanResponse>>.Fail("Lỗi khi lấy danh sách gói", 500));
+            return StatusCode(500, ApiResponse<List<QuotaPlanResponse>>.Fail("Lỗi khi lấy danh sách gói", 500));
         }
     }
 
