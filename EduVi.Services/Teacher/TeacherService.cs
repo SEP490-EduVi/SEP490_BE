@@ -33,12 +33,6 @@ public class TeacherService : ITeacherService
         var teacher = await _unitOfWork.TeacherRepository.GetProfileByUserIdAsync(userId)
             ?? throw new KeyNotFoundException("Không tìm thấy thông tin giáo viên.");
 
-        if (request.FullName is not null)
-            teacher.Teacher.FullName = request.FullName;
-
-        if (request.PhoneNumber is not null)
-            teacher.Teacher.PhoneNumber = request.PhoneNumber;
-
         if (request.SchoolName is not null)
             teacher.SchoolName = request.SchoolName;
 

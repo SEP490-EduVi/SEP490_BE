@@ -315,12 +315,6 @@ public class ExpertService : IExpertService
         var expert = await _unitOfWork.ExpertRepository.GetProfileByUserIdAsync(userId)
             ?? throw new KeyNotFoundException("Không tìm thấy thông tin chuyên gia.");
 
-        if (request.FullName is not null)
-            expert.Expert.FullName = request.FullName;
-
-        if (request.PhoneNumber is not null)
-            expert.Expert.PhoneNumber = request.PhoneNumber;
-
         if (request.Bio is not null)
             expert.Bio = request.Bio;
 

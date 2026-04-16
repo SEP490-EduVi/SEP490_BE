@@ -105,6 +105,7 @@ public class TeacherRepository : ITeacherRepository
     public async Task<Teachers?> GetProfileByUserIdAsync(int userId)
     {
         return await _context.Teachers
+            .AsTracking()
             .Include(t => t.Teacher) // Users navigation
             .FirstOrDefaultAsync(t => t.TeacherId == userId);
     }

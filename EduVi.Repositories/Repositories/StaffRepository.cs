@@ -89,6 +89,7 @@ public class StaffRepository : IStaffRepository
     public async Task<Staffs?> GetProfileByUserIdAsync(int userId)
     {
         return await _context.Staffs
+            .AsTracking()
             .Include(s => s.Staff) // Users navigation
             .FirstOrDefaultAsync(s => s.StaffId == userId);
     }

@@ -45,7 +45,7 @@ public class TeacherController : ControllerBase
     }
 
     /// <summary>
-    /// Cập nhật thông tin profile (FullName, PhoneNumber, SchoolName).
+    /// Cập nhật thông tin riêng của Teacher (SchoolName).
     /// </summary>
     [HttpPut("profile")]
     public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateTeacherProfileRequest request)

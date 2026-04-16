@@ -159,7 +159,7 @@ public class ExpertController : ControllerBase
     }
 
     /// <summary>
-    /// Cập nhật thông tin profile (FullName, PhoneNumber, Bio).
+    /// Cập nhật thông tin riêng của Expert (Bio).
     /// </summary>
     [HttpPut("profile")]
     public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateExpertProfileRequest request)

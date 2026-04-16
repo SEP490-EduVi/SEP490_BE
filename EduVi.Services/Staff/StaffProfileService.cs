@@ -34,12 +34,6 @@ public class StaffProfileService : IStaffProfileService
         var staff = await _unitOfWork.StaffRepository.GetProfileByUserIdAsync(userId)
             ?? throw new KeyNotFoundException("Không tìm thấy thông tin nhân viên.");
 
-        if (request.FullName is not null)
-            staff.Staff.FullName = request.FullName;
-
-        if (request.PhoneNumber is not null)
-            staff.Staff.PhoneNumber = request.PhoneNumber;
-
         if (request.Department is not null)
             staff.Department = request.Department;
 

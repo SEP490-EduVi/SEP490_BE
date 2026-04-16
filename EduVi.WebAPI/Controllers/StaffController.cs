@@ -140,7 +140,7 @@ public class StaffController : ControllerBase
     }
 
     /// <summary>
-    /// Cập nhật thông tin profile (FullName, PhoneNumber, Department).
+    /// Cập nhật thông tin riêng của Staff (Department).
     /// </summary>
     [HttpPut("profile")]
     public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateStaffProfileRequest request)

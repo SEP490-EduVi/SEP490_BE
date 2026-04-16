@@ -50,6 +50,7 @@ public class ExpertRepository : IExpertRepository
     public async Task<Experts?> GetProfileByUserIdAsync(int userId)
     {
         return await _context.Experts
+            .AsTracking()
             .Include(e => e.Expert) // Users navigation
             .FirstOrDefaultAsync(e => e.ExpertId == userId);
     }
