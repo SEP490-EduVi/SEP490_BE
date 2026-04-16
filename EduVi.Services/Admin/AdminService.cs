@@ -103,7 +103,7 @@ public class AdminService : IAdminService
     {
         // Validate role tồn tại
         if (!await _unitOfWork.AdminRepository.RoleExistsAsync(request.RoleId))
-            throw new InvalidOperationException($"Role ID {request.RoleId} không tồn tại.");
+            throw new InvalidOperationException($"Vai trò có ID {request.RoleId} không tồn tại.");
 
         var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
             ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");

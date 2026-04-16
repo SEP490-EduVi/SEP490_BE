@@ -47,7 +47,7 @@ public class InputDocumentService : IInputDocumentService
         }
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
+            ?? throw new InvalidOperationException("Chưa cấu hình tên bucket GCS");
         var storageClient = await StorageClient.CreateAsync();
 
         var fileExtension = Path.GetExtension(request.File.FileName);
@@ -127,7 +127,7 @@ public class InputDocumentService : IInputDocumentService
             ?? throw new KeyNotFoundException($"Tài liệu đầu vào '{documentCode}' không tồn tại hoặc không thuộc về bạn");
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
+            ?? throw new InvalidOperationException("Chưa cấu hình tên bucket GCS");
         var storageClient = await StorageClient.CreateAsync();
 
         if (!string.IsNullOrWhiteSpace(inputDocument.FilePath))

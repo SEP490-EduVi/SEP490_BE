@@ -211,11 +211,11 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
 
             var bodyJson = JsonSerializer.Serialize(message);
             if (string.IsNullOrWhiteSpace(bodyJson))
-                throw new InvalidOperationException($"Serialized RabbitMQ video message is empty. TaskId={taskId}, RequestId={productVideoCode}, ProductId={productId}");
+                throw new InvalidOperationException($"Nội dung video gửi RabbitMQ đang rỗng. TaskId={taskId}, RequestId={productVideoCode}, ProductId={productId}");
 
             var body = Encoding.UTF8.GetBytes(bodyJson);
             if (body.Length <= 0)
-                throw new InvalidOperationException($"Serialized RabbitMQ video message has zero length body. TaskId={taskId}, RequestId={productVideoCode}, ProductId={productId}");
+                throw new InvalidOperationException($"Nội dung video gửi RabbitMQ có độ dài bằng 0. TaskId={taskId}, RequestId={productVideoCode}, ProductId={productId}");
 
             _logger.LogInformation(
                 "Video publish payload prepared. TaskId={TaskId}, RequestId={RequestId}, ProductId={ProductId}, BodyLength={BodyLength}",
@@ -306,11 +306,11 @@ public class RabbitMqPublisherService : IRabbitMqPublisherService, IAsyncDisposa
 
             var bodyJson = JsonSerializer.Serialize(message);
             if (string.IsNullOrWhiteSpace(bodyJson))
-                throw new InvalidOperationException($"Serialized RabbitMQ game message is empty. TaskId={taskId}");
+                throw new InvalidOperationException($"Nội dung trò chơi gửi RabbitMQ đang rỗng. TaskId={taskId}");
 
             var body = Encoding.UTF8.GetBytes(bodyJson);
             if (body.Length <= 0)
-                throw new InvalidOperationException($"Serialized RabbitMQ game message has zero length body. TaskId={taskId}");
+                throw new InvalidOperationException($"Nội dung trò chơi gửi RabbitMQ có độ dài bằng 0. TaskId={taskId}");
 
             var properties = new BasicProperties
             {

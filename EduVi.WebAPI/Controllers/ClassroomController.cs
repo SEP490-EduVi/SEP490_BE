@@ -123,7 +123,7 @@ public class ClassroomController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _classroomService.ImportStudentsAsync(userId, classroomCode, request);
-            return Ok(ApiResponse<ClassroomResponseDto>.Success(result, $"Đã import {result.StudentCount} học sinh thành công"));
+            return Ok(ApiResponse<ClassroomResponseDto>.Success(result, $"Đã nhập {result.StudentCount} học sinh thành công"));
         }
         catch (KeyNotFoundException ex)
         {
@@ -136,7 +136,7 @@ public class ClassroomController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error importing students for classroom {ClassroomCode}", classroomCode);
-            return StatusCode(500, ApiResponse<ClassroomResponseDto>.Fail("Đã xảy ra lỗi khi import danh sách học sinh", 500));
+            return StatusCode(500, ApiResponse<ClassroomResponseDto>.Fail("Đã xảy ra lỗi khi nhập danh sách học sinh", 500));
         }
     }
 

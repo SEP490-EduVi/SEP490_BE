@@ -200,7 +200,7 @@ public class PaymentService : IPaymentService
     {
         // Validate ngoài transaction (read-only)
         var plan = await _unitOfWork.PaymentRepository.GetPlanByIdAsync(request.PlanId)
-            ?? throw new InvalidOperationException("Gói subscription không tồn tại hoặc đã ngưng bán.");
+            ?? throw new InvalidOperationException("Gói cước không tồn tại hoặc đã ngưng bán.");
 
         var planPrice = plan.Price ?? 0;
         if (planPrice <= 0)
@@ -415,7 +415,7 @@ public class PaymentService : IPaymentService
             }
             else if (info.status == PayOSStatus.Cancelled)
             {
-                await FailTransactionAsync(transaction, "Cancelled by user", Status.Cancelled);
+                await FailTransactionAsync(transaction, "Người dùng đã hủy giao dịch", Status.Cancelled);
             }
         }
         catch (Exception ex)
@@ -430,7 +430,7 @@ public class PaymentService : IPaymentService
             ?? throw new InvalidOperationException("Không tìm thấy người dùng.");
 
         return user.Teachers?.TeacherId
-            ?? throw new InvalidOperationException("Chỉ giáo viên mới có thể mua gói subscription.");
+            ?? throw new InvalidOperationException("Chỉ giáo viên mới có thể mua gói cước.");
     }
 
     /// <summary>

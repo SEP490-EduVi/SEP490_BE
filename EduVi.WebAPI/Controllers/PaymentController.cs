@@ -109,7 +109,7 @@ public class PaymentController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _paymentService.CreateTopUpAsync(userId, request);
-            return Ok(ApiResponse<TopUpResponse>.Success(result, "Đã tạo link thanh toán"));
+            return Ok(ApiResponse<TopUpResponse>.Success(result, "Đã tạo đường dẫn thanh toán"));
         }
         catch (InvalidOperationException ex)
         {

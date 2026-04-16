@@ -45,7 +45,7 @@ public class SessionValidationMiddleware
                         await context.Response.WriteAsJsonAsync(new
                         {
                             Code = 401,
-                            Message = "Session expired or invalid. Please login again.",
+                            Message = "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.",
                             Result = (object?)null
                         });
                         return;

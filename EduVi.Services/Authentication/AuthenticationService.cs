@@ -174,7 +174,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (InvalidJwtException)
         {
-            throw new UnauthorizedAccessException("Token Google không hợp lệ");
+            throw new UnauthorizedAccessException("Mã xác thực Google không hợp lệ");
         }
     }
 

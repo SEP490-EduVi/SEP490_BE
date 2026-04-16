@@ -33,20 +33,20 @@ public class TextbookIngestionService : ITextbookIngestionService
     {
         var fileExtension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
         if (fileExtension is not ".pdf")
-            throw new InvalidOperationException("Chỉ chấp nhận file .pdf");
+            throw new InvalidOperationException("Chỉ chấp nhận tệp .pdf");
 
         const long maxFileSizeBytes = 100L * 1024 * 1024;
         if (request.File.Length > maxFileSizeBytes)
-            throw new InvalidOperationException("Kích thước file không được vượt quá 100 MB");
+            throw new InvalidOperationException("Kích thước tệp không được vượt quá 100 MB");
 
         var completedIngestionExists = await _unitOfWork.TextbookDocumentRepository
             .ExistsCompletedAsync(request.SubjectCode, request.GradeCode);
         if (completedIngestionExists)
             throw new InvalidOperationException(
-                $"Đã tồn tại một bản ghi ingestion thành công cho {request.SubjectCode} - lớp {request.GradeCode}. Xóa dữ liệu Neo4j trước khi upload lại.");
+                $"Đã tồn tại một bản ghi nhập dữ liệu thành công cho {request.SubjectCode} - lớp {request.GradeCode}. Vui lòng xóa dữ liệu Neo4j trước khi tải lên lại.");
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
+            ?? throw new InvalidOperationException("Chưa cấu hình tên bucket GCS");
         var textbooksFolder = _configuration["GCS:Folders:Textbooks"] ?? "textbooks";
         var storageClient = await StorageClient.CreateAsync();
 

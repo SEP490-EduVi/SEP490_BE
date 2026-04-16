@@ -30,18 +30,18 @@ public class GameService : IGameService
     {
         var templateId = (request.TemplateId ?? string.Empty).Trim();
         if (!IsSupportedTemplate(templateId))
-            throw new InvalidOperationException("TemplateId không hợp lệ");
+            throw new InvalidOperationException("Mã mẫu trò chơi không hợp lệ");
 
         var template = await _unitOfWork.GameTemplateRepository.GetTemplateByCodeAsync(templateId)
-            ?? throw new InvalidOperationException("Template không tồn tại hoặc đã bị ẩn");
+            ?? throw new InvalidOperationException("Mẫu trò chơi không tồn tại hoặc đã bị ẩn");
 
         var slideEditedDocumentUrl = (request.SlideEditedDocumentUrl ?? string.Empty).Trim();
         if (!IsSupportedGcsUrl(slideEditedDocumentUrl))
-            throw new InvalidOperationException("SlideEditedDocumentUrl phải là GCS URL hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
+            throw new InvalidOperationException("Đường dẫn tài liệu slide đã chỉnh sửa phải là đường dẫn GCS hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
 
         var roundCount = request.RoundCount ?? 1;
         if (roundCount <= 0)
-            throw new InvalidOperationException("RoundCount phải lớn hơn 0");
+            throw new InvalidOperationException("Số vòng chơi phải lớn hơn 0");
 
         var taskId = Guid.NewGuid();
 

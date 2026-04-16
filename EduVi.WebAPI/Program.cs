@@ -22,7 +22,9 @@ using EduVi.Services.Teacher;
 using EduVi.WebAPI.BackgroundServices;
 using EduVi.WebAPI.Hubs;
 using EduVi.WebAPI.Middleware;
+using EduVi.Contracts.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -157,7 +159,31 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        // Chuẩn hóa phản hồi validation về tiếng Việt để tránh rò rỉ message tiếng Anh từ ASP.NET mặc định.
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(entry => entry.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    entry => entry.Key,
+                    entry => entry.Value!.Errors
+                        .Select(_ => "Giá trị không hợp lệ")
+                        .Distinct()
+                        .ToArray());
+
+            var response = new ApiResponse<object>
+            {
+                Code = 400,
+                Message = "Dữ liệu gửi lên không hợp lệ",
+                Result = errors.Count > 0 ? new { Errors = errors } : null
+            };
+
+            return new BadRequestObjectResult(response);
+        };
+    });
 
 // Swagger/OpenAPI with JWT Support
 builder.Services.AddEndpointsApiExplorer();

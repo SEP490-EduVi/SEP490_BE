@@ -34,18 +34,18 @@ public class CurriculumIngestionService : ICurriculumIngestionService
         // File type validation: .docx only
         var fileExtension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
         if (fileExtension is not ".docx")
-            throw new InvalidOperationException("Chỉ chấp nhận file .docx");
+            throw new InvalidOperationException("Chỉ chấp nhận tệp .docx");
 
         // File size validation: 50 MB
         const long maxFileSizeBytes = 50L * 1024 * 1024;
         if (request.File.Length > maxFileSizeBytes)
-            throw new InvalidOperationException("Kích thước file không được vượt quá 50 MB");
+            throw new InvalidOperationException("Kích thước tệp không được vượt quá 50 MB");
 
         var completedIngestionExists = await _unitOfWork.CurriculumDocumentRepository
             .ExistsCompletedAsync(request.SubjectCode, request.EducationLevel, request.CurriculumYear);
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
+            ?? throw new InvalidOperationException("Chưa cấu hình tên bucket GCS");
         var curriculaFolder = _configuration["GCS:Folders:Curricula"] ?? "curricula";
         var storageClient = await StorageClient.CreateAsync();
 
@@ -99,7 +99,7 @@ public class CurriculumIngestionService : ICurriculumIngestionService
 
         var response = MapToResponseDto(document);
         if (completedIngestionExists)
-            response.Warning = $"Đã tồn tại một bản ghi ingestion thành công cho {request.SubjectCode} - {request.EducationLevel} - {request.CurriculumYear}. Tác vụ mới vẫn sẽ được xử lý.";
+            response.Warning = $"Đã tồn tại một bản ghi nhập dữ liệu thành công cho {request.SubjectCode} - {request.EducationLevel} - {request.CurriculumYear}. Tác vụ mới vẫn sẽ được xử lý.";
 
         return response;
     }

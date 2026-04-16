@@ -40,19 +40,19 @@ public class ExpertService : IExpertService
     public async Task<ExpertVerificationDto> UploadVerificationAsync(int expertId, UploadVerificationRequestDto request)
     {
         if (!AllowedContentTypes.Contains(request.File.ContentType))
-            throw new InvalidOperationException("Chỉ chấp nhận file ảnh (JPG, PNG) hoặc PDF cho hồ sơ xác thực");
+            throw new InvalidOperationException("Chỉ chấp nhận tệp ảnh (JPG, PNG) hoặc PDF cho hồ sơ xác thực");
 
         if (!AllowedFileTypes.Contains(request.FileType.ToLower()))
-            throw new InvalidOperationException($"FileType không hợp lệ. Hợp lệ: {string.Join(", ", AllowedFileTypes)}");
+            throw new InvalidOperationException($"Loại tệp không hợp lệ. Chấp nhận: {string.Join(", ", AllowedFileTypes)}");
 
         var expert = await _unitOfWork.ExpertRepository.GetExpertByIdAsync(expertId)
-            ?? throw new KeyNotFoundException($"Expert {expertId} không tồn tại");
+            ?? throw new KeyNotFoundException($"Chuyên gia {expertId} không tồn tại");
 
         if (expert.IsVerified == true)
             throw new InvalidOperationException("Tài khoản đã được xác thực. Không cần nộp thêm hồ sơ");
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
+            ?? throw new InvalidOperationException("Chưa cấu hình tên bucket GCS");
 
         var storageClient = await StorageClient.CreateAsync();
 
@@ -98,7 +98,7 @@ public class ExpertService : IExpertService
     public async Task<ExpertVerificationFileDto> GetMyVerificationFileAsync(int expertId, string verificationCode)
     {
         var verification = await _unitOfWork.ExpertRepository.GetVerificationByCodeAsync(verificationCode)
-            ?? throw new KeyNotFoundException($"Verification '{verificationCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Hồ sơ xác thực '{verificationCode}' không tồn tại");
 
         if (verification.ExpertId != expertId)
             throw new InvalidOperationException("Hồ sơ không thuộc về bạn");
@@ -123,7 +123,7 @@ public class ExpertService : IExpertService
     public async Task DeleteVerificationAsync(int expertId, string verificationCode)
     {
         var verification = await _unitOfWork.ExpertRepository.GetVerificationByCodeAsync(verificationCode)
-            ?? throw new KeyNotFoundException($"Verification '{verificationCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Hồ sơ xác thực '{verificationCode}' không tồn tại");
 
         if (verification.ExpertId != expertId)
             throw new InvalidOperationException("Hồ sơ không thuộc về bạn");
@@ -132,7 +132,7 @@ public class ExpertService : IExpertService
             throw new InvalidOperationException("Không thể xóa hồ sơ đã được duyệt");
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
+            ?? throw new InvalidOperationException("Chưa cấu hình tên bucket GCS");
 
         var storageClient = await StorageClient.CreateAsync();
         var objectName = verification.FileUrl.Replace($"gs://{bucketName}/", "");
@@ -171,7 +171,7 @@ public class ExpertService : IExpertService
     public async Task<ExpertVerificationFileDto> GetVerificationFileAsync(string verificationCode)
     {
         var verification = await _unitOfWork.StaffRepository.GetVerificationByCodeAsync(verificationCode)
-            ?? throw new KeyNotFoundException($"Verification '{verificationCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Hồ sơ xác thực '{verificationCode}' không tồn tại");
 
         var (bucketName, objectName) = ParseGcsPath(verification.FileUrl);
         var storageClient = await StorageClient.CreateAsync();
@@ -193,10 +193,10 @@ public class ExpertService : IExpertService
     public async Task ReviewVerificationAsync(int staffId, string verificationCode, ReviewVerificationRequestDto request)
     {
         if (!request.Approved && string.IsNullOrWhiteSpace(request.RejectionReason))
-            throw new InvalidOperationException("Phải cung cấp lý do từ chối khi Reject hồ sơ");
+            throw new InvalidOperationException("Phải cung cấp lý do khi từ chối hồ sơ");
 
         var verification = await _unitOfWork.StaffRepository.GetVerificationByCodeAsync(verificationCode)
-            ?? throw new KeyNotFoundException($"Verification '{verificationCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Hồ sơ xác thực '{verificationCode}' không tồn tại");
 
         if (verification.Status != VerificationStatus.Pending)
             throw new InvalidOperationException($"Hồ sơ này đã được xử lý (trạng thái: {VerificationStatus.GetStatusName(verification.Status)})");
@@ -209,7 +209,7 @@ public class ExpertService : IExpertService
 
         // Dùng navigation property đã được Include sẵn — tránh load thêm instance thứ 2 gây EF tracking conflict
         var expert = verification.Expert
-            ?? throw new InvalidOperationException($"Expert {verification.ExpertId} không tồn tại");
+            ?? throw new InvalidOperationException($"Chuyên gia {verification.ExpertId} không tồn tại");
 
         if (request.Approved)
         {
@@ -245,13 +245,13 @@ public class ExpertService : IExpertService
     private static (string BucketName, string ObjectName) ParseGcsPath(string gcsPath)
     {
         if (string.IsNullOrWhiteSpace(gcsPath) || !gcsPath.StartsWith("gs://", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Đường dẫn file GCS không hợp lệ");
+            throw new InvalidOperationException("Đường dẫn tệp GCS không hợp lệ");
 
         var pathWithoutScheme = gcsPath["gs://".Length..];
         var separatorIndex = pathWithoutScheme.IndexOf('/');
 
         if (separatorIndex <= 0 || separatorIndex == pathWithoutScheme.Length - 1)
-            throw new InvalidOperationException("Đường dẫn file GCS không hợp lệ");
+            throw new InvalidOperationException("Đường dẫn tệp GCS không hợp lệ");
 
         var bucketName = pathWithoutScheme[..separatorIndex];
         var objectName = pathWithoutScheme[(separatorIndex + 1)..];
@@ -279,8 +279,8 @@ public class ExpertService : IExpertService
         {
             VerificationCode = verification.VerificationCode,
             ExpertId = verification.ExpertId,
-            ExpertName = verification.Expert?.Expert?.FullName ?? "Unknown",
-            ExpertEmail = verification.Expert?.Expert?.Email ?? "Unknown",
+            ExpertName = verification.Expert?.Expert?.FullName ?? "Không xác định",
+            ExpertEmail = verification.Expert?.Expert?.Email ?? "Không xác định",
             FileType = verification.FileType,
             Description = verification.Description,
             Status = verification.Status,

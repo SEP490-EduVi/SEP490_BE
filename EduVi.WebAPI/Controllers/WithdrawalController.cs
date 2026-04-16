@@ -63,7 +63,7 @@ public class WithdrawalController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _withdrawalService.ConfirmWithdrawalAsync(userId, request);
-            return Ok(ApiResponse<WithdrawalResponse>.Success(result, "Yêu cầu rút tiền đã được ghi nhận. Admin sẽ xử lý và chuyển khoản trong thời gian sớm nhất."));
+            return Ok(ApiResponse<WithdrawalResponse>.Success(result, "Yêu cầu rút tiền đã được ghi nhận. Quản trị viên sẽ xử lý và chuyển khoản trong thời gian sớm nhất."));
         }
         catch (InvalidOperationException ex)
         {

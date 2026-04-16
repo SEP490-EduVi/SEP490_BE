@@ -48,7 +48,7 @@ public class ExpertController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading verification for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
-            return StatusCode(500, ApiResponse<ExpertVerificationDto>.Fail("Đã xảy ra lỗi khi upload hồ sơ", 500));
+            return StatusCode(500, ApiResponse<ExpertVerificationDto>.Fail("Đã xảy ra lỗi khi tải lên hồ sơ", 500));
         }
     }
 

@@ -42,18 +42,18 @@ public class MaterialService : IMaterialService
     {
         var type = request.Type.ToLowerInvariant();
         if (!AllowedFileTypes.Contains(type))
-            throw new InvalidOperationException($"Type không hợp lệ cho file upload. Cho phép: {string.Join(", ", AllowedFileTypes)}");
+            throw new InvalidOperationException($"Loại tệp tải lên không hợp lệ. Chấp nhận: {string.Join(", ", AllowedFileTypes)}");
 
         await ValidateExpertIsVerifiedAsync(expertId);
         await ValidateExpertPendingLimitAsync(expertId);
         var (subjectId, gradeId) = await ResolveSubjectGradeAsync(request.SubjectCode, request.GradeCode);
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
+            ?? throw new InvalidOperationException("Chưa cấu hình tên bucket GCS");
         var storageClient = await StorageClient.CreateAsync();
 
-        var resourceObjectName = ParseAndValidateObjectName(request.ResourceUrl, bucketName, expertId, "resource");
-        var resourceObject = await GetObjectOrThrowAsync(storageClient, bucketName, resourceObjectName, "resource");
+        var resourceObjectName = ParseAndValidateObjectName(request.ResourceUrl, bucketName, expertId, "tài nguyên");
+        var resourceObject = await GetObjectOrThrowAsync(storageClient, bucketName, resourceObjectName, "tài nguyên");
         ValidateFileSizeByType(resourceObject.Size, type);
         ValidateContentTypeByType(resourceObject.ContentType, type);
 
@@ -66,13 +66,13 @@ public class MaterialService : IMaterialService
         string? previewUrl = null;
         if (!string.IsNullOrWhiteSpace(request.PreviewUrl))
         {
-            var previewObjectName = ParseAndValidateObjectName(request.PreviewUrl, bucketName, expertId, "preview");
-            var previewObject = await GetObjectOrThrowAsync(storageClient, bucketName, previewObjectName, "preview");
+            var previewObjectName = ParseAndValidateObjectName(request.PreviewUrl, bucketName, expertId, "xem trước");
+            var previewObject = await GetObjectOrThrowAsync(storageClient, bucketName, previewObjectName, "xem trước");
 
             if (string.IsNullOrWhiteSpace(previewObject.ContentType)
                 || !previewObject.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("Preview phải là file ảnh hợp lệ");
+                throw new InvalidOperationException("Tệp xem trước phải là ảnh hợp lệ");
             }
 
             previewUrl = $"gs://{bucketName}/{previewObjectName}";
@@ -93,13 +93,13 @@ public class MaterialService : IMaterialService
     public async Task<MaterialResponseDto> UpdateMaterialAsync(int expertId, string materialCode, UpdateMaterialRequestDto request)
     {
         var material = await _unitOfWork.ExpertRepository.GetMaterialByCodeAsync(materialCode)
-            ?? throw new KeyNotFoundException($"Material '{materialCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Học liệu '{materialCode}' không tồn tại");
 
         if (material.ExpertId != expertId)
-            throw new InvalidOperationException("Bạn không có quyền sửa material này");
+            throw new InvalidOperationException("Bạn không có quyền sửa học liệu này");
 
         if (material.ApprovalStatus == 1)
-            throw new InvalidOperationException("Không thể sửa material đã được duyệt");
+            throw new InvalidOperationException("Không thể sửa học liệu đã được duyệt");
 
         if (!string.IsNullOrWhiteSpace(request.Title))
             material.Title = request.Title;
@@ -113,14 +113,14 @@ public class MaterialService : IMaterialService
         if (!string.IsNullOrWhiteSpace(request.SubjectCode))
         {
             var subject = await _unitOfWork.ExpertRepository.GetSubjectByCodeAsync(request.SubjectCode)
-                ?? throw new KeyNotFoundException($"SubjectCode '{request.SubjectCode}' không tồn tại");
+                ?? throw new KeyNotFoundException($"Mã môn học '{request.SubjectCode}' không tồn tại");
             material.SubjectId = subject.SubjectId;
         }
 
         if (!string.IsNullOrWhiteSpace(request.GradeCode))
         {
             var grade = await _unitOfWork.ExpertRepository.GetGradeByCodeAsync(request.GradeCode)
-                ?? throw new KeyNotFoundException($"GradeCode '{request.GradeCode}' không tồn tại");
+                ?? throw new KeyNotFoundException($"Mã khối lớp '{request.GradeCode}' không tồn tại");
             material.GradeId = grade.GradeId;
         }
 
@@ -138,13 +138,13 @@ public class MaterialService : IMaterialService
     public async Task DeleteMaterialAsync(int expertId, string materialCode)
     {
         var material = await _unitOfWork.ExpertRepository.GetMaterialByCodeAsync(materialCode)
-            ?? throw new KeyNotFoundException($"Material '{materialCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Học liệu '{materialCode}' không tồn tại");
 
         if (material.ExpertId != expertId)
-            throw new InvalidOperationException("Bạn không có quyền xóa material này");
+            throw new InvalidOperationException("Bạn không có quyền xóa học liệu này");
 
         if (material.ApprovalStatus == 1)
-            throw new InvalidOperationException("Không thể xóa material đã được duyệt. Liên hệ Staff để hỗ trợ");
+            throw new InvalidOperationException("Không thể xóa học liệu đã được duyệt. Vui lòng liên hệ nhân viên để được hỗ trợ");
 
         _unitOfWork.ExpertRepository.DeleteMaterial(material);
         await _unitOfWork.SaveChangesAsync();
@@ -163,7 +163,7 @@ public class MaterialService : IMaterialService
     public async Task<MaterialResponseDto> GetMaterialDetailForStaffAsync(string materialCode)
     {
         var material = await _unitOfWork.StaffRepository.GetMaterialByCodeWithDetailsAsync(materialCode)
-            ?? throw new KeyNotFoundException($"Material '{materialCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Học liệu '{materialCode}' không tồn tại");
 
         return MapToResponseDto(material, includeResourceUrl: true);
     }
@@ -171,10 +171,10 @@ public class MaterialService : IMaterialService
     public async Task ReviewMaterialAsync(int staffId, string materialCode, ReviewMaterialRequestDto request)
     {
         var material = await _unitOfWork.StaffRepository.GetMaterialByCodeWithDetailsAsync(materialCode)
-            ?? throw new KeyNotFoundException($"Material '{materialCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Học liệu '{materialCode}' không tồn tại");
 
         if (material.ApprovalStatus != 0)
-            throw new InvalidOperationException("Material này đã được xử lý trước đó");
+            throw new InvalidOperationException("Học liệu này đã được xử lý trước đó");
 
         if (request.Approved)
         {
@@ -184,7 +184,7 @@ public class MaterialService : IMaterialService
         else
         {
             if (string.IsNullOrWhiteSpace(request.RejectionReason))
-                throw new InvalidOperationException("Phải cung cấp lý do khi từ chối material");
+                throw new InvalidOperationException("Phải cung cấp lý do khi từ chối học liệu");
 
             material.ApprovalStatus = 2; // Rejected
             material.RejectionReason = request.RejectionReason;
@@ -211,7 +211,7 @@ public class MaterialService : IMaterialService
     public async Task<MaterialResponseDto> GetMaterialDetailForTeacherAsync(int teacherId, string materialCode)
     {
         var material = await _unitOfWork.TeacherRepository.GetApprovedMaterialByCodeAsync(materialCode)
-            ?? throw new KeyNotFoundException($"Material '{materialCode}' không tồn tại hoặc chưa được duyệt");
+            ?? throw new KeyNotFoundException($"Học liệu '{materialCode}' không tồn tại hoặc chưa được duyệt");
 
         return MapToResponseDto(material, includeResourceUrl: true);
     }
@@ -219,12 +219,12 @@ public class MaterialService : IMaterialService
     public async Task<PurchasedMaterialResponseDto> PurchaseMaterialAsync(int teacherId, string materialCode)
     {
         var material = await _unitOfWork.TeacherRepository.GetApprovedMaterialByCodeAsync(materialCode)
-            ?? throw new KeyNotFoundException($"Material '{materialCode}' không tồn tại hoặc chưa được duyệt");
+            ?? throw new KeyNotFoundException($"Học liệu '{materialCode}' không tồn tại hoặc chưa được duyệt");
 
         // Kiểm tra đã mua chưa
         var alreadyPurchased = await _unitOfWork.TeacherRepository.HasTeacherPurchasedAsync(teacherId, material.MaterialId);
         if (alreadyPurchased)
-            throw new InvalidOperationException("Bạn đã mua material này rồi");
+            throw new InvalidOperationException("Bạn đã mua học liệu này rồi");
 
         var price = material.Price ?? 0;
 
@@ -257,7 +257,7 @@ public class MaterialService : IMaterialService
                     BalanceBefore = balanceBefore,
                     BalanceAfter = wallet.Balance,
                     Status = 1, // COMPLETED
-                    Description = $"Mua material: {material.Title}",
+                    Description = $"Mua học liệu: {material.Title}",
                     MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -269,7 +269,7 @@ public class MaterialService : IMaterialService
 
                 // ExpertId == UserId trong model (FK đã map 1-1)
                 var expertWallet = await _unitOfWork.ExpertRepository.GetWalletByUserIdAsync(material.ExpertId!.Value)
-                    ?? throw new InvalidOperationException("Expert chưa có ví. Liên hệ hỗ trợ.");
+                    ?? throw new InvalidOperationException("Chuyên gia chưa có ví. Vui lòng liên hệ hỗ trợ.");
 
                 var expertBalanceBefore = expertWallet.Balance ?? 0;
                 expertWallet.Balance = expertBalanceBefore + expertRevenue;
@@ -285,14 +285,14 @@ public class MaterialService : IMaterialService
                     BalanceBefore = expertBalanceBefore,
                     BalanceAfter = expertWallet.Balance,
                     Status = 1,
-                    Description = $"Doanh thu material (70%): {material.Title}",
+                    Description = $"Doanh thu học liệu (70%): {material.Title}",
                     MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.ExpertRepository.CreateWalletTransactionAsync(expertTransaction);
 
                 var adminWallet = await _unitOfWork.AdminRepository.GetAdminWalletAsync()
-                    ?? throw new InvalidOperationException("Không tìm thấy ví nền tảng Admin. Liên hệ hỗ trợ.");
+                    ?? throw new InvalidOperationException("Không tìm thấy ví nền tảng của quản trị viên. Vui lòng liên hệ hỗ trợ.");
 
                 var adminBalanceBefore = adminWallet.Balance ?? 0;
                 adminWallet.Balance = adminBalanceBefore + platformFee;
@@ -308,7 +308,7 @@ public class MaterialService : IMaterialService
                     BalanceBefore = adminBalanceBefore,
                     BalanceAfter = adminWallet.Balance,
                     Status = 1,
-                    Description = $"Phí nền tảng material (30%): {material.Title}",
+                    Description = $"Phí nền tảng học liệu (30%): {material.Title}",
                     MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -348,10 +348,10 @@ public class MaterialService : IMaterialService
     private async Task ValidateExpertIsVerifiedAsync(int expertId)
     {
         var expert = await _unitOfWork.ExpertRepository.GetExpertByIdAsync(expertId)
-            ?? throw new KeyNotFoundException($"Expert {expertId} không tồn tại");
+            ?? throw new KeyNotFoundException($"Chuyên gia {expertId} không tồn tại");
 
         if (expert.IsVerified != true)
-            throw new InvalidOperationException("Expert chưa được xác thực. Vui lòng hoàn tất xác thực trước khi upload material");
+            throw new InvalidOperationException("Chuyên gia chưa được xác thực. Vui lòng hoàn tất xác thực trước khi tải lên học liệu");
     }
 
     private async Task ValidateExpertPendingLimitAsync(int expertId)
@@ -359,7 +359,7 @@ public class MaterialService : IMaterialService
         const int MaxPendingMaterials = 3;
         var pendingCount = await _unitOfWork.ExpertRepository.CountPendingMaterialsAsync(expertId);
         if (pendingCount >= MaxPendingMaterials)
-            throw new InvalidOperationException($"Bạn đang có {pendingCount} material chờ duyệt. Tối đa {MaxPendingMaterials} material pending cùng lúc. Vui lòng chờ Staff duyệt trước khi upload thêm.");
+            throw new InvalidOperationException($"Bạn đang có {pendingCount} học liệu chờ duyệt. Tối đa {MaxPendingMaterials} học liệu chờ duyệt cùng lúc. Vui lòng chờ nhân viên duyệt trước khi tải lên thêm.");
     }
 
     private async Task<(int? subjectId, int? gradeId)> ResolveSubjectGradeAsync(string? subjectCode, string? gradeCode)
@@ -370,14 +370,14 @@ public class MaterialService : IMaterialService
         if (!string.IsNullOrWhiteSpace(subjectCode))
         {
             var subject = await _unitOfWork.ExpertRepository.GetSubjectByCodeAsync(subjectCode)
-                ?? throw new KeyNotFoundException($"SubjectCode '{subjectCode}' không tồn tại");
+                ?? throw new KeyNotFoundException($"Mã môn học '{subjectCode}' không tồn tại");
             subjectId = subject.SubjectId;
         }
 
         if (!string.IsNullOrWhiteSpace(gradeCode))
         {
             var grade = await _unitOfWork.ExpertRepository.GetGradeByCodeAsync(gradeCode)
-                ?? throw new KeyNotFoundException($"GradeCode '{gradeCode}' không tồn tại");
+                ?? throw new KeyNotFoundException($"Mã khối lớp '{gradeCode}' không tồn tại");
             gradeId = grade.GradeId;
         }
 
@@ -409,33 +409,33 @@ public class MaterialService : IMaterialService
     private static void ValidateFileSizeByType(ulong? fileSizeBytes, string type)
     {
         if (!fileSizeBytes.HasValue || fileSizeBytes.Value <= 0)
-            throw new InvalidOperationException("File upload rỗng hoặc không hợp lệ");
+            throw new InvalidOperationException("Tệp tải lên rỗng hoặc không hợp lệ");
 
         var maxFileSizeBytes = type == "video" ? MaxVideoFileSizeBytes : MaxImageFileSizeBytes;
         if (fileSizeBytes.Value > maxFileSizeBytes)
         {
             var maxFileSizeMb = type == "video" ? 100 : 10;
-            throw new InvalidOperationException($"File {type} vượt quá giới hạn {maxFileSizeMb}MB");
+            throw new InvalidOperationException($"Tệp {type} vượt quá giới hạn {maxFileSizeMb}MB");
         }
     }
 
     private static void ValidateContentTypeByType(string? contentType, string type)
     {
         if (string.IsNullOrWhiteSpace(contentType))
-            throw new InvalidOperationException("Không xác định được Content-Type của file trên GCS");
+            throw new InvalidOperationException("Không xác định được loại nội dung của tệp trên GCS");
 
         if (!AllowedContentTypesByFileType.TryGetValue(type, out var allowedContentTypes)
             || !allowedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(
-                $"File không hợp lệ cho loại '{type}'. Cho phép: {string.Join(", ", AllowedContentTypesByFileType[type])}");
+                $"Tệp không hợp lệ cho loại '{type}'. Cho phép: {string.Join(", ", AllowedContentTypesByFileType[type])}");
         }
     }
 
     private static string ParseAndValidateObjectName(string resourceUrl, string expectedBucketName, int expertId, string fieldName)
     {
         if (!Uri.TryCreate(resourceUrl, UriKind.Absolute, out var uri))
-            throw new InvalidOperationException($"{fieldName}Url không hợp lệ");
+            throw new InvalidOperationException($"Đường dẫn {fieldName} không hợp lệ");
 
         string bucketName;
         string objectName;
@@ -452,7 +452,7 @@ public class MaterialService : IMaterialService
             {
                 var pathParts = uri.AbsolutePath.TrimStart('/').Split('/', 2, StringSplitOptions.RemoveEmptyEntries);
                 if (pathParts.Length < 2)
-                    throw new InvalidOperationException($"{fieldName}Url không hợp lệ");
+                    throw new InvalidOperationException($"Đường dẫn {fieldName} không hợp lệ");
 
                 bucketName = pathParts[0];
                 objectName = Uri.UnescapeDataString(pathParts[1]);
@@ -464,23 +464,23 @@ public class MaterialService : IMaterialService
             }
             else
             {
-                throw new InvalidOperationException($"{fieldName}Url phải thuộc Google Cloud Storage");
+                throw new InvalidOperationException($"Đường dẫn {fieldName} phải thuộc dịch vụ lưu trữ Google Cloud");
             }
         }
         else
         {
-            throw new InvalidOperationException($"{fieldName}Url phải là gs:// hoặc https://storage.googleapis.com");
+            throw new InvalidOperationException($"Đường dẫn {fieldName} phải là gs:// hoặc https://storage.googleapis.com");
         }
 
         if (!bucketName.Equals(expectedBucketName, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"{fieldName}Url không thuộc bucket được cấu hình");
+            throw new InvalidOperationException($"Đường dẫn {fieldName} không thuộc bucket đã cấu hình");
 
         if (string.IsNullOrWhiteSpace(objectName))
-            throw new InvalidOperationException($"{fieldName}Url không chứa object name hợp lệ");
+            throw new InvalidOperationException($"Đường dẫn {fieldName} không chứa tên tệp hợp lệ");
 
         var expectedPrefix = $"materials/{expertId}/";
         if (!objectName.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"{fieldName}Url phải thuộc thư mục {expectedPrefix}");
+            throw new InvalidOperationException($"Đường dẫn {fieldName} phải thuộc thư mục {expectedPrefix}");
 
         return objectName;
     }
@@ -497,7 +497,7 @@ public class MaterialService : IMaterialService
         }
         catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            throw new KeyNotFoundException($"Không tìm thấy file {fieldName} trên GCS");
+            throw new KeyNotFoundException($"Không tìm thấy tệp {fieldName} trên GCS");
         }
     }
 

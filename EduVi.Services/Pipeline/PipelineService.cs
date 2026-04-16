@@ -44,13 +44,13 @@ public class PipelineService : IPipelineService
         var document = await _unitOfWork.InputDocumentRepository
             .GetInputDocumentByCodeAndTeacherAsync(request.DocumentCode, teacherId);
         if (document is null)
-            throw new InvalidOperationException("InputDocument không tồn tại hoặc không thuộc về bạn");
+            throw new InvalidOperationException("Tài liệu đầu vào không tồn tại hoặc không thuộc về bạn");
 
         if (document.ProjectId != project.ProjectId)
             throw new InvalidOperationException("Tài liệu đầu vào không thuộc Dự án đã chọn");
 
         var lessonCode = document.Lesson?.LessonCode
-            ?? throw new InvalidOperationException("Lesson chưa có LessonCode");
+            ?? throw new InvalidOperationException("Bài học chưa có mã bài học");
         var subjectCode = document.Subject?.SubjectCode ?? "Unknown";
         var gradeCode = document.Grade?.GradeCode ?? "Unknown";
 
@@ -64,7 +64,7 @@ public class PipelineService : IPipelineService
             var teacherEntityId = await GetTeacherEntityIdAsync(teacherId);
             var hasConsumedQuota = await _unitOfWork.PaymentRepository.ConsumeAnalysisQuotaAsync(teacherEntityId, 1);
             if (!hasConsumedQuota)
-                throw new InvalidOperationException("Bạn đã hết quota đánh giá tài liệu. Vui lòng mua thêm gói subscription");
+                throw new InvalidOperationException("Bạn đã hết lượt đánh giá tài liệu. Vui lòng mua thêm gói cước");
 
             product = await _unitOfWork.PipelineRepository.GetProductByCodeAndTeacherAsync(productCode, teacherId);
 
@@ -106,7 +106,7 @@ public class PipelineService : IPipelineService
         }
 
         if (product is null)
-            throw new InvalidOperationException("Không thể khởi tạo product cho tác vụ phân tích");
+            throw new InvalidOperationException("Không thể khởi tạo nội dung số cho tác vụ phân tích");
 
         // 5. Store task metadata in Redis (TTL 1 hour)
         var db = _redis.GetDatabase();
@@ -177,7 +177,7 @@ public class PipelineService : IPipelineService
             var teacherEntityId = await GetTeacherEntityIdAsync(teacherId);
             var hasConsumedQuota = await _unitOfWork.PaymentRepository.ConsumeSlideQuotaAsync(teacherEntityId, 1);
             if (!hasConsumedQuota)
-                throw new InvalidOperationException("Bạn đã hết quota slide. Vui lòng mua thêm gói subscription");
+                throw new InvalidOperationException("Bạn đã hết lượt tạo slide. Vui lòng mua thêm gói cước");
 
             product.Status = ProductStatusConstants.GeneratingSlides;
             product.SlideDocument = null;
@@ -242,7 +242,7 @@ public class PipelineService : IPipelineService
             throw new InvalidOperationException("Video đang được tạo. Vui lòng chờ hoàn tất trước khi gửi lại");
 
         if (!IsSupportedGcsUrl(request.SlideEditedDocumentUrl))
-            throw new InvalidOperationException("SlideEditedDocumentUrl phải là GCS URL hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
+            throw new InvalidOperationException("Đường dẫn tài liệu slide đã chỉnh sửa phải là đường dẫn GCS hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
 
         var slideEditedDocumentUrl = request.SlideEditedDocumentUrl.Trim();
 
@@ -255,7 +255,7 @@ public class PipelineService : IPipelineService
             var teacherEntityId = await GetTeacherEntityIdAsync(teacherId);
             var hasConsumedQuota = await _unitOfWork.PaymentRepository.ConsumeVideoQuotaAsync(teacherEntityId, 1);
             if (!hasConsumedQuota)
-                throw new InvalidOperationException("Bạn đã hết quota video. Vui lòng mua thêm gói subscription");
+                throw new InvalidOperationException("Bạn đã hết lượt tạo video. Vui lòng mua thêm gói cước");
 
             product.SlideEditedDocument = slideEditedDocumentUrl;
             product.SlideEditedAt = DateTime.UtcNow;
@@ -360,7 +360,7 @@ public class PipelineService : IPipelineService
         }
 
         if (!IsSupportedGcsUrl(request.SlideEditedDocumentUrl))
-            throw new InvalidOperationException("SlideEditedDocumentUrl phải là GCS URL hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
+            throw new InvalidOperationException("Đường dẫn tài liệu slide đã chỉnh sửa phải là đường dẫn GCS hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
 
         var slideEditedDocumentUrl = request.SlideEditedDocumentUrl.Trim();
 
@@ -482,7 +482,7 @@ public class PipelineService : IPipelineService
     {
         var productVideo = await _unitOfWork.PipelineRepository
             .GetLatestActiveProductVideoByDocumentCodeAndTeacherAsync(documentCode, teacherId)
-            ?? throw new KeyNotFoundException($"Document {documentCode} chưa có video nào");
+            ?? throw new KeyNotFoundException($"Tài liệu {documentCode} chưa có video nào");
 
         return MapToProductVideoDetailDto(productVideo);
     }

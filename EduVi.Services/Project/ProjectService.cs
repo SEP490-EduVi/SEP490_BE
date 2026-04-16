@@ -76,9 +76,9 @@ public class ProjectService : IProjectService
             throw new InvalidOperationException($"Mã dự án '{request.ProjectCode}' đã tồn tại");
 
         var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode)
-            ?? throw new InvalidOperationException($"Subject '{request.SubjectCode}' không tồn tại");
+            ?? throw new InvalidOperationException($"Môn học '{request.SubjectCode}' không tồn tại");
         var grade = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(request.GradeCode)
-            ?? throw new InvalidOperationException($"Grade '{request.GradeCode}' không tồn tại");
+            ?? throw new InvalidOperationException($"Khối lớp '{request.GradeCode}' không tồn tại");
 
         var project = new Projects
         {
@@ -117,14 +117,14 @@ public class ProjectService : IProjectService
         if (request.SubjectCode is not null)
         {
             var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode)
-                ?? throw new InvalidOperationException($"Subject '{request.SubjectCode}' không tồn tại");
+                ?? throw new InvalidOperationException($"Môn học '{request.SubjectCode}' không tồn tại");
             project.SubjectId = subject.SubjectId;
         }
 
         if (request.GradeCode is not null)
         {
             var grade = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(request.GradeCode)
-                ?? throw new InvalidOperationException($"Grade '{request.GradeCode}' không tồn tại");
+                ?? throw new InvalidOperationException($"Khối lớp '{request.GradeCode}' không tồn tại");
             project.GradeId = grade.GradeId;
         }
 
@@ -147,7 +147,7 @@ public class ProjectService : IProjectService
             throw new InvalidOperationException("Dự án không thuộc về bạn");
 
         if (project.Products.Count > 0)
-            throw new InvalidOperationException($"Không thể xóa Dự án đang có {project.Products.Count} Product");
+            throw new InvalidOperationException($"Không thể xóa dự án đang có {project.Products.Count} nội dung số");
 
         if (project.Status == ProjectStatusConstants.Deleted)
             throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại");

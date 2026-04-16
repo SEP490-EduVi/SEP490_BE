@@ -53,7 +53,7 @@ public class MaterialController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading file material for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
-            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Đã xảy ra lỗi khi upload học liệu", 500));
+            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Đã xảy ra lỗi khi tải lên học liệu", 500));
         }
     }
 

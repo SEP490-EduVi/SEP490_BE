@@ -27,7 +27,7 @@ public class CurriculumService : ICurriculumService
     public async Task<SubjectResponseDto> GetSubjectByCodeAsync(string subjectCode)
     {
         var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(subjectCode, includeRelations: true)
-            ?? throw new KeyNotFoundException($"Subject '{subjectCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Môn học '{subjectCode}' không tồn tại");
 
         return MapToSubjectResponse(subject);
     }
@@ -36,7 +36,7 @@ public class CurriculumService : ICurriculumService
     {
         var existing = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode);
         if (existing is not null)
-            throw new InvalidOperationException($"SubjectCode '{request.SubjectCode}' đã tồn tại");
+            throw new InvalidOperationException($"Mã môn học '{request.SubjectCode}' đã tồn tại");
 
         var subject = new Subjects
         {
@@ -56,13 +56,13 @@ public class CurriculumService : ICurriculumService
     public async Task<SubjectResponseDto> UpdateSubjectAsync(string subjectCode, UpdateSubjectRequestDto request)
     {
         var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(subjectCode, includeRelations: true)
-            ?? throw new KeyNotFoundException($"Subject '{subjectCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Môn học '{subjectCode}' không tồn tại");
 
         if (request.SubjectCode is not null && request.SubjectCode != subjectCode)
         {
             var existing = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode);
             if (existing is not null)
-                throw new InvalidOperationException($"SubjectCode '{request.SubjectCode}' đã được sử dụng");
+                throw new InvalidOperationException($"Mã môn học '{request.SubjectCode}' đã được sử dụng");
             subject.SubjectCode = request.SubjectCode;
         }
 
@@ -81,10 +81,10 @@ public class CurriculumService : ICurriculumService
     public async Task DeleteSubjectAsync(string subjectCode)
     {
         var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(subjectCode, includeRelations: true)
-            ?? throw new KeyNotFoundException($"Subject '{subjectCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Môn học '{subjectCode}' không tồn tại");
 
         if (subject.Lessons.Count > 0)
-            throw new InvalidOperationException($"Không thể xóa Subject đang có {subject.Lessons.Count} Lesson");
+            throw new InvalidOperationException($"Không thể xóa môn học đang có {subject.Lessons.Count} bài học");
 
         _unitOfWork.CurriculumRepository.DeleteSubject(subject);
         await _unitOfWork.SaveChangesAsync();
@@ -105,7 +105,7 @@ public class CurriculumService : ICurriculumService
     public async Task<GradeResponseDto> GetGradeByCodeAsync(string gradeCode)
     {
         var grade = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(gradeCode)
-            ?? throw new KeyNotFoundException($"Grade '{gradeCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Khối lớp '{gradeCode}' không tồn tại");
 
         return MapToGradeResponse(grade);
     }
@@ -114,7 +114,7 @@ public class CurriculumService : ICurriculumService
     {
         var existing = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(request.GradeCode);
         if (existing is not null)
-            throw new InvalidOperationException($"GradeCode '{request.GradeCode}' đã tồn tại");
+            throw new InvalidOperationException($"Mã khối lớp '{request.GradeCode}' đã tồn tại");
 
         var grade = new Grades
         {
@@ -132,13 +132,13 @@ public class CurriculumService : ICurriculumService
     public async Task<GradeResponseDto> UpdateGradeAsync(string gradeCode, UpdateGradeRequestDto request)
     {
         var grade = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(gradeCode)
-            ?? throw new KeyNotFoundException($"Grade '{gradeCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Khối lớp '{gradeCode}' không tồn tại");
 
         if (request.GradeCode is not null && request.GradeCode != gradeCode)
         {
             var existing = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(request.GradeCode);
             if (existing is not null)
-                throw new InvalidOperationException($"GradeCode '{request.GradeCode}' đã được sử dụng");
+                throw new InvalidOperationException($"Mã khối lớp '{request.GradeCode}' đã được sử dụng");
             grade.GradeCode = request.GradeCode;
         }
 
@@ -155,7 +155,7 @@ public class CurriculumService : ICurriculumService
     public async Task DeleteGradeAsync(string gradeCode)
     {
         var grade = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(gradeCode)
-            ?? throw new KeyNotFoundException($"Grade '{gradeCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Khối lớp '{gradeCode}' không tồn tại");
 
         _unitOfWork.CurriculumRepository.DeleteGrade(grade);
         await _unitOfWork.SaveChangesAsync();
@@ -179,7 +179,7 @@ public class CurriculumService : ICurriculumService
     public async Task<LessonResponseDto> GetLessonByCodeAsync(string lessonCode)
     {
         var lesson = await _unitOfWork.CurriculumRepository.GetLessonByCodeAsync(lessonCode, includeRelations: true)
-            ?? throw new KeyNotFoundException($"Lesson '{lessonCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Bài học '{lessonCode}' không tồn tại");
 
         return MapToLessonResponse(lesson);
     }
@@ -187,11 +187,11 @@ public class CurriculumService : ICurriculumService
     public async Task<LessonResponseDto> CreateLessonAsync(CreateLessonRequestDto request)
     {
         var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode)
-            ?? throw new KeyNotFoundException($"Subject '{request.SubjectCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Môn học '{request.SubjectCode}' không tồn tại");
 
         var existing = await _unitOfWork.CurriculumRepository.GetLessonByCodeAsync(request.LessonCode);
         if (existing is not null)
-            throw new InvalidOperationException($"LessonCode '{request.LessonCode}' đã tồn tại");
+            throw new InvalidOperationException($"Mã bài học '{request.LessonCode}' đã tồn tại");
 
         var lesson = new Lessons
         {
@@ -213,13 +213,13 @@ public class CurriculumService : ICurriculumService
     public async Task<LessonResponseDto> UpdateLessonAsync(string lessonCode, UpdateLessonRequestDto request)
     {
         var lesson = await _unitOfWork.CurriculumRepository.GetLessonByCodeAsync(lessonCode, includeRelations: true)
-            ?? throw new KeyNotFoundException($"Lesson '{lessonCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Bài học '{lessonCode}' không tồn tại");
 
         if (request.LessonCode is not null && request.LessonCode != lessonCode)
         {
             var existing = await _unitOfWork.CurriculumRepository.GetLessonByCodeAsync(request.LessonCode);
             if (existing is not null)
-                throw new InvalidOperationException($"LessonCode '{request.LessonCode}' đã được sử dụng");
+                throw new InvalidOperationException($"Mã bài học '{request.LessonCode}' đã được sử dụng");
             lesson.LessonCode = request.LessonCode;
         }
 
@@ -229,7 +229,7 @@ public class CurriculumService : ICurriculumService
         if (request.SubjectCode is not null)
         {
             var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode)
-                ?? throw new KeyNotFoundException($"Subject '{request.SubjectCode}' không tồn tại");
+                ?? throw new KeyNotFoundException($"Môn học '{request.SubjectCode}' không tồn tại");
             lesson.SubjectId = subject.SubjectId;
         }
 
@@ -245,7 +245,7 @@ public class CurriculumService : ICurriculumService
     public async Task DeleteLessonAsync(string lessonCode)
     {
         var lesson = await _unitOfWork.CurriculumRepository.GetLessonByCodeAsync(lessonCode)
-            ?? throw new KeyNotFoundException($"Lesson '{lessonCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Bài học '{lessonCode}' không tồn tại");
 
         _unitOfWork.CurriculumRepository.DeleteLesson(lesson);
         await _unitOfWork.SaveChangesAsync();
