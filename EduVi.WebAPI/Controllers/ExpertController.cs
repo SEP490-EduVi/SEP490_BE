@@ -1,6 +1,8 @@
 using EduVi.Contracts.Common;
+using EduVi.Contracts.DTOs.Authentication.Request;
 using EduVi.Contracts.DTOs.Expert;
 using EduVi.Contracts.DTOs.Profile;
+using EduVi.Services.Authentication;
 using EduVi.Services.Expert;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,11 +20,16 @@ namespace EduVi.WebAPI.Controllers;
 public class ExpertController : ControllerBase
 {
     private readonly IExpertService _expertService;
+    private readonly IAuthenticationService _authenticationService;
     private readonly ILogger<ExpertController> _logger;
 
-    public ExpertController(IExpertService expertService, ILogger<ExpertController> logger)
+    public ExpertController(
+        IExpertService expertService,
+        IAuthenticationService authenticationService,
+        ILogger<ExpertController> logger)
     {
         _expertService = expertService;
+        _authenticationService = authenticationService;
         _logger = logger;
     }
 
@@ -159,7 +166,7 @@ public class ExpertController : ControllerBase
     }
 
     /// <summary>
-    /// Cập nhật thông tin riêng của Expert (Bio).
+    /// Cập nhật thông tin Expert (FullName, PhoneNumber, AvatarUrl, Bio).
     /// </summary>
     [HttpPut("profile")]
     public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateExpertProfileRequest request)
@@ -167,12 +174,31 @@ public class ExpertController : ControllerBase
         try
         {
             var expertId = GetCurrentUserId();
+
+            var hasAuthenticationFieldsToUpdate = request.FullName is not null
+                || request.PhoneNumber is not null
+                || request.AvatarUrl is not null;
+
+            if (hasAuthenticationFieldsToUpdate)
+            {
+                await _authenticationService.UpdateCurrentUserAsync(expertId, new UpdateCurrentUserRequest
+                {
+                    FullName = request.FullName,
+                    PhoneNumber = request.PhoneNumber,
+                    AvatarUrl = request.AvatarUrl
+                });
+            }
+
             await _expertService.UpdateProfileAsync(expertId, request);
             return Ok(ApiResponse<object>.Success(null, "Cập nhật thông tin thành công."));
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message, 400));
         }
         catch (Exception ex)
         {

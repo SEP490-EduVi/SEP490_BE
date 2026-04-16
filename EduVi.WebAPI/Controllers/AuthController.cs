@@ -196,34 +196,6 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Cập nhật thông tin người dùng hiện tại
-    /// </summary>
-    [HttpPut("me")]
-    [Authorize]
-    public async Task<ActionResult<ApiResponse<UserInfo>>> UpdateCurrentUser([FromBody] UpdateCurrentUserRequest request)
-    {
-        try
-        {
-            var userId = GetCurrentUserId();
-            var result = await _authService.UpdateCurrentUserAsync(userId, request);
-            return Ok(ApiResponse<UserInfo>.Success(result, "Cập nhật thông tin người dùng thành công"));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ApiResponse<UserInfo>.Fail(ex.Message, 404));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<UserInfo>.Fail(ex.Message, 400));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating current user information");
-            return StatusCode(500, ApiResponse<UserInfo>.Fail("Lỗi khi cập nhật thông tin người dùng", 500));
-        }
-    }
-
-    /// <summary>
     /// Gửi OTP reset mật khẩu qua email (6 digits, 5 phút)
     /// </summary>
     [HttpPost("forgot-password")]

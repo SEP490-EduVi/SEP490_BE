@@ -18,6 +18,11 @@ public interface IAdminService
     Task<AdminUserResponse> GetUserByCodeAsync(string userCode);
 
     /// <summary>
+    /// Tạo user mới từ màn Admin
+    /// </summary>
+    Task<AdminUserResponse> CreateUserAsync(CreateUserRequest request);
+
+    /// <summary>
     /// Cập nhật thông tin cơ bản user
     /// </summary>
     Task<AdminUserResponse> UpdateUserAsync(string userCode, UpdateUserRequest request);

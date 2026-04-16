@@ -1,6 +1,8 @@
 using EduVi.Contracts.Common;
+using EduVi.Contracts.DTOs.Authentication.Request;
 using EduVi.Contracts.DTOs.Expert;
 using EduVi.Contracts.DTOs.Profile;
+using EduVi.Services.Authentication;
 using EduVi.Services.Expert;
 using EduVi.Services.Staff;
 using Microsoft.AspNetCore.Authorization;
@@ -19,15 +21,18 @@ public class StaffController : ControllerBase
 {
     private readonly IExpertService _expertService;
     private readonly IStaffProfileService _staffProfileService;
+    private readonly IAuthenticationService _authenticationService;
     private readonly ILogger<StaffController> _logger;
 
     public StaffController(
         IExpertService expertService,
         IStaffProfileService staffProfileService,
+        IAuthenticationService authenticationService,
         ILogger<StaffController> logger)
     {
         _expertService = expertService;
         _staffProfileService = staffProfileService;
+        _authenticationService = authenticationService;
         _logger = logger;
     }
 
@@ -140,7 +145,7 @@ public class StaffController : ControllerBase
     }
 
     /// <summary>
-    /// Cập nhật thông tin riêng của Staff (Department).
+    /// Cập nhật thông tin Staff (FullName, PhoneNumber, AvatarUrl, Department).
     /// </summary>
     [HttpPut("profile")]
     public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateStaffProfileRequest request)
@@ -148,12 +153,31 @@ public class StaffController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
+
+            var hasAuthenticationFieldsToUpdate = request.FullName is not null
+                || request.PhoneNumber is not null
+                || request.AvatarUrl is not null;
+
+            if (hasAuthenticationFieldsToUpdate)
+            {
+                await _authenticationService.UpdateCurrentUserAsync(userId, new UpdateCurrentUserRequest
+                {
+                    FullName = request.FullName,
+                    PhoneNumber = request.PhoneNumber,
+                    AvatarUrl = request.AvatarUrl
+                });
+            }
+
             await _staffProfileService.UpdateProfileAsync(userId, request);
             return Ok(ApiResponse<object>.Success(null, "Cập nhật thông tin thành công."));
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message, 400));
         }
         catch (Exception ex)
         {

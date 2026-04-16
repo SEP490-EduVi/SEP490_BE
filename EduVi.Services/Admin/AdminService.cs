@@ -46,6 +46,84 @@ public class AdminService : IAdminService
         return MapToUserResponse(user);
     }
 
+    public async Task<AdminUserResponse> CreateUserAsync(CreateUserRequest request)
+    {
+        var normalizedUsername = request.Username.Trim();
+        var normalizedEmail = request.Email.Trim();
+
+        if (await _unitOfWork.AuthenticationRepository.UsernameExistsAsync(normalizedUsername))
+            throw new InvalidOperationException("Tên đăng nhập đã tồn tại.");
+
+        if (await _unitOfWork.AuthenticationRepository.EmailExistsAsync(normalizedEmail))
+            throw new InvalidOperationException("Email đã tồn tại.");
+
+        var role = await _unitOfWork.AuthenticationRepository.GetRoleByIdAsync(request.RoleId)
+            ?? throw new InvalidOperationException($"Vai trò có ID {request.RoleId} không tồn tại.");
+
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var user = new Users
+            {
+                Username = normalizedUsername,
+                PasswordHash = _authService.HashPassword(request.Password),
+                Email = normalizedEmail,
+                FullName = request.FullName.Trim(),
+                PhoneNumber = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim(),
+                AvatarUrl = string.IsNullOrWhiteSpace(request.AvatarUrl) ? null : request.AvatarUrl.Trim(),
+                RoleId = request.RoleId,
+                Status = 1,
+                IsEmailVerified = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            user = await _unitOfWork.AuthenticationRepository.CreateUserAsync(user);
+
+            if (string.Equals(role.RoleName, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                await _unitOfWork.AuthenticationRepository.CreateAdminAsync(user.UserId);
+            }
+            else if (string.Equals(role.RoleName, "Staff", StringComparison.OrdinalIgnoreCase))
+            {
+                await _unitOfWork.AuthenticationRepository.CreateStaffAsync(user.UserId);
+            }
+            else if (string.Equals(role.RoleName, "Expert", StringComparison.OrdinalIgnoreCase))
+            {
+                await _unitOfWork.AuthenticationRepository.CreateExpertAsync(user.UserId);
+            }
+            else if (string.Equals(role.RoleName, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                await _unitOfWork.AuthenticationRepository.CreateTeacherAsync(user.UserId);
+
+                // Đồng bộ chính sách cấp quota khởi tạo giống flow đăng ký.
+                await _unitOfWork.PaymentRepository.CreateOrUpdateQuotaAsync(
+                    user.UserId,
+                    analysisQuotaToAdd: 2,
+                    slideQuotaToAdd: 1,
+                    videoQuotaToAdd: 1,
+                    gameQuotaToAdd: 2);
+            }
+            else
+            {
+                throw new InvalidOperationException("Role hiện tại chưa được hỗ trợ tạo qua Admin.");
+            }
+
+            await _unitOfWork.AuthenticationRepository.CreateWalletAsync(user.UserId);
+            await _unitOfWork.CommitTransactionAsync();
+
+            var createdUser = await _unitOfWork.AdminRepository.GetUserByCodeAsync(user.UserCode)
+                ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {user.UserCode}.");
+
+            _logger.LogInformation("Admin created user {UserCode} with role {RoleName}", createdUser.UserCode, role.RoleName);
+            return MapToUserResponse(createdUser);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
+    }
+
     public async Task<AdminUserResponse> UpdateUserAsync(string userCode, UpdateUserRequest request)
     {
         var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)

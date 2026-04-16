@@ -1,5 +1,7 @@
 using EduVi.Contracts.Common;
+using EduVi.Contracts.DTOs.Authentication.Request;
 using EduVi.Contracts.DTOs.Profile;
+using EduVi.Services.Authentication;
 using EduVi.Services.Teacher;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +15,16 @@ namespace EduVi.WebAPI.Controllers;
 public class TeacherController : ControllerBase
 {
     private readonly ITeacherService _teacherService;
+    private readonly IAuthenticationService _authenticationService;
     private readonly ILogger<TeacherController> _logger;
 
-    public TeacherController(ITeacherService teacherService, ILogger<TeacherController> logger)
+    public TeacherController(
+        ITeacherService teacherService,
+        IAuthenticationService authenticationService,
+        ILogger<TeacherController> logger)
     {
         _teacherService = teacherService;
+        _authenticationService = authenticationService;
         _logger = logger;
     }
 
@@ -45,7 +52,7 @@ public class TeacherController : ControllerBase
     }
 
     /// <summary>
-    /// Cập nhật thông tin riêng của Teacher (SchoolName).
+    /// Cập nhật thông tin Teacher (FullName, PhoneNumber, AvatarUrl, SchoolName).
     /// </summary>
     [HttpPut("profile")]
     public async Task<ActionResult<ApiResponse<object>>> UpdateProfile([FromBody] UpdateTeacherProfileRequest request)
@@ -53,12 +60,31 @@ public class TeacherController : ControllerBase
         try
         {
             var userId = GetCurrentUserId();
+
+            var hasAuthenticationFieldsToUpdate = request.FullName is not null
+                || request.PhoneNumber is not null
+                || request.AvatarUrl is not null;
+
+            if (hasAuthenticationFieldsToUpdate)
+            {
+                await _authenticationService.UpdateCurrentUserAsync(userId, new UpdateCurrentUserRequest
+                {
+                    FullName = request.FullName,
+                    PhoneNumber = request.PhoneNumber,
+                    AvatarUrl = request.AvatarUrl
+                });
+            }
+
             await _teacherService.UpdateProfileAsync(userId, request);
             return Ok(ApiResponse<object>.Success(null, "Cập nhật thông tin thành công."));
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ApiResponse<object>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message, 400));
         }
         catch (Exception ex)
         {

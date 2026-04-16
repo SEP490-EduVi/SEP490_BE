@@ -49,6 +49,29 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// Tạo user mới (Admin/Staff/Expert/Teacher)
+    /// </summary>
+    [HttpPost("users")]
+    public async Task<ActionResult<ApiResponse<AdminUserResponse>>> CreateUser([FromBody] CreateUserRequest request)
+    {
+        try
+        {
+            var result = await _adminService.CreateUserAsync(request);
+            return CreatedAtAction(nameof(GetUserByCode), new { userCode = result.UserCode },
+                ApiResponse<AdminUserResponse>.Success(result, "Tạo người dùng thành công"));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<AdminUserResponse>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating user with username {Username}", request.Username);
+            return StatusCode(500, ApiResponse<AdminUserResponse>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
+    /// <summary>
     /// Xem chi tiết 1 user
     /// </summary>
     [HttpGet("users/{userCode}")]
