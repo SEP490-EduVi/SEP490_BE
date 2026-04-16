@@ -47,7 +47,7 @@ public class VideoController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _pipelineService.CreateVideoGenerationTaskAsync(userId, request);
-            return Ok(ApiResponse<PipelineTaskResponseDto>.Success(result, "Task tạo video đã được đưa vào hàng đợi xử lý"));
+            return Ok(ApiResponse<PipelineTaskResponseDto>.Success(result, "Yêu cầu tạo video đã được đưa vào hàng đợi xử lý"));
         }
         catch (InvalidOperationException ex)
         {
@@ -56,7 +56,7 @@ public class VideoController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Lỗi khi tạo task tạo video");
-            return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo task tạo video", 500));
+            return StatusCode(500, ApiResponse<PipelineTaskResponseDto>.Fail("Lỗi khi tạo yêu cầu tạo video", 500));
         }
     }
 

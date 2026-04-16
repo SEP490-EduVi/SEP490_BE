@@ -34,7 +34,7 @@ public class InputDocumentController : ControllerBase
         {
             var teacherId = GetCurrentUserId();
             var result = await _inputDocumentService.UploadInputDocumentAsync(teacherId, request);
-            return Ok(ApiResponse<InputDocumentResponseDto>.Success(result, "Upload tài liệu thành công"));
+            return Ok(ApiResponse<InputDocumentResponseDto>.Success(result, "Tải lên tài liệu thành công"));
         }
         catch (InvalidOperationException exception)
         {
@@ -43,7 +43,7 @@ public class InputDocumentController : ControllerBase
         catch (Exception exception)
         {
             _logger.LogError(exception, "Error uploading input document");
-            return StatusCode(500, ApiResponse<InputDocumentResponseDto>.Fail("Lỗi khi upload tài liệu", 500));
+            return StatusCode(500, ApiResponse<InputDocumentResponseDto>.Fail("Lỗi khi tải lên tài liệu", 500));
         }
     }
 

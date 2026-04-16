@@ -52,7 +52,7 @@ public class ExpertService : IExpertService
             throw new InvalidOperationException("Tài khoản đã được xác thực. Không cần nộp thêm hồ sơ");
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("GCS BucketName not configured");
+            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
 
         var storageClient = await StorageClient.CreateAsync();
 
@@ -132,7 +132,7 @@ public class ExpertService : IExpertService
             throw new InvalidOperationException("Không thể xóa hồ sơ đã được duyệt");
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("GCS BucketName not configured");
+            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
 
         var storageClient = await StorageClient.CreateAsync();
         var objectName = verification.FileUrl.Replace($"gs://{bucketName}/", "");

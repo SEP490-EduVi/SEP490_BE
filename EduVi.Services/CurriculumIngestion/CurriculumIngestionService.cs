@@ -45,7 +45,7 @@ public class CurriculumIngestionService : ICurriculumIngestionService
             .ExistsCompletedAsync(request.SubjectCode, request.EducationLevel, request.CurriculumYear);
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("GCS BucketName not configured");
+            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
         var curriculaFolder = _configuration["GCS:Folders:Curricula"] ?? "curricula";
         var storageClient = await StorageClient.CreateAsync();
 
@@ -113,7 +113,7 @@ public class CurriculumIngestionService : ICurriculumIngestionService
     public async Task<CurriculumDocumentResponseDto> GetCurriculumDocumentByCodeAsync(string documentCode)
     {
         var document = await _unitOfWork.CurriculumDocumentRepository.GetByDocumentCodeAsync(documentCode)
-            ?? throw new KeyNotFoundException($"Curriculum document '{documentCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Tài liệu chương trình '{documentCode}' không tồn tại");
 
         return MapToResponseDto(document);
     }
@@ -146,7 +146,7 @@ public class CurriculumIngestionService : ICurriculumIngestionService
     public async Task DeleteCurriculumNeo4jAsync(string documentCode)
     {
         var document = await _unitOfWork.CurriculumDocumentRepository.GetByDocumentCodeAsync(documentCode)
-            ?? throw new KeyNotFoundException($"Curriculum document '{documentCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Tài liệu chương trình '{documentCode}' không tồn tại");
 
         document.Status = CurriculumDocumentStatusConstants.Deleting;
         _unitOfWork.CurriculumDocumentRepository.Update(document);

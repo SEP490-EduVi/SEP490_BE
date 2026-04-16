@@ -137,14 +137,14 @@ public class PaymentController : ControllerBase
             if (result)
                 return Ok(new { success = true });
             else
-                return BadRequest(new { success = false, message = "Invalid webhook" });
+                return BadRequest(new { success = false, message = "Webhook không hợp lệ" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing PayOS webhook");
             // PHẢI trả OK để PayOS không gửi lại (retry storm)
             // Log lỗi để xử lý thủ công
-            return Ok(new { success = false, message = "Lỗi hệ thống (liên quan tới payos-webhook" });
+            return Ok(new { success = false, message = "Lỗi hệ thống liên quan đến PayOS webhook" });
         }
     }
 

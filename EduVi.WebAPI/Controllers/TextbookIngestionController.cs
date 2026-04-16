@@ -40,7 +40,7 @@ public class TextbookIngestionController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _textbookIngestionService.UploadTextbookDocumentAsync(userId, request);
-            return StatusCode(202, ApiResponse<TextbookDocumentResponseDto>.Success(result, "Sách giáo khoa đã được upload và đưa vào hàng đợi xử lý"));
+            return StatusCode(202, ApiResponse<TextbookDocumentResponseDto>.Success(result, "Sách giáo khoa đã được tải lên và đưa vào hàng đợi xử lý"));
         }
         catch (InvalidOperationException ex)
         {
@@ -49,7 +49,7 @@ public class TextbookIngestionController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading textbook document");
-            return StatusCode(500, ApiResponse<TextbookDocumentResponseDto>.Fail("Lỗi khi upload sách giáo khoa", 500));
+            return StatusCode(500, ApiResponse<TextbookDocumentResponseDto>.Fail("Lỗi khi tải lên sách giáo khoa", 500));
         }
     }
 
@@ -121,7 +121,7 @@ public class TextbookIngestionController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedAccessException("User ID not found in token");
+            throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
         return userId;
     }
 }

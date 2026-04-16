@@ -18,11 +18,11 @@ public class PayOSService : IPayOSService
         _logger = logger;
 
         var clientId = configuration["PayOS:ClientId"]
-            ?? throw new InvalidOperationException("PayOS:ClientId is missing");
+            ?? throw new InvalidOperationException("Thiếu cấu hình PayOS:ClientId");
         var apiKey = configuration["PayOS:ApiKey"]
-            ?? throw new InvalidOperationException("PayOS:ApiKey is missing");
+            ?? throw new InvalidOperationException("Thiếu cấu hình PayOS:ApiKey");
         var checksumKey = configuration["PayOS:ChecksumKey"]
-            ?? throw new InvalidOperationException("PayOS:ChecksumKey is missing");
+            ?? throw new InvalidOperationException("Thiếu cấu hình PayOS:ChecksumKey");
 
         _payOS = new PayOS(clientId, apiKey, checksumKey);
         _logger.LogInformation("PayOS initialized");

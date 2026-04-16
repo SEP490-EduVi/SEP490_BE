@@ -46,7 +46,7 @@ public class TextbookIngestionService : ITextbookIngestionService
                 $"Đã tồn tại một bản ghi ingestion thành công cho {request.SubjectCode} - lớp {request.GradeCode}. Xóa dữ liệu Neo4j trước khi upload lại.");
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("GCS BucketName not configured");
+            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
         var textbooksFolder = _configuration["GCS:Folders:Textbooks"] ?? "textbooks";
         var storageClient = await StorageClient.CreateAsync();
 
@@ -105,7 +105,7 @@ public class TextbookIngestionService : ITextbookIngestionService
     public async Task<TextbookDocumentResponseDto> GetTextbookDocumentByCodeAsync(string documentCode)
     {
         var document = await _unitOfWork.TextbookDocumentRepository.GetByDocumentCodeAsync(documentCode)
-            ?? throw new KeyNotFoundException($"Textbook document '{documentCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Tài liệu sách giáo khoa '{documentCode}' không tồn tại");
 
         return MapToResponseDto(document);
     }
@@ -113,7 +113,7 @@ public class TextbookIngestionService : ITextbookIngestionService
     public async Task DeleteTextbookNeo4jAsync(string documentCode)
     {
         var document = await _unitOfWork.TextbookDocumentRepository.GetByDocumentCodeAsync(documentCode)
-            ?? throw new KeyNotFoundException($"Textbook document '{documentCode}' không tồn tại");
+            ?? throw new KeyNotFoundException($"Tài liệu sách giáo khoa '{documentCode}' không tồn tại");
 
         document.Status = TextbookDocumentStatusConstants.Deleting;
         _unitOfWork.TextbookDocumentRepository.Update(document);

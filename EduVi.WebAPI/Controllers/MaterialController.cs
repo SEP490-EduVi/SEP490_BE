@@ -118,7 +118,7 @@ public class MaterialController : ControllerBase
         {
             var expertId = GetCurrentUserId();
             await _materialService.DeleteMaterialAsync(expertId, materialCode);
-            return Ok(ApiResponse<object>.Success(null, "Material đã được xóa."));
+            return Ok(ApiResponse<object>.Success(null, "Học liệu đã được xóa."));
         }
         catch (KeyNotFoundException ex)
         {
@@ -195,8 +195,8 @@ public class MaterialController : ControllerBase
             await _materialService.ReviewMaterialAsync(staffId, materialCode, request);
 
             var message = request.Approved
-                ? "Material đã được phê duyệt. Teacher có thể mua từ marketplace."
-                : "Material đã bị từ chối. Expert sẽ nhận thông báo.";
+                ? "Học liệu đã được phê duyệt. Giáo viên có thể mua từ chợ học liệu."
+                : "Học liệu đã bị từ chối. Chuyên gia sẽ nhận thông báo.";
 
             return Ok(ApiResponse<object>.Success(null, message));
         }

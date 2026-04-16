@@ -40,7 +40,7 @@ public class CurriculumIngestionController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _curriculumIngestionService.UploadCurriculumDocumentAsync(userId, request);
-            return StatusCode(202, ApiResponse<CurriculumDocumentResponseDto>.Success(result, "Tài liệu đã được upload và đưa vào hàng đợi xử lý"));
+            return StatusCode(202, ApiResponse<CurriculumDocumentResponseDto>.Success(result, "Tài liệu đã được tải lên và đưa vào hàng đợi xử lý"));
         }
         catch (InvalidOperationException ex)
         {
@@ -49,7 +49,7 @@ public class CurriculumIngestionController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading curriculum document");
-            return StatusCode(500, ApiResponse<CurriculumDocumentResponseDto>.Fail("Lỗi khi upload tài liệu chương trình", 500));
+            return StatusCode(500, ApiResponse<CurriculumDocumentResponseDto>.Fail("Lỗi khi tải lên tài liệu chương trình", 500));
         }
     }
 
@@ -97,7 +97,7 @@ public class CurriculumIngestionController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedAccessException("User ID not found in token");
+            throw new UnauthorizedAccessException("Không tìm thấy ID người dùng trong token");
         return userId;
     }
 

@@ -29,25 +29,25 @@ public class InputDocumentService : IInputDocumentService
     {
         var project = await _unitOfWork.PipelineRepository
             .GetProjectByCodeAndTeacherAsync(request.ProjectCode, teacherId)
-            ?? throw new InvalidOperationException($"Project '{request.ProjectCode}' không tồn tại hoặc không thuộc về bạn");
+            ?? throw new InvalidOperationException($"Dự án '{request.ProjectCode}' không tồn tại hoặc không thuộc về bạn");
 
         var subject = await _unitOfWork.CurriculumRepository.GetSubjectByCodeAsync(request.SubjectCode)
-            ?? throw new InvalidOperationException($"Subject '{request.SubjectCode}' không tồn tại");
+            ?? throw new InvalidOperationException($"Môn học '{request.SubjectCode}' không tồn tại");
         var grade = await _unitOfWork.CurriculumRepository.GetGradeByCodeAsync(request.GradeCode)
-            ?? throw new InvalidOperationException($"Grade '{request.GradeCode}' không tồn tại");
+            ?? throw new InvalidOperationException($"Khối lớp '{request.GradeCode}' không tồn tại");
 
         int? lessonId = null;
         string lessonCodePart = string.Empty;
         if (request.LessonCode is not null)
         {
             var lesson = await _unitOfWork.CurriculumRepository.GetLessonByCodeAsync(request.LessonCode)
-                ?? throw new InvalidOperationException($"Lesson '{request.LessonCode}' không tồn tại");
+                ?? throw new InvalidOperationException($"Bài học '{request.LessonCode}' không tồn tại");
             lessonId = lesson.LessonId;
             lessonCodePart = $"_{request.LessonCode}";
         }
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("GCS BucketName not configured");
+            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
         var storageClient = await StorageClient.CreateAsync();
 
         var fileExtension = Path.GetExtension(request.File.FileName);
@@ -103,7 +103,7 @@ public class InputDocumentService : IInputDocumentService
     {
         var project = await _unitOfWork.PipelineRepository
             .GetProjectByCodeAndTeacherAsync(projectCode, teacherId)
-            ?? throw new KeyNotFoundException($"Project '{projectCode}' không tồn tại hoặc không thuộc về bạn");
+            ?? throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại hoặc không thuộc về bạn");
 
         var documents = await _unitOfWork.InputDocumentRepository
             .GetInputDocumentsByTeacherAndProjectAsync(teacherId, project.ProjectId);
@@ -115,7 +115,7 @@ public class InputDocumentService : IInputDocumentService
     {
         var inputDocument = await _unitOfWork.InputDocumentRepository
             .GetInputDocumentByCodeAndTeacherAsync(documentCode, teacherId)
-            ?? throw new KeyNotFoundException($"InputDocument '{documentCode}' không tồn tại hoặc không thuộc về bạn");
+            ?? throw new KeyNotFoundException($"Tài liệu đầu vào '{documentCode}' không tồn tại hoặc không thuộc về bạn");
 
         return MapToInputDocumentResponse(inputDocument);
     }
@@ -124,10 +124,10 @@ public class InputDocumentService : IInputDocumentService
     {
         var inputDocument = await _unitOfWork.InputDocumentRepository
             .GetInputDocumentByCodeAndTeacherAsync(documentCode, teacherId)
-            ?? throw new KeyNotFoundException($"InputDocument '{documentCode}' không tồn tại hoặc không thuộc về bạn");
+            ?? throw new KeyNotFoundException($"Tài liệu đầu vào '{documentCode}' không tồn tại hoặc không thuộc về bạn");
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("GCS BucketName not configured");
+            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
         var storageClient = await StorageClient.CreateAsync();
 
         if (!string.IsNullOrWhiteSpace(inputDocument.FilePath))

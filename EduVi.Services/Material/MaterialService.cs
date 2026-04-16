@@ -49,7 +49,7 @@ public class MaterialService : IMaterialService
         var (subjectId, gradeId) = await ResolveSubjectGradeAsync(request.SubjectCode, request.GradeCode);
 
         var bucketName = _configuration["GCS:BucketName"]
-            ?? throw new InvalidOperationException("GCS BucketName not configured");
+            ?? throw new InvalidOperationException("Chưa cấu hình GCS BucketName");
         var storageClient = await StorageClient.CreateAsync();
 
         var resourceObjectName = ParseAndValidateObjectName(request.ResourceUrl, bucketName, expertId, "resource");
