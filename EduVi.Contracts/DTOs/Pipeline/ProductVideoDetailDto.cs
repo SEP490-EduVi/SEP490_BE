@@ -10,6 +10,7 @@ public class ProductVideoDetailDto
     public string ProductCode { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
     public string ProductVideoCode { get; set; } = string.Empty;
+    public string VideoName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string? SlideDocumentUrl { get; set; }
     public string? VideoUrl { get; set; }

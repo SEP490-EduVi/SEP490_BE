@@ -33,6 +33,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<GameTemplates> GameTemplates { get; set; }
 
+    public virtual DbSet<TeacherGames> TeacherGames { get; set; }
+
     public virtual DbSet<InputDocuments> InputDocuments { get; set; }
 
     public virtual DbSet<Materials> Materials { get; set; }
@@ -220,6 +222,40 @@ public partial class EduViContext : DbContext
                 .HasColumnType("nvarchar(max)");
         });
 
+        modelBuilder.Entity<TeacherGames>(entity =>
+        {
+            entity.ToTable("TeacherGames");
+
+            entity.HasKey(e => e.TeacherGameId).HasName("PK_TeacherGames");
+
+            entity.HasIndex(e => e.TeacherGameCode, "UQ_TeacherGames_TeacherGameCode").IsUnique();
+            entity.HasIndex(e => e.TaskId, "UQ_TeacherGames_TaskId").IsUnique();
+            entity.HasIndex(e => new { e.TeacherId, e.CreatedAt }, "IX_TeacherGames_TeacherID_CreatedAt");
+
+            entity.Property(e => e.TeacherGameId).HasColumnName("TeacherGameID");
+            entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
+            entity.Property(e => e.TeacherGameCode)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.GameName).HasMaxLength(200);
+            entity.Property(e => e.TemplateCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Status).HasDefaultValue(0);
+            entity.Property(e => e.ResultJson).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+            entity.Property(e => e.CompletedAt).HasColumnType("datetime2");
+
+            entity.HasOne(d => d.Teacher).WithMany(p => p.TeacherGames)
+                .HasForeignKey(d => d.TeacherId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_TeacherGames_Teachers");
+        });
+
         modelBuilder.Entity<InputDocuments>(entity =>
         {
             entity.HasKey(e => e.DocumentId).HasName("PK__InputDoc__1ABEEF6FB9B9B79B");
@@ -379,6 +415,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.ProductVideoCode)
                 .HasMaxLength(200)
                 .IsUnicode(false);
+            entity.Property(e => e.VideoName).HasMaxLength(200);
             entity.Property(e => e.Status)
                 .HasDefaultValue(0);
             entity.Property(e => e.SlideDocumentUrl).HasMaxLength(1000);

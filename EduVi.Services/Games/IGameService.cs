@@ -7,4 +7,7 @@ public interface IGameService
 {
     Task<GameTaskResponseDto> CreatePlayableGameTaskAsync(int userId, GameConfigRequest request);
     Task<GameProgressDto?> GetGameStatusAsync(Guid taskId);
+    Task<List<GameSummaryDto>> GetGamesByTeacherAsync(int userId);
+    Task<GameDetailDto> GetGameByCodeAsync(int userId, string gameCode);
+    Task SoftDeleteGameAsync(int userId, string gameCode);
 }

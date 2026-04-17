@@ -417,6 +417,7 @@ public class PipelineResultConsumerService : BackgroundService
     private async Task UpsertProductVideoCompletedAsync(IUnitOfWork unitOfWork, PipelineProgressDto progress, int productId)
     {
         var productVideoCode = await ResolveProductVideoCodeAsync(progress);
+        var videoName = await ResolveVideoNameAsync(progress);
 
         if (string.IsNullOrWhiteSpace(productVideoCode) && progress.TaskId != Guid.Empty)
             productVideoCode = $"video_task_{progress.TaskId}";
@@ -438,10 +439,14 @@ public class PipelineResultConsumerService : BackgroundService
             {
                 ProductId = productId,
                 ProductVideoCode = productVideoCode,
+                VideoName = videoName,
                 Status = VideoStatusConstants.Completed,
                 CreatedAt = DateTime.UtcNow
             });
         }
+
+        if (string.IsNullOrWhiteSpace(productVideo.VideoName) && !string.IsNullOrWhiteSpace(videoName))
+            productVideo.VideoName = videoName;
 
         productVideo.Status = VideoStatusConstants.Completed;
         productVideo.UpdatedAt = DateTime.UtcNow;
@@ -469,6 +474,7 @@ public class PipelineResultConsumerService : BackgroundService
     private async Task UpsertProductVideoFailedAsync(IUnitOfWork unitOfWork, PipelineProgressDto progress, int productId)
     {
         var productVideoCode = await ResolveProductVideoCodeAsync(progress);
+        var videoName = await ResolveVideoNameAsync(progress);
 
         if (string.IsNullOrWhiteSpace(productVideoCode) && progress.TaskId != Guid.Empty)
             productVideoCode = $"video_task_{progress.TaskId}";
@@ -490,10 +496,14 @@ public class PipelineResultConsumerService : BackgroundService
             {
                 ProductId = productId,
                 ProductVideoCode = productVideoCode,
+                VideoName = videoName,
                 Status = VideoStatusConstants.Failed,
                 CreatedAt = DateTime.UtcNow
             });
         }
+
+        if (string.IsNullOrWhiteSpace(productVideo.VideoName) && !string.IsNullOrWhiteSpace(videoName))
+            productVideo.VideoName = videoName;
 
         productVideo.Status = VideoStatusConstants.Failed;
         productVideo.ErrorMessage = progress.Error;
@@ -546,10 +556,36 @@ public class PipelineResultConsumerService : BackgroundService
         return null;
     }
 
+    private async Task<string?> ResolveVideoNameAsync(PipelineProgressDto progress)
+    {
+        try
+        {
+            var redisDb = _redis.GetDatabase();
+            var data = await redisDb.StringGetAsync($"pipeline:status:{progress.TaskId}");
+            if (data.IsNullOrEmpty)
+                return null;
+
+            using var doc = JsonDocument.Parse((string)data!);
+            if (doc.RootElement.TryGetProperty("videoName", out var videoNameElement))
+            {
+                var videoName = videoNameElement.GetString();
+                if (!string.IsNullOrWhiteSpace(videoName))
+                    return videoName;
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static string BuildRedisProgressPayload(PipelineProgressDto progress, string? existingMetaJson)
     {
         string? requestId = null;
         string? productVideoCode = null;
+        string? videoName = null;
         string? createdAt = null;
 
         if (!string.IsNullOrWhiteSpace(existingMetaJson))
@@ -564,6 +600,9 @@ public class PipelineResultConsumerService : BackgroundService
 
                 if (existingRoot.TryGetProperty("productVideoCode", out var productVideoCodeElement))
                     productVideoCode = productVideoCodeElement.GetString();
+
+                if (existingRoot.TryGetProperty("videoName", out var videoNameElement))
+                    videoName = videoNameElement.GetString();
 
                 if (existingRoot.TryGetProperty("createdAt", out var createdAtElement))
                     createdAt = createdAtElement.GetString();
@@ -587,6 +626,7 @@ public class PipelineResultConsumerService : BackgroundService
             error = progress.Error,
             requestId,
             productVideoCode,
+            videoName,
             createdAt
         });
     }

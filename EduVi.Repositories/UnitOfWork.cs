@@ -21,6 +21,7 @@ public class UnitOfWork : IUnitOfWork
     private CurriculumDocumentRepository? _curriculumDocumentRepository;
     private TextbookDocumentRepository? _textbookDocumentRepository;
     private GameTemplateRepository? _gameTemplateRepository;
+    private GameRepository? _gameRepository;
     private StudentListRepository? _studentListRepository;
     private WithdrawalRepository? _withdrawalRepository;
     private IDbContextTransaction? _currentTransaction;
@@ -92,6 +93,11 @@ public class UnitOfWork : IUnitOfWork
     public IGameTemplateRepository GameTemplateRepository
     {
         get => _gameTemplateRepository ??= new GameTemplateRepository(_context);
+    }
+
+    public IGameRepository GameRepository
+    {
+        get => _gameRepository ??= new GameRepository(_context);
     }
 
     public IStudentListRepository StudentListRepository

@@ -1,4 +1,6 @@
+using EduVi.Contracts.Common;
 using EduVi.Contracts.DTOs.Games.Response;
+using EduVi.Repositories.Interfaces;
 using EduVi.WebAPI.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using RabbitMQ.Client;
@@ -11,13 +13,14 @@ namespace EduVi.WebAPI.BackgroundServices;
 
 /// <summary>
 /// BackgroundService consume kết quả game generation từ AI worker qua RabbitMQ
-/// và lưu trạng thái vào Redis.
+/// và lưu trạng thái vào Redis + TeacherGames.
 /// </summary>
 public class GameResultConsumerService : BackgroundService
 {
     private readonly ILogger<GameResultConsumerService> _logger;
     private readonly IHubContext<PipelineHub> _hubContext;
     private readonly IConnectionMultiplexer _redis;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ConnectionFactory _connectionFactory;
 
     private IConnection? _connection;
@@ -34,11 +37,13 @@ public class GameResultConsumerService : BackgroundService
         ILogger<GameResultConsumerService> logger,
         IHubContext<PipelineHub> hubContext,
         IConnectionMultiplexer redis,
+        IServiceScopeFactory scopeFactory,
         IConfiguration configuration)
     {
         _logger = logger;
         _hubContext = hubContext;
         _redis = redis;
+        _scopeFactory = scopeFactory;
 
         var rabbitConfig = configuration.GetSection("RabbitMQ");
         _connectionFactory = new ConnectionFactory
@@ -93,6 +98,8 @@ public class GameResultConsumerService : BackgroundService
                             $"game:status:{progress!.TaskId}",
                             JsonSerializer.Serialize(progress),
                             TimeSpan.FromHours(1));
+
+                        await UpdateTeacherGameInDatabaseAsync(progress);
 
                         if (!string.IsNullOrWhiteSpace(progress.UserId))
                         {
@@ -177,6 +184,58 @@ public class GameResultConsumerService : BackgroundService
         {
             error = ex.Message;
             return false;
+        }
+    }
+
+    private async Task UpdateTeacherGameInDatabaseAsync(GameProgressDto progress)
+    {
+        if (progress.TaskId == Guid.Empty)
+            return;
+
+        if (progress.Status is not "completed" and not "failed")
+            return;
+
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+            var teacherGame = await unitOfWork.GameRepository.GetTeacherGameByTaskIdAsync(progress.TaskId);
+            if (teacherGame is null)
+            {
+                _logger.LogWarning("TeacherGame not found for task {TaskId}", progress.TaskId);
+                return;
+            }
+
+            if (teacherGame.Status == GameStatusConstants.Deleted)
+            {
+                _logger.LogInformation("Skip persistence for deleted game {GameCode}", teacherGame.TeacherGameCode);
+                return;
+            }
+
+            teacherGame.UpdatedAt = DateTime.UtcNow;
+
+            if (progress.Status == "completed")
+            {
+                teacherGame.Status = GameStatusConstants.Completed;
+                teacherGame.CompletedAt = DateTime.UtcNow;
+                teacherGame.ErrorMessage = null;
+                teacherGame.ResultJson = progress.Result is not null
+                    ? JsonSerializer.Serialize(progress.Result)
+                    : null;
+            }
+            else
+            {
+                teacherGame.Status = GameStatusConstants.Failed;
+                teacherGame.ErrorMessage = progress.Error;
+            }
+
+            unitOfWork.GameRepository.UpdateTeacherGame(teacherGame);
+            await unitOfWork.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update game persistence for task {TaskId}", progress.TaskId);
         }
     }
 

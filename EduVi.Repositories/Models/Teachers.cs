@@ -21,6 +21,8 @@ public partial class Teachers
 
     public virtual ICollection<Products> Products { get; set; } = new List<Products>();
 
+    public virtual ICollection<TeacherGames> TeacherGames { get; set; } = new List<TeacherGames>();
+
     public virtual ICollection<Projects> Projects { get; set; } = new List<Projects>();
 
     public virtual Users Teacher { get; set; }

@@ -75,6 +75,11 @@ public interface IUnitOfWork
     IGameTemplateRepository GameTemplateRepository { get; }
 
     /// <summary>
+    /// Repository xử lý TeacherGames
+    /// </summary>
+    IGameRepository GameRepository { get; }
+
+    /// <summary>
     /// Repository xử lý WithdrawalRequests: yêu cầu rút tiền của Expert
     /// </summary>
     IWithdrawalRepository WithdrawalRepository { get; }

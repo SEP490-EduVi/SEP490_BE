@@ -245,6 +245,7 @@ public class PipelineService : IPipelineService
             throw new InvalidOperationException("Đường dẫn tài liệu slide đã chỉnh sửa phải là đường dẫn GCS hợp lệ (gs://... hoặc https://storage.googleapis.com/...)");
 
         var slideEditedDocumentUrl = request.SlideEditedDocumentUrl.Trim();
+        var videoName = ResolveVideoName(request.VideoName, product.ProductName);
 
         var productVideoCode = $"video_{product.ProductCode}_{DateTime.UtcNow:yyyyMMddHHmmssfff}";
 
@@ -266,6 +267,7 @@ public class PipelineService : IPipelineService
             {
                 ProductId = product.ProductId,
                 ProductVideoCode = productVideoCode,
+                VideoName = videoName,
                 Status = VideoStatusConstants.Queued,
                 SlideDocumentUrl = slideEditedDocumentUrl,
                 CreatedAt = DateTime.UtcNow
@@ -286,6 +288,7 @@ public class PipelineService : IPipelineService
             userId = teacherId.ToString(),
             productId = product.ProductId,
             productVideoCode,
+            videoName,
             status = "queued",
             step = "video_generation",
             createdAt = DateTime.UtcNow.ToString("o")
@@ -385,6 +388,25 @@ public class PipelineService : IPipelineService
             || value.StartsWith("https://storage.googleapis.com/", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static string ResolveVideoName(string? requestedVideoName, string? productName)
+    {
+        var normalizedVideoName = (requestedVideoName ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedVideoName))
+        {
+            var normalizedProductName = (productName ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(normalizedProductName))
+                normalizedProductName = "Video";
+
+            normalizedVideoName = $"{normalizedProductName} - {DateTime.UtcNow:yyyyMMddHHmmss}";
+        }
+
+        if (normalizedVideoName.Length > 200)
+            throw new InvalidOperationException("Tên video không được vượt quá 200 ký tự");
+
+        return normalizedVideoName;
+    }
+
     private async Task<int> GetTeacherEntityIdAsync(int userId)
     {
         var user = await _unitOfWork.AuthenticationRepository.GetUserByIdAsync(userId)
@@ -471,6 +493,7 @@ public class PipelineService : IPipelineService
             SlideEditedDocument = ParseJson(product.SlideEditedDocument),
             SlideEditedAt = product.SlideEditedAt,
             VideoUrl = latestProductVideo?.VideoUrl,
+            VideoName = latestProductVideo?.VideoName,
             VideoDuration = latestProductVideo?.Duration,
             ProductVideoCode = latestProductVideo?.ProductVideoCode,
             VideoInteractions = ParseJson(latestProductVideo?.Interactions),
@@ -552,6 +575,7 @@ public class PipelineService : IPipelineService
             ProductCode = productVideo.Product?.ProductCode ?? string.Empty,
             ProductName = productVideo.Product?.ProductName ?? string.Empty,
             ProductVideoCode = productVideo.ProductVideoCode,
+            VideoName = productVideo.VideoName,
             Status = VideoStatusConstants.GetStatusName(productVideo.Status),
             SlideDocumentUrl = productVideo.SlideDocumentUrl,
             VideoUrl = productVideo.VideoUrl,

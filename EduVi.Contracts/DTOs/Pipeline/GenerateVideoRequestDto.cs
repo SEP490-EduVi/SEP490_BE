@@ -18,4 +18,9 @@ public class GenerateVideoRequestDto
     /// </summary>
     [Required(ErrorMessage = "SlideEditedDocumentUrl không được để trống")]
     public required string SlideEditedDocumentUrl { get; set; }
+
+    /// <summary>
+    /// Tên video hiển thị cho người dùng. Nếu bỏ trống, hệ thống sẽ tự sinh.
+    /// </summary>
+    public string? VideoName { get; set; }
 }

@@ -12,6 +12,8 @@ public partial class ProductVideos
 
     public string ProductVideoCode { get; set; }
 
+    public string VideoName { get; set; }
+
     /// <summary>0 = Queued, 1 = Completed, 2 = Failed, 3 = Deleted — xem VideoStatusConstants</summary>
     public int Status { get; set; }
 

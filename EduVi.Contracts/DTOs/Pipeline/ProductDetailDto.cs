@@ -34,6 +34,7 @@ public class ProductDetailDto
     // ── Bước 4: Video Generation ─────────────────────────────────────────
     /// <summary>Video URL sau khi AI tạo xong.</summary>
     public string? VideoUrl { get; set; }
+    public string? VideoName { get; set; }
     public double? VideoDuration { get; set; }
     public string? ProductVideoCode { get; set; }
     public JsonElement? VideoInteractions { get; set; }
