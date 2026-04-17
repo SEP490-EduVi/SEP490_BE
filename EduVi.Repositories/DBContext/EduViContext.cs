@@ -706,6 +706,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.Status).HasDefaultValue(0);
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.PlanId).HasColumnName("PlanID");
+            entity.Property(e => e.MaterialId).HasColumnName("MaterialId");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -718,6 +719,10 @@ public partial class EduViContext : DbContext
             entity.HasOne(d => d.Plan).WithMany()
                 .HasForeignKey(d => d.PlanId)
                 .HasConstraintName("FK__WalletTrans__PlanID");
+
+            entity.HasOne(d => d.Material).WithMany(p => p.WalletTransactions)
+                .HasForeignKey(d => d.MaterialId)
+                .HasConstraintName("FK_WalletTransactions_Materials");
         });
 
         modelBuilder.Entity<CurriculumDocuments>(entity =>

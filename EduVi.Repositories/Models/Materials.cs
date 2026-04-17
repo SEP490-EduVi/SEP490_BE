@@ -47,4 +47,6 @@ public partial class Materials
     public virtual Subjects Subject { get; set; }
 
     public virtual ICollection<TeacherMaterials> TeacherMaterials { get; set; } = new List<TeacherMaterials>();
+
+    public virtual ICollection<WalletTransactions> WalletTransactions { get; set; } = new List<WalletTransactions>();
 }

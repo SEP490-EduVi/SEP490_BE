@@ -180,6 +180,7 @@ public class AdminRepository : IAdminRepository
             .Include(t => t.Wallet)
                 .ThenInclude(w => w.User)
             .Include(t => t.Plan)
+            .Include(t => t.Material)
             .AsQueryable();
 
         // Lọc theo userId thông qua Wallet

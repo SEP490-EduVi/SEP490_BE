@@ -60,6 +60,8 @@ public class PaymentRepository : IPaymentRepository
     public async Task<WalletTransactions?> GetTransactionByOrderCodeAsync(long orderCode)
     {
         return await _context.WalletTransactions
+            .Include(t => t.Plan)
+            .Include(t => t.Material)
             .FirstOrDefaultAsync(t => t.OrderCode == orderCode);
     }
 
