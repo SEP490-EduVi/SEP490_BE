@@ -33,6 +33,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<GameTemplates> GameTemplates { get; set; }
 
+    public virtual DbSet<CardTemplates> CardTemplates { get; set; }
+
     public virtual DbSet<TeacherGames> TeacherGames { get; set; }
 
     public virtual DbSet<InputDocuments> InputDocuments { get; set; }
@@ -220,6 +222,31 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.TemplateJson)
                 .HasColumnName("template_json")
                 .HasColumnType("nvarchar(max)");
+        });
+
+        modelBuilder.Entity<CardTemplates>(entity =>
+        {
+            entity.ToTable("CardTemplates");
+
+            entity.HasKey(e => e.TemplateId).HasName("PK_CardTemplates");
+            entity.HasIndex(e => e.TemplateCode, "UQ_CardTemplates_TemplateCode").IsUnique();
+
+            entity.Property(e => e.TemplateId).HasColumnName("TemplateID");
+            entity.Property(e => e.TemplateCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Category)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Skeleton).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("GETUTCDATE()");
         });
 
         modelBuilder.Entity<TeacherGames>(entity =>

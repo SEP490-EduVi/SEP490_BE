@@ -75,6 +75,11 @@ public interface IUnitOfWork
     IGameTemplateRepository GameTemplateRepository { get; }
 
     /// <summary>
+    /// Repository xử lý CardTemplates
+    /// </summary>
+    ITemplateRepository TemplateRepository { get; }
+
+    /// <summary>
     /// Repository xử lý TeacherGames
     /// </summary>
     IGameRepository GameRepository { get; }
