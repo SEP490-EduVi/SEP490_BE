@@ -161,33 +161,6 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// Phân quyền: thay đổi role của user + tự động revoke token
-    /// </summary>
-    [HttpPut("users/{userCode}/role")]
-    public async Task<ActionResult<ApiResponse<string>>> ChangeUserRole(
-        string userCode, [FromBody] ChangeUserRoleRequest request)
-    {
-        try
-        {
-            await _adminService.ChangeUserRoleAsync(userCode, request);
-            return Ok(ApiResponse<string>.Success("", "Đã thay đổi vai trò và thu hồi token"));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ApiResponse<string>.Fail(ex.Message, 404));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<string>.Fail(ex.Message, 400));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error changing role for user {UserCode}", userCode);
-            return StatusCode(500, ApiResponse<string>.Fail("Lỗi hệ thống", 500));
-        }
-    }
-
-    /// <summary>
     /// Xóa user (hard delete)
     /// </summary>
     [HttpDelete("users/{userCode}")]

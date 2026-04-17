@@ -40,7 +40,7 @@ Layering rules:
 | SubjectController | Subject management |
 | GradeController | Grade management |
 | LessonController | Lesson management |
-| ClassroomController | Classroom and student management |
+| StudentListController | Student list and student management |
 | ProjectController | Teacher project management |
 | InputDocumentController | Input document upload and management |
 | PipelineController | AI analysis/slide/video task operations |

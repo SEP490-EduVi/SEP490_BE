@@ -13,7 +13,7 @@ public partial class Teachers
 
     public string SchoolName { get; set; }
 
-    public virtual ICollection<Classrooms> Classrooms { get; set; }
+    public virtual ICollection<StudentLists> StudentLists { get; set; }
 
     public virtual ICollection<InputDocuments> InputDocuments { get; set; } = new List<InputDocuments>();
 

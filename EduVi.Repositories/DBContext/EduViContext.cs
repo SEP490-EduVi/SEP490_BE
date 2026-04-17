@@ -19,7 +19,7 @@ public partial class EduViContext : DbContext
     {
     }
 
-    public virtual DbSet<Classrooms> Classrooms { get; set; }
+    public virtual DbSet<StudentLists> StudentLists { get; set; }
 
     public virtual DbSet<Admins> Admins { get; set; }
 
@@ -723,27 +723,29 @@ public partial class EduViContext : DbContext
                 .HasConstraintName("FK_WithdrawalRequests_Admins");
         });
 
-        modelBuilder.Entity<Classrooms>(entity =>
+        modelBuilder.Entity<StudentLists>(entity =>
         {
-            entity.HasKey(e => e.ClassroomId).HasName("PK_Classrooms");
+            entity.ToTable("StudentLists");
 
-            entity.HasIndex(e => e.ClassroomCode, "UQ_Classrooms_ClassroomCode").IsUnique();
-            entity.HasIndex(e => e.TeacherId, "IX_Classrooms_TeacherId");
+            entity.HasKey(e => e.StudentListId).HasName("PK_StudentLists");
 
-            entity.Property(e => e.ClassroomCode).HasMaxLength(100).IsUnicode(false);
-            entity.Property(e => e.Name).HasMaxLength(200);
-            entity.Property(e => e.GradeLabel).HasMaxLength(100);
-            entity.Property(e => e.SchoolYear).HasMaxLength(20).IsUnicode(false);
+            entity.HasIndex(e => e.StudentListCode, "UQ_StudentLists_StudentListCode").IsUnique();
+            entity.HasIndex(e => e.TeacherId, "IX_StudentLists_TeacherID");
+
+            entity.Property(e => e.StudentListId).HasColumnName("StudentListID");
+            entity.Property(e => e.StudentListCode).HasMaxLength(100).IsUnicode(false);
+            entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
+            entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Students).HasColumnType("nvarchar(max)");
             entity.Property(e => e.CreatedAt)
                 .HasColumnType("datetime2")
                 .HasDefaultValueSql("GETUTCDATE()");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
 
-            entity.HasOne(d => d.Teacher).WithMany(p => p.Classrooms)
+            entity.HasOne(d => d.Teacher).WithMany(p => p.StudentLists)
                 .HasForeignKey(d => d.TeacherId)
                 .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("FK_Classrooms_Teachers");
+                .HasConstraintName("FK_StudentLists_Teachers");
         });
 
         modelBuilder.Entity<TextbookDocuments>(entity =>

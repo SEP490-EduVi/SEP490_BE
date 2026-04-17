@@ -355,7 +355,7 @@ public class PipelineService : IPipelineService
                 var isOwned = await _unitOfWork.PipelineRepository
                     .IsTeacherOwnsMaterialAsync(teacherId, materialId);
                 if (!isOwned)
-                    throw new InvalidOperationException($"Bạn chưa sở hữu học liệu '{materialCode}'. Vui lòng mua trước khi sử dụng");
+                    throw new InvalidOperationException($"Học liệu '{materialCode}' chưa được sở hữu, bạn hãy mua material và thử lại");
             }
         }
 

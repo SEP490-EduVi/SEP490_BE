@@ -101,14 +101,29 @@ public class AdminRepository : IAdminRepository
         return true;
     }
 
-    public async Task<bool> ChangeUserRoleAsync(int userId, int newRoleId)
+    public async Task<int> RemoveTeacherOwnedMaterialsAsync(int teacherId)
     {
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null) return false;
+        return await _context.TeacherMaterials
+            .Where(tm => tm.TeacherId == teacherId)
+            .ExecuteDeleteAsync();
+    }
 
-        user.RoleId = newRoleId;
-        _context.Users.Update(user);
-        return true;
+    public async Task<int> HideApprovedMaterialsByExpertAsync(int expertId, string reason)
+    {
+        return await _context.Materials
+            .Where(m => m.ExpertId == expertId && m.ApprovalStatus == 1)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(m => m.ApprovalStatus, 2)
+                .SetProperty(m => m.RejectionReason, reason));
+    }
+
+    public async Task<int> RestoreMaterialsHiddenByExpertBanAsync(int expertId, string reason)
+    {
+        return await _context.Materials
+            .Where(m => m.ExpertId == expertId && m.ApprovalStatus == 2 && m.RejectionReason == reason)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(m => m.ApprovalStatus, 1)
+                .SetProperty(m => m.RejectionReason, (string?)null));
     }
 
     public async Task<bool> DeleteUserAsync(int userId)
@@ -123,11 +138,6 @@ public class AdminRepository : IAdminRepository
     public async Task<List<Roles>> GetAllRolesAsync()
     {
         return await _context.Roles.OrderBy(r => r.RoleId).ToListAsync();
-    }
-
-    public async Task<bool> RoleExistsAsync(int roleId)
-    {
-        return await _context.Roles.AnyAsync(r => r.RoleId == roleId);
     }
 
     // ============ Financial ============

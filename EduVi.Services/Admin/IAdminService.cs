@@ -38,11 +38,6 @@ public interface IAdminService
     Task<bool> UnbanUserAsync(string userCode);
 
     /// <summary>
-    /// Thay đổi role + Revoke Token (user phải login lại với quyền mới)
-    /// </summary>
-    Task<bool> ChangeUserRoleAsync(string userCode, ChangeUserRoleRequest request);
-
-    /// <summary>
     /// Xóa user (hard delete)
     /// </summary>
     Task<bool> DeleteUserAsync(string userCode);

@@ -65,9 +65,9 @@ public interface IUnitOfWork
     ITextbookDocumentRepository TextbookDocumentRepository { get; }
 
     /// <summary>
-    /// Repository xử lý Classrooms: quản lý lớp học và danh sách học sinh
+    /// Repository xử lý StudentLists: quản lý danh sách học sinh
     /// </summary>
-    IClassroomRepository ClassroomRepository { get; }
+    IStudentListRepository StudentListRepository { get; }
 
     /// <summary>
     /// Repository xử lý GameTemplates

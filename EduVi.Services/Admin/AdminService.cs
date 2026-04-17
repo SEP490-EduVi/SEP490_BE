@@ -9,6 +9,8 @@ namespace EduVi.Services.Admin;
 
 public class AdminService : IAdminService
 {
+    private const string ExpertMarketplaceHiddenByBanReason = "Tạm ẩn khỏi marketplace do tài khoản Expert bị khóa bởi Admin.";
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthenticationService _authService;
     private readonly ILogger<AdminService> _logger;
@@ -149,11 +151,37 @@ public class AdminService : IAdminService
         var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
             ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
-        var success = await _unitOfWork.AdminRepository.UpdateUserStatusAsync(user.UserId, 0);
-        if (!success)
-            throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var success = await _unitOfWork.AdminRepository.UpdateUserStatusAsync(user.UserId, 0);
+            if (!success)
+                throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
-        await _unitOfWork.SaveChangesAsync();
+            var roleName = user.Role?.RoleName;
+            if (string.Equals(roleName, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                var removedOwnershipCount = await _unitOfWork.AdminRepository.RemoveTeacherOwnedMaterialsAsync(user.UserId);
+                _logger.LogWarning("Teacher {UserCode} bị ban: đã xóa {RemovedOwnershipCount} bản ghi sở hữu học liệu",
+                    userCode, removedOwnershipCount);
+            }
+            else if (string.Equals(roleName, "Expert", StringComparison.OrdinalIgnoreCase))
+            {
+                var hiddenMaterialsCount = await _unitOfWork.AdminRepository.HideApprovedMaterialsByExpertAsync(
+                    user.UserId,
+                    ExpertMarketplaceHiddenByBanReason);
+
+                _logger.LogWarning("Expert {UserCode} bị ban: đã ẩn {HiddenMaterialsCount} học liệu khỏi marketplace",
+                    userCode, hiddenMaterialsCount);
+            }
+
+            await _unitOfWork.CommitTransactionAsync();
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
 
         // CRITICAL: Revoke Token ngay lập tức → user bị đẩy ra khỏi hệ thống
         await _authService.RevokeTokenAsync(user.UserId);
@@ -167,35 +195,38 @@ public class AdminService : IAdminService
         var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
             ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
-        var success = await _unitOfWork.AdminRepository.UpdateUserStatusAsync(user.UserId, 1);
-        if (!success)
-            throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var success = await _unitOfWork.AdminRepository.UpdateUserStatusAsync(user.UserId, 1);
+            if (!success)
+                throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
 
-        await _unitOfWork.SaveChangesAsync();
+            var roleName = user.Role?.RoleName;
+            if (string.Equals(roleName, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogInformation("Teacher {UserCode} unban: giữ nguyên quota/wallet, không khôi phục ownership học liệu đã bị xóa khi ban",
+                    userCode);
+            }
+            else if (string.Equals(roleName, "Expert", StringComparison.OrdinalIgnoreCase))
+            {
+                var restoredMaterialsCount = await _unitOfWork.AdminRepository.RestoreMaterialsHiddenByExpertBanAsync(
+                    user.UserId,
+                    ExpertMarketplaceHiddenByBanReason);
+
+                _logger.LogInformation("Expert {UserCode} unban: đã mở lại {RestoredMaterialsCount} học liệu lên marketplace",
+                    userCode, restoredMaterialsCount);
+            }
+
+            await _unitOfWork.CommitTransactionAsync();
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
 
         _logger.LogInformation("Admin UNBANNED user {UserCode} (UserId: {UserId})", userCode, user.UserId);
-        return true;
-    }
-
-    public async Task<bool> ChangeUserRoleAsync(string userCode, ChangeUserRoleRequest request)
-    {
-        // Validate role tồn tại
-        if (!await _unitOfWork.AdminRepository.RoleExistsAsync(request.RoleId))
-            throw new InvalidOperationException($"Vai trò có ID {request.RoleId} không tồn tại.");
-
-        var user = await _unitOfWork.AdminRepository.GetUserByCodeAsync(userCode)
-            ?? throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
-
-        var success = await _unitOfWork.AdminRepository.ChangeUserRoleAsync(user.UserId, request.RoleId);
-        if (!success)
-            throw new KeyNotFoundException($"Không tìm thấy người dùng với code {userCode}.");
-
-        await _unitOfWork.SaveChangesAsync();
-
-        // Revoke Token → user phải login lại để nhận token mới với role mới
-        await _authService.RevokeTokenAsync(user.UserId);
-
-        _logger.LogWarning("Admin changed role of user {UserCode} (UserId: {UserId}) to RoleId={RoleId}, token revoked", userCode, user.UserId, request.RoleId);
         return true;
     }
 
