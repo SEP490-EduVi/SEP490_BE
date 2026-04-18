@@ -118,6 +118,7 @@ public class GameService : IGameService
         {
             TaskId = taskId,
             GameCode = gameCode,
+            TeacherGameCode = gameCode,
             GameName = gameName,
             TemplateId = template.TemplateCode ?? templateId,
             RoundCount = roundCount,
@@ -148,6 +149,7 @@ public class GameService : IGameService
             .Select(teacherGame => new GameSummaryDto
             {
                 GameCode = teacherGame.TeacherGameCode,
+                TeacherGameCode = teacherGame.TeacherGameCode,
                 GameName = teacherGame.GameName,
                 TemplateCode = teacherGame.TemplateCode,
                 RoundCount = teacherGame.RoundCount,
@@ -171,6 +173,7 @@ public class GameService : IGameService
         return new GameDetailDto
         {
             GameCode = teacherGame.TeacherGameCode,
+            TeacherGameCode = teacherGame.TeacherGameCode,
             GameName = teacherGame.GameName,
             TemplateCode = teacherGame.TemplateCode,
             RoundCount = teacherGame.RoundCount,
