@@ -24,6 +24,7 @@ public class UnitOfWork : IUnitOfWork
     private TemplateRepository? _templateRepository;
     private GameRepository? _gameRepository;
     private StudentListRepository? _studentListRepository;
+    private ProductMaterialRepository? _productMaterialRepository;
     private WithdrawalRepository? _withdrawalRepository;
     private IDbContextTransaction? _currentTransaction;
 
@@ -109,6 +110,11 @@ public class UnitOfWork : IUnitOfWork
     public IStudentListRepository StudentListRepository
     {
         get => _studentListRepository ??= new StudentListRepository(_context);
+    }
+
+    public IProductMaterialRepository ProductMaterialRepository
+    {
+        get => _productMaterialRepository ??= new ProductMaterialRepository(_context);
     }
 
     public IWithdrawalRepository WithdrawalRepository

@@ -45,6 +45,8 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<Products> Products { get; set; }
 
+    public virtual DbSet<ProductMaterials> ProductMaterials { get; set; }
+
     public virtual DbSet<ProductVideos> ProductVideos { get; set; }
 
     public virtual DbSet<CurriculumDocuments> CurriculumDocuments { get; set; }
@@ -428,6 +430,51 @@ public partial class EduViContext : DbContext
                 .HasForeignKey(d => d.TeacherId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Products__Teache__6FE99F9F");
+        });
+
+        modelBuilder.Entity<ProductMaterials>(entity =>
+        {
+            entity.HasKey(e => e.ProductMaterialId).HasName("PK_ProductMaterials");
+
+            entity.HasIndex(e => e.ProductMaterialCode, "UQ_ProductMaterials_ProductMaterialCode").IsUnique();
+
+            entity.HasIndex(e => new { e.ProductId, e.MaterialId }, "IX_ProductMaterials_ProductID_MaterialID")
+                .IsUnique()
+                .HasFilter("[MaterialID] IS NOT NULL");
+
+            entity.Property(e => e.ProductMaterialId).HasColumnName("ProductMaterialID");
+            entity.Property(e => e.ProductId).HasColumnName("ProductID");
+            entity.Property(e => e.MaterialId).HasColumnName("MaterialID");
+            entity.Property(e => e.ProductMaterialCode)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.SourceType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.Type)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.ResourceUrl)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.PreviewUrl)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .HasColumnType("datetime2");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.ProductMaterials)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ProductMaterials_Products");
+
+            entity.HasOne(d => d.Material).WithMany(p => p.ProductMaterials)
+                .HasForeignKey(d => d.MaterialId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_ProductMaterials_Materials");
         });
 
         modelBuilder.Entity<ProductVideos>(entity =>

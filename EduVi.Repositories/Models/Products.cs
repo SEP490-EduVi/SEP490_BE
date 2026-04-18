@@ -39,6 +39,7 @@ public partial class Products
     public DateTime? SlideEditedAt { get; set; }
 
     public virtual ICollection<ProductGames> ProductGames { get; set; } = new List<ProductGames>();
+    public virtual ICollection<ProductMaterials> ProductMaterials { get; set; } = new List<ProductMaterials>();
 
     public virtual ICollection<ProductVideos> ProductVideos { get; set; } = new List<ProductVideos>();
 
