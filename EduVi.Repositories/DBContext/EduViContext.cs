@@ -266,9 +266,7 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.ProductGameCode)
                 .HasMaxLength(100)
                 .IsUnicode(false);
-            entity.Property(e => e.ProductGameName)
-                .HasMaxLength(200)
-                .HasColumnName("ProductName");
+            entity.Property(e => e.ProductGameName).HasMaxLength(200);
             entity.Property(e => e.TemplateCode)
                 .HasMaxLength(50)
                 .IsUnicode(false);
