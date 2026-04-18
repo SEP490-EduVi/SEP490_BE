@@ -5,7 +5,7 @@ public class GameSummaryDto
     public string GameCode { get; set; } = string.Empty;
     public string ProductGameCode { get; set; } = string.Empty;
     public string ProductCode { get; set; } = string.Empty;
-    public string ProductName { get; set; } = string.Empty;
+    public string ProductGameName { get; set; } = string.Empty;
     public string TemplateCode { get; set; } = string.Empty;
     public int RoundCount { get; set; }
     public string Status { get; set; } = string.Empty;

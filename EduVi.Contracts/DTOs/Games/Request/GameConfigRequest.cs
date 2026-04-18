@@ -9,8 +9,10 @@ public class GameConfigRequest
     [Required]
     public string ProductCode { get; set; } = string.Empty;
 
-    [JsonPropertyName("gameName")]
-    public string GameName { get; set; } = string.Empty;
+    [JsonPropertyName("productGameName")]
+    [Required]
+    [MaxLength(200)]
+    public string ProductGameName { get; set; } = string.Empty;
 
     [JsonPropertyName("templateId")]
     [Required]

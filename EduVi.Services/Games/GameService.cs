@@ -31,6 +31,7 @@ public class GameService : IGameService
     public async Task<GameTaskResponseDto> CreatePlayableGameTaskAsync(int userId, GameConfigRequest request)
     {
         var productCode = NormalizeProductCode(request.ProductCode);
+        var productGameName = NormalizeProductGameName(request.ProductGameName);
 
         var templateId = (request.TemplateId ?? string.Empty).Trim();
         if (!IsSupportedTemplate(templateId))
@@ -60,6 +61,7 @@ public class GameService : IGameService
             throw new InvalidOperationException("slideEditedDocumentUrl không khớp với slide của productCode đã chọn");
 
         var productGameCode = BuildProductGameCode(productCode, taskId);
+        var createdProductGameName = productGameName;
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -68,17 +70,19 @@ public class GameService : IGameService
             if (!consumed)
                 throw new InvalidOperationException("Bạn không còn đủ lượt tạo game. Vui lòng mua thêm gói để tiếp tục.");
 
-            await _unitOfWork.GameRepository.CreateProductGameAsync(new ProductGames
+            var createdProductGame = await _unitOfWork.GameRepository.CreateProductGameAsync(new ProductGames
             {
                 ProductId = product.ProductId,
                 ProductGameCode = productGameCode,
                 TaskId = taskId,
-                ProductName = product.ProductName,
+                ProductGameName = productGameName,
                 TemplateCode = template.TemplateCode ?? templateId,
                 RoundCount = roundCount,
                 Status = GameStatusConstants.Queued,
                 CreatedAt = DateTime.UtcNow
             });
+
+            createdProductGameName = createdProductGame.ProductGameName;
 
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
@@ -115,7 +119,7 @@ public class GameService : IGameService
             error = (string?)null,
             productCode,
             productGameCode,
-            productName = product.ProductName,
+            productGameName = createdProductGameName,
             roundCount
         });
         var redisStart = Stopwatch.GetTimestamp();
@@ -130,7 +134,7 @@ public class GameService : IGameService
             GameCode = productGameCode,
             ProductGameCode = productGameCode,
             ProductCode = productCode,
-            ProductName = product.ProductName,
+            ProductGameName = createdProductGameName,
             TemplateId = template.TemplateCode ?? templateId,
             RoundCount = roundCount,
             Status = "queued"
@@ -162,7 +166,7 @@ public class GameService : IGameService
                 GameCode = productGame.ProductGameCode,
                 ProductGameCode = productGame.ProductGameCode,
                 ProductCode = productGame.Product?.ProductCode ?? string.Empty,
-                ProductName = productGame.ProductName,
+                ProductGameName = productGame.ProductGameName,
                 TemplateCode = productGame.TemplateCode,
                 RoundCount = productGame.RoundCount,
                 Status = GameStatusConstants.GetStatusName(productGame.Status),
@@ -187,7 +191,7 @@ public class GameService : IGameService
             GameCode = productGame.ProductGameCode,
             ProductGameCode = productGame.ProductGameCode,
             ProductCode = productGame.Product?.ProductCode ?? string.Empty,
-            ProductName = productGame.ProductName,
+            ProductGameName = productGame.ProductGameName,
             TemplateCode = productGame.TemplateCode,
             RoundCount = productGame.RoundCount,
             Status = GameStatusConstants.GetStatusName(productGame.Status),
@@ -238,6 +242,18 @@ public class GameService : IGameService
         if (string.IsNullOrWhiteSpace(normalizedProductCode))
             throw new InvalidOperationException("ProductCode không được để trống");
         return normalizedProductCode;
+    }
+
+    private static string NormalizeProductGameName(string productGameName)
+    {
+        var normalizedProductGameName = (productGameName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedProductGameName))
+            throw new InvalidOperationException("ProductGameName không được để trống");
+
+        if (normalizedProductGameName.Length > 200)
+            throw new InvalidOperationException("ProductGameName không được vượt quá 200 ký tự");
+
+        return normalizedProductGameName;
     }
 
     private static string BuildProductGameCode(string productCode, Guid taskId)

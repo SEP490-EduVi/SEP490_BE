@@ -13,7 +13,7 @@ public partial class ProductGames
 
     public Guid TaskId { get; set; }
 
-    public string ProductName { get; set; }
+    public string ProductGameName { get; set; }
 
     public string TemplateCode { get; set; }
 
