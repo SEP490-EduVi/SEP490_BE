@@ -85,6 +85,11 @@ public interface IUnitOfWork
     IGameRepository GameRepository { get; }
 
     /// <summary>
+    /// Repository xử lý ProductMaterials: bộ học liệu được gắn cho từng product.
+    /// </summary>
+    IProductMaterialRepository ProductMaterialRepository { get; }
+
+    /// <summary>
     /// Repository xử lý WithdrawalRequests: yêu cầu rút tiền của Expert
     /// </summary>
     IWithdrawalRepository WithdrawalRepository { get; }
