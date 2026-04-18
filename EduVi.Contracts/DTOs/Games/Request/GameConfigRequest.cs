@@ -5,8 +5,11 @@ namespace EduVi.Contracts.DTOs.Games.Request;
 
 public class GameConfigRequest
 {
-    [JsonPropertyName("gameName")]
+    [JsonPropertyName("productCode")]
     [Required]
+    public string ProductCode { get; set; } = string.Empty;
+
+    [JsonPropertyName("gameName")]
     public string GameName { get; set; } = string.Empty;
 
     [JsonPropertyName("templateId")]

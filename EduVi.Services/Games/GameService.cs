@@ -30,7 +30,7 @@ public class GameService : IGameService
 
     public async Task<GameTaskResponseDto> CreatePlayableGameTaskAsync(int userId, GameConfigRequest request)
     {
-        var gameName = NormalizeGameName(request.GameName);
+        var productCode = NormalizeProductCode(request.ProductCode);
 
         var templateId = (request.TemplateId ?? string.Empty).Trim();
         if (!IsSupportedTemplate(templateId))
@@ -50,7 +50,16 @@ public class GameService : IGameService
         var taskId = Guid.NewGuid();
 
         var teacherId = await GetTeacherEntityIdAsync(userId);
-        var gameCode = BuildGameCode(userId, template.TemplateCode ?? templateId, taskId);
+        var product = await _unitOfWork.PipelineRepository.GetProductByCodeAndTeacherAsync(productCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy product với mã {productCode}");
+
+        if (string.IsNullOrWhiteSpace(product.SlideEditedDocument))
+            throw new InvalidOperationException("Product chưa có slide đã chỉnh sửa để tạo game");
+
+        if (!string.Equals(product.SlideEditedDocument?.Trim(), slideEditedDocumentUrl, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("slideEditedDocumentUrl không khớp với slide của productCode đã chọn");
+
+        var productGameCode = BuildProductGameCode(productCode, taskId);
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -59,12 +68,12 @@ public class GameService : IGameService
             if (!consumed)
                 throw new InvalidOperationException("Bạn không còn đủ lượt tạo game. Vui lòng mua thêm gói để tiếp tục.");
 
-            await _unitOfWork.GameRepository.CreateTeacherGameAsync(new TeacherGames
+            await _unitOfWork.GameRepository.CreateProductGameAsync(new ProductGames
             {
-                TeacherId = teacherId,
-                TeacherGameCode = gameCode,
+                ProductId = product.ProductId,
+                ProductGameCode = productGameCode,
                 TaskId = taskId,
-                GameName = gameName,
+                ProductName = product.ProductName,
                 TemplateCode = template.TemplateCode ?? templateId,
                 RoundCount = roundCount,
                 Status = GameStatusConstants.Queued,
@@ -104,8 +113,9 @@ public class GameService : IGameService
             detail = (string?)null,
             result = (object?)null,
             error = (string?)null,
-            gameCode,
-            gameName,
+            productCode,
+            productGameCode,
+            productName = product.ProductName,
             roundCount
         });
         var redisStart = Stopwatch.GetTimestamp();
@@ -117,9 +127,10 @@ public class GameService : IGameService
         return new GameTaskResponseDto
         {
             TaskId = taskId,
-            GameCode = gameCode,
-            TeacherGameCode = gameCode,
-            GameName = gameName,
+            GameCode = productGameCode,
+            ProductGameCode = productGameCode,
+            ProductCode = productCode,
+            ProductName = product.ProductName,
             TemplateId = template.TemplateCode ?? templateId,
             RoundCount = roundCount,
             Status = "queued"
@@ -143,20 +154,21 @@ public class GameService : IGameService
     public async Task<List<GameSummaryDto>> GetGamesByTeacherAsync(int userId)
     {
         var teacherId = await GetTeacherEntityIdAsync(userId);
-        var teacherGames = await _unitOfWork.GameRepository.GetActiveTeacherGamesByTeacherAsync(teacherId);
+        var productGames = await _unitOfWork.GameRepository.GetActiveProductGamesByTeacherAsync(teacherId);
 
-        return teacherGames
-            .Select(teacherGame => new GameSummaryDto
+        return productGames
+            .Select(productGame => new GameSummaryDto
             {
-                GameCode = teacherGame.TeacherGameCode,
-                TeacherGameCode = teacherGame.TeacherGameCode,
-                GameName = teacherGame.GameName,
-                TemplateCode = teacherGame.TemplateCode,
-                RoundCount = teacherGame.RoundCount,
-                Status = GameStatusConstants.GetStatusName(teacherGame.Status),
-                CreatedAt = teacherGame.CreatedAt,
-                UpdatedAt = teacherGame.UpdatedAt,
-                CompletedAt = teacherGame.CompletedAt
+                GameCode = productGame.ProductGameCode,
+                ProductGameCode = productGame.ProductGameCode,
+                ProductCode = productGame.Product?.ProductCode ?? string.Empty,
+                ProductName = productGame.ProductName,
+                TemplateCode = productGame.TemplateCode,
+                RoundCount = productGame.RoundCount,
+                Status = GameStatusConstants.GetStatusName(productGame.Status),
+                CreatedAt = productGame.CreatedAt,
+                UpdatedAt = productGame.UpdatedAt,
+                CompletedAt = productGame.CompletedAt
             })
             .ToList();
     }
@@ -164,42 +176,43 @@ public class GameService : IGameService
     public async Task<GameDetailDto> GetGameByCodeAsync(int userId, string gameCode)
     {
         var teacherId = await GetTeacherEntityIdAsync(userId);
-        var teacherGame = await _unitOfWork.GameRepository.GetTeacherGameByCodeAndTeacherAsync(gameCode, teacherId)
+        var productGame = await _unitOfWork.GameRepository.GetProductGameByCodeAndTeacherAsync(gameCode, teacherId)
             ?? throw new KeyNotFoundException($"Không tìm thấy game với mã {gameCode}");
 
-        if (teacherGame.Status == GameStatusConstants.Deleted)
+        if (productGame.Status == GameStatusConstants.Deleted)
             throw new KeyNotFoundException($"Không tìm thấy game với mã {gameCode}");
 
         return new GameDetailDto
         {
-            GameCode = teacherGame.TeacherGameCode,
-            TeacherGameCode = teacherGame.TeacherGameCode,
-            GameName = teacherGame.GameName,
-            TemplateCode = teacherGame.TemplateCode,
-            RoundCount = teacherGame.RoundCount,
-            Status = GameStatusConstants.GetStatusName(teacherGame.Status),
-            TaskId = teacherGame.TaskId,
-            Result = ParseJson(teacherGame.ResultJson),
-            ErrorMessage = teacherGame.ErrorMessage,
-            CreatedAt = teacherGame.CreatedAt,
-            UpdatedAt = teacherGame.UpdatedAt,
-            CompletedAt = teacherGame.CompletedAt
+            GameCode = productGame.ProductGameCode,
+            ProductGameCode = productGame.ProductGameCode,
+            ProductCode = productGame.Product?.ProductCode ?? string.Empty,
+            ProductName = productGame.ProductName,
+            TemplateCode = productGame.TemplateCode,
+            RoundCount = productGame.RoundCount,
+            Status = GameStatusConstants.GetStatusName(productGame.Status),
+            TaskId = productGame.TaskId,
+            Result = ParseJson(productGame.ResultJson),
+            ErrorMessage = productGame.ErrorMessage,
+            CreatedAt = productGame.CreatedAt,
+            UpdatedAt = productGame.UpdatedAt,
+            CompletedAt = productGame.CompletedAt
         };
     }
 
     public async Task SoftDeleteGameAsync(int userId, string gameCode)
     {
         var teacherId = await GetTeacherEntityIdAsync(userId);
-        var teacherGame = await _unitOfWork.GameRepository.GetTeacherGameByCodeAndTeacherAsync(gameCode, teacherId)
+        var productGame = await _unitOfWork.GameRepository.GetProductGameByCodeAndTeacherAsync(gameCode, teacherId)
             ?? throw new KeyNotFoundException($"Không tìm thấy game với mã {gameCode}");
 
-        if (teacherGame.Status == GameStatusConstants.Deleted)
+        if (productGame.Status == GameStatusConstants.Deleted)
             throw new KeyNotFoundException($"Không tìm thấy game với mã {gameCode}");
 
-        teacherGame.Status = GameStatusConstants.Deleted;
-        teacherGame.UpdatedAt = DateTime.UtcNow;
+        productGame.Status = GameStatusConstants.Deleted;
+        productGame.UpdatedAt = DateTime.UtcNow;
 
-        _unitOfWork.GameRepository.UpdateTeacherGame(teacherGame);
+        _unitOfWork.GameRepository.UpdateProductGame(productGame);
         await _unitOfWork.SaveChangesAsync();
     }
 
@@ -219,32 +232,28 @@ public class GameService : IGameService
             || value.StartsWith("https://storage.googleapis.com/", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string NormalizeGameName(string gameName)
+    private static string NormalizeProductCode(string productCode)
     {
-        var trimmedGameName = (gameName ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(trimmedGameName))
-            throw new InvalidOperationException("Tên game không được để trống");
-
-        if (trimmedGameName.Length > 200)
-            throw new InvalidOperationException("Tên game không được vượt quá 200 ký tự");
-
-        return trimmedGameName;
+        var normalizedProductCode = (productCode ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedProductCode))
+            throw new InvalidOperationException("ProductCode không được để trống");
+        return normalizedProductCode;
     }
 
-    private static string BuildGameCode(int userId, string templateCode, Guid taskId)
+    private static string BuildProductGameCode(string productCode, Guid taskId)
     {
-        var cleanedTemplateCode = new string((templateCode ?? string.Empty)
+        var cleanedProductCode = new string((productCode ?? string.Empty)
             .Where(char.IsLetterOrDigit)
             .ToArray());
 
-        if (string.IsNullOrWhiteSpace(cleanedTemplateCode))
-            cleanedTemplateCode = "template";
+        if (string.IsNullOrWhiteSpace(cleanedProductCode))
+            cleanedProductCode = "product";
 
-        if (cleanedTemplateCode.Length > 24)
-            cleanedTemplateCode = cleanedTemplateCode[..24];
+        if (cleanedProductCode.Length > 24)
+            cleanedProductCode = cleanedProductCode[..24];
 
         var taskSegment = taskId.ToString("N")[..8];
-        return $"game_{userId}_{cleanedTemplateCode}_{taskSegment}";
+        return $"pgame_{cleanedProductCode}_{taskSegment}";
     }
 
     private static JsonElement? ParseJson(string? value)

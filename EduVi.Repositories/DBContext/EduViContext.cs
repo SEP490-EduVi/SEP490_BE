@@ -35,7 +35,7 @@ public partial class EduViContext : DbContext
 
     public virtual DbSet<CardTemplates> CardTemplates { get; set; }
 
-    public virtual DbSet<TeacherGames> TeacherGames { get; set; }
+    public virtual DbSet<ProductGames> ProductGames { get; set; }
 
     public virtual DbSet<InputDocuments> InputDocuments { get; set; }
 
@@ -249,22 +249,22 @@ public partial class EduViContext : DbContext
                 .HasDefaultValueSql("GETUTCDATE()");
         });
 
-        modelBuilder.Entity<TeacherGames>(entity =>
+        modelBuilder.Entity<ProductGames>(entity =>
         {
-            entity.ToTable("TeacherGames");
+            entity.ToTable("ProductGames");
 
-            entity.HasKey(e => e.TeacherGameId).HasName("PK_TeacherGames");
+            entity.HasKey(e => e.ProductGameId).HasName("PK_ProductGames");
 
-            entity.HasIndex(e => e.TeacherGameCode, "UQ_TeacherGames_TeacherGameCode").IsUnique();
-            entity.HasIndex(e => e.TaskId, "UQ_TeacherGames_TaskId").IsUnique();
-            entity.HasIndex(e => new { e.TeacherId, e.CreatedAt }, "IX_TeacherGames_TeacherID_CreatedAt");
+            entity.HasIndex(e => e.ProductGameCode, "UQ_ProductGames_ProductGameCode").IsUnique();
+            entity.HasIndex(e => e.TaskId, "UQ_ProductGames_TaskId").IsUnique();
+            entity.HasIndex(e => new { e.ProductId, e.CreatedAt }, "IX_ProductGames_ProductId_CreatedAt");
 
-            entity.Property(e => e.TeacherGameId).HasColumnName("TeacherGameID");
-            entity.Property(e => e.TeacherId).HasColumnName("TeacherID");
-            entity.Property(e => e.TeacherGameCode)
+            entity.Property(e => e.ProductGameId).HasColumnName("ProductGameID");
+            entity.Property(e => e.ProductId).HasColumnName("ProductID");
+            entity.Property(e => e.ProductGameCode)
                 .HasMaxLength(100)
                 .IsUnicode(false);
-            entity.Property(e => e.GameName).HasMaxLength(200);
+            entity.Property(e => e.ProductName).HasMaxLength(200);
             entity.Property(e => e.TemplateCode)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -277,10 +277,10 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
             entity.Property(e => e.CompletedAt).HasColumnType("datetime2");
 
-            entity.HasOne(d => d.Teacher).WithMany(p => p.TeacherGames)
-                .HasForeignKey(d => d.TeacherId)
+            entity.HasOne(d => d.Product).WithMany(p => p.ProductGames)
+                .HasForeignKey(d => d.ProductId)
                 .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("FK_TeacherGames_Teachers");
+                .HasConstraintName("FK_ProductGames_Products");
         });
 
         modelBuilder.Entity<InputDocuments>(entity =>

@@ -13,7 +13,7 @@ namespace EduVi.WebAPI.BackgroundServices;
 
 /// <summary>
 /// BackgroundService consume kết quả game generation từ AI worker qua RabbitMQ
-/// và lưu trạng thái vào Redis + TeacherGames.
+/// và lưu trạng thái vào Redis + ProductGames.
 /// </summary>
 public class GameResultConsumerService : BackgroundService
 {
@@ -99,7 +99,7 @@ public class GameResultConsumerService : BackgroundService
                             JsonSerializer.Serialize(progress),
                             TimeSpan.FromHours(1));
 
-                        await UpdateTeacherGameInDatabaseAsync(progress);
+                        await UpdateProductGameInDatabaseAsync(progress);
 
                         if (!string.IsNullOrWhiteSpace(progress.UserId))
                         {
@@ -187,7 +187,7 @@ public class GameResultConsumerService : BackgroundService
         }
     }
 
-    private async Task UpdateTeacherGameInDatabaseAsync(GameProgressDto progress)
+    private async Task UpdateProductGameInDatabaseAsync(GameProgressDto progress)
     {
         if (progress.TaskId == Guid.Empty)
             return;
@@ -200,37 +200,37 @@ public class GameResultConsumerService : BackgroundService
             using var scope = _scopeFactory.CreateScope();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            var teacherGame = await unitOfWork.GameRepository.GetTeacherGameByTaskIdAsync(progress.TaskId);
-            if (teacherGame is null)
+            var productGame = await unitOfWork.GameRepository.GetProductGameByTaskIdAsync(progress.TaskId);
+            if (productGame is null)
             {
-                _logger.LogWarning("TeacherGame not found for task {TaskId}", progress.TaskId);
+                _logger.LogWarning("ProductGame not found for task {TaskId}", progress.TaskId);
                 return;
             }
 
-            if (teacherGame.Status == GameStatusConstants.Deleted)
+            if (productGame.Status == GameStatusConstants.Deleted)
             {
-                _logger.LogInformation("Skip persistence for deleted game {GameCode}", teacherGame.TeacherGameCode);
+                _logger.LogInformation("Skip persistence for deleted game {GameCode}", productGame.ProductGameCode);
                 return;
             }
 
-            teacherGame.UpdatedAt = DateTime.UtcNow;
+            productGame.UpdatedAt = DateTime.UtcNow;
 
             if (progress.Status == "completed")
             {
-                teacherGame.Status = GameStatusConstants.Completed;
-                teacherGame.CompletedAt = DateTime.UtcNow;
-                teacherGame.ErrorMessage = null;
-                teacherGame.ResultJson = progress.Result is not null
+                productGame.Status = GameStatusConstants.Completed;
+                productGame.CompletedAt = DateTime.UtcNow;
+                productGame.ErrorMessage = null;
+                productGame.ResultJson = progress.Result is not null
                     ? JsonSerializer.Serialize(progress.Result)
                     : null;
             }
             else
             {
-                teacherGame.Status = GameStatusConstants.Failed;
-                teacherGame.ErrorMessage = progress.Error;
+                productGame.Status = GameStatusConstants.Failed;
+                productGame.ErrorMessage = progress.Error;
             }
 
-            unitOfWork.GameRepository.UpdateTeacherGame(teacherGame);
+            unitOfWork.GameRepository.UpdateProductGame(productGame);
             await unitOfWork.SaveChangesAsync();
         }
         catch (Exception ex)

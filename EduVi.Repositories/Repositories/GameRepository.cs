@@ -15,36 +15,43 @@ public class GameRepository : IGameRepository
         _context = context;
     }
 
-    public async Task<TeacherGames> CreateTeacherGameAsync(TeacherGames teacherGame)
+    public async Task<ProductGames> CreateProductGameAsync(ProductGames productGame)
     {
-        var entry = await _context.TeacherGames.AddAsync(teacherGame);
+        var entry = await _context.ProductGames.AddAsync(productGame);
         return entry.Entity;
     }
 
-    public async Task<TeacherGames?> GetTeacherGameByTaskIdAsync(Guid taskId)
+    public async Task<ProductGames?> GetProductGameByTaskIdAsync(Guid taskId)
     {
-        return await _context.TeacherGames
-            .FirstOrDefaultAsync(teacherGame => teacherGame.TaskId == taskId);
+        return await _context.ProductGames
+            .Include(productGame => productGame.Product)
+            .FirstOrDefaultAsync(productGame => productGame.TaskId == taskId);
     }
 
-    public async Task<TeacherGames?> GetTeacherGameByCodeAndTeacherAsync(string teacherGameCode, int teacherId)
+    public async Task<ProductGames?> GetProductGameByCodeAndTeacherAsync(string productGameCode, int teacherId)
     {
-        return await _context.TeacherGames
-            .FirstOrDefaultAsync(teacherGame =>
-                teacherGame.TeacherGameCode == teacherGameCode
-                && teacherGame.TeacherId == teacherId);
+        return await _context.ProductGames
+            .Include(productGame => productGame.Product)
+            .FirstOrDefaultAsync(productGame =>
+                productGame.ProductGameCode == productGameCode
+                && productGame.Product != null
+                && productGame.Product.TeacherId == teacherId);
     }
 
-    public async Task<List<TeacherGames>> GetActiveTeacherGamesByTeacherAsync(int teacherId)
+    public async Task<List<ProductGames>> GetActiveProductGamesByTeacherAsync(int teacherId)
     {
-        return await _context.TeacherGames
-            .Where(teacherGame => teacherGame.TeacherId == teacherId && teacherGame.Status != GameStatusConstants.Deleted)
-            .OrderByDescending(teacherGame => teacherGame.CreatedAt)
+        return await _context.ProductGames
+            .Include(productGame => productGame.Product)
+            .Where(productGame =>
+                productGame.Product != null
+                && productGame.Product.TeacherId == teacherId
+                && productGame.Status != GameStatusConstants.Deleted)
+            .OrderByDescending(productGame => productGame.CreatedAt)
             .ToListAsync();
     }
 
-    public void UpdateTeacherGame(TeacherGames teacherGame)
+    public void UpdateProductGame(ProductGames productGame)
     {
-        _context.TeacherGames.Update(teacherGame);
+        _context.ProductGames.Update(productGame);
     }
 }

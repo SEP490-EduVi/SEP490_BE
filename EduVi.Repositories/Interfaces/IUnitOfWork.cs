@@ -80,7 +80,7 @@ public interface IUnitOfWork
     ITemplateRepository TemplateRepository { get; }
 
     /// <summary>
-    /// Repository xử lý TeacherGames
+    /// Repository xử lý ProductGames
     /// </summary>
     IGameRepository GameRepository { get; }
 

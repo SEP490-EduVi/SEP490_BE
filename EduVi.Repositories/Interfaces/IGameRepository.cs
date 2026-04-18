@@ -4,9 +4,9 @@ namespace EduVi.Repositories.Interfaces;
 
 public interface IGameRepository
 {
-    Task<TeacherGames> CreateTeacherGameAsync(TeacherGames teacherGame);
-    Task<TeacherGames?> GetTeacherGameByTaskIdAsync(Guid taskId);
-    Task<TeacherGames?> GetTeacherGameByCodeAndTeacherAsync(string teacherGameCode, int teacherId);
-    Task<List<TeacherGames>> GetActiveTeacherGamesByTeacherAsync(int teacherId);
-    void UpdateTeacherGame(TeacherGames teacherGame);
+    Task<ProductGames> CreateProductGameAsync(ProductGames productGame);
+    Task<ProductGames?> GetProductGameByTaskIdAsync(Guid taskId);
+    Task<ProductGames?> GetProductGameByCodeAndTeacherAsync(string productGameCode, int teacherId);
+    Task<List<ProductGames>> GetActiveProductGamesByTeacherAsync(int teacherId);
+    void UpdateProductGame(ProductGames productGame);
 }
