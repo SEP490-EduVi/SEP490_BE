@@ -24,6 +24,7 @@ public interface IPaymentRepository
     /// Lấy transaction theo OrderCode (dùng khi webhook callback)
     /// </summary>
     Task<WalletTransactions?> GetTransactionByOrderCodeAsync(long orderCode);
+    Task<List<WalletTransactions>> GetExpiredPendingTopUpTransactionsAsync(DateTime expiredBeforeUtc, int limit);
     
     Task<WalletTransactions> CreateTransactionAsync(WalletTransactions transaction);
     Task UpdateTransactionAsync(WalletTransactions transaction);

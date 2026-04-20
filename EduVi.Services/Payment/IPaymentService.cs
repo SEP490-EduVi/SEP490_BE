@@ -42,6 +42,11 @@ public interface IPaymentService
     /// </summary>
     Task<TransactionHistoryResponse?> VerifyTopUpByOrderCodeAsync(long orderCode);
 
+    /// <summary>
+    /// Tự động hủy các giao dịch TOP_UP đang pending quá thời gian cho phép.
+    /// </summary>
+    Task<int> AutoCancelExpiredPendingTopUpsAsync(int timeoutMinutes, int batchSize, CancellationToken cancellationToken = default);
+
     // ============ Mua gói bằng EduCoin ============
     
     /// <summary>

@@ -143,6 +143,7 @@ builder.Services.AddHostedService<PipelineResultConsumerService>();
 builder.Services.AddHostedService<CurriculumResultConsumerService>();
 builder.Services.AddHostedService<TextbookResultConsumerService>();
 builder.Services.AddHostedService<GameResultConsumerService>();
+builder.Services.AddHostedService<PaymentPendingTopUpAutoCancelBackgroundService>();
 
 // SignalR with Redis backplane
 builder.Services.AddSignalR()

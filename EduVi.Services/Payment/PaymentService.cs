@@ -188,6 +188,49 @@ public class PaymentService : IPaymentService
         return transaction == null ? null : MapToTransactionResponse(transaction);
     }
 
+    public async Task<int> AutoCancelExpiredPendingTopUpsAsync(int timeoutMinutes, int batchSize, CancellationToken cancellationToken = default)
+    {
+        if (timeoutMinutes <= 0)
+            throw new ArgumentOutOfRangeException(nameof(timeoutMinutes), "timeoutMinutes phải lớn hơn 0.");
+
+        if (batchSize <= 0)
+            throw new ArgumentOutOfRangeException(nameof(batchSize), "batchSize phải lớn hơn 0.");
+
+        var expiredBeforeUtc = DateTime.UtcNow.AddMinutes(-timeoutMinutes);
+        var expiredPendingTransactions = await _unitOfWork.PaymentRepository
+            .GetExpiredPendingTopUpTransactionsAsync(expiredBeforeUtc, batchSize);
+
+        if (expiredPendingTransactions.Count == 0)
+            return 0;
+
+        var cancelledCount = 0;
+        var completedCount = 0;
+
+        foreach (var transaction in expiredPendingTransactions)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var outcome = await ProcessExpiredPendingTopUpAsync(transaction, cancellationToken);
+            if (outcome == Status.Cancelled)
+            {
+                cancelledCount++;
+            }
+            else if (outcome == Status.Completed)
+            {
+                completedCount++;
+            }
+        }
+
+        _logger.LogInformation(
+            "Auto-timeout top-up job processed. TimeoutMinutes={TimeoutMinutes}, Checked={CheckedCount}, Cancelled={CancelledCount}, Completed={CompletedCount}",
+            timeoutMinutes,
+            expiredPendingTransactions.Count,
+            cancelledCount,
+            completedCount);
+
+        return cancelledCount;
+    }
+
     #endregion
 
     #region Mua gói bằng EduCoin
@@ -394,6 +437,11 @@ public class PaymentService : IPaymentService
     {
         transaction.Status = status;
         transaction.Description = description;
+        if (transaction.BalanceAfter == null && transaction.BalanceBefore != null)
+        {
+            // Giao dịch hủy/thất bại không làm thay đổi số dư ví.
+            transaction.BalanceAfter = transaction.BalanceBefore;
+        }
         transaction.UpdatedAt = DateTime.UtcNow;
         await _unitOfWork.PaymentRepository.UpdateTransactionAsync(transaction);
         await _unitOfWork.SaveChangesAsync();
@@ -415,12 +463,51 @@ public class PaymentService : IPaymentService
             }
             else if (info.status == PayOSStatus.Cancelled)
             {
-                await FailTransactionAsync(transaction, "Người dùng đã hủy giao dịch", Status.Cancelled);
+                await FailTransactionAsync(transaction, "Người dùng đã hủy giao dịch. Hệ thống không cộng tiền", Status.Cancelled);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "SyncTransactionWithPayOS failed. OrderCode={OrderCode}", orderCode);
+        }
+    }
+
+    private async Task<int?> ProcessExpiredPendingTopUpAsync(WalletTransactions transaction, CancellationToken cancellationToken)
+    {
+        if (transaction.Status != Status.Pending)
+            return null;
+
+        var orderCode = transaction.OrderCode;
+
+        try
+        {
+            var info = await _payOSService.GetPaymentLinkInfoAsync(orderCode);
+
+            if (info.status == PayOSStatus.Paid)
+            {
+                await CompleteTopUpWithTransactionAsync(transaction);
+                return Status.Completed;
+            }
+
+            if (info.status == PayOSStatus.Cancelled)
+            {
+                await FailTransactionAsync(transaction, "Hệ thống xác nhận giao dịch đã bị hủy. Không cộng tiền", Status.Cancelled);
+                return Status.Cancelled;
+            }
+
+            await _payOSService.CancelPaymentLinkAsync(orderCode, "Giao dịch quá thời gian thanh toán");
+            cancellationToken.ThrowIfCancellationRequested();
+            await FailTransactionAsync(transaction, "Hệ thống tự động hủy do quá thời gian thanh toán. Không cộng tiền", Status.Cancelled);
+            return Status.Cancelled;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Auto-timeout handling failed. OrderCode={OrderCode}", orderCode);
+            return null;
         }
     }
 
@@ -493,20 +580,35 @@ public class PaymentService : IPaymentService
         UpdatedAt = quota.UpdatedAt
     };
 
-    private static TransactionHistoryResponse MapToTransactionResponse(WalletTransactions t) => new()
+    private static TransactionHistoryResponse MapToTransactionResponse(WalletTransactions transaction)
     {
-        TransactionId = t.TransactionId,
-        OrderCode = t.OrderCode,
-        TransactionType = t.TransactionType ?? "",
-        Amount = t.Amount ?? 0,
-        BalanceBefore = t.BalanceBefore ?? 0,
-        BalanceAfter = t.BalanceAfter ?? 0,
-        Status = GetStatusName(t.Status),
-        Description = t.Description,
-        PlanName = t.Plan?.PlanName,
-        MaterialTitle = t.Material?.Title,
-        CreatedAt = t.CreatedAt ?? DateTime.MinValue
-    };
+        var transactionType = transaction.TransactionType ?? "";
+        var status = transaction.Status ?? Status.Pending;
+        var balanceBefore = transaction.BalanceBefore ?? 0;
+        var balanceAfter = transaction.BalanceAfter ?? balanceBefore;
+        var displayAmount = transaction.Amount ?? 0;
+
+        // TOP_UP chỉ nên hiển thị số tiền cộng khi giao dịch đã COMPLETED.
+        if (transactionType == TransactionType.TopUp && status != Status.Completed)
+        {
+            displayAmount = 0;
+        }
+
+        return new TransactionHistoryResponse
+        {
+            TransactionId = transaction.TransactionId,
+            OrderCode = transaction.OrderCode,
+            TransactionType = transactionType,
+            Amount = displayAmount,
+            BalanceBefore = balanceBefore,
+            BalanceAfter = balanceAfter,
+            Status = GetStatusName(status),
+            Description = transaction.Description,
+            PlanName = transaction.Plan?.PlanName,
+            MaterialTitle = transaction.Material?.Title,
+            CreatedAt = transaction.CreatedAt ?? DateTime.MinValue
+        };
+    }
 
     #endregion
 }

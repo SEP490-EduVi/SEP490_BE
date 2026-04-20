@@ -65,6 +65,21 @@ public class PaymentRepository : IPaymentRepository
             .FirstOrDefaultAsync(t => t.OrderCode == orderCode);
     }
 
+    public async Task<List<WalletTransactions>> GetExpiredPendingTopUpTransactionsAsync(DateTime expiredBeforeUtc, int limit)
+    {
+        const string topUpTransactionType = "TOP_UP";
+        const int pendingStatus = 0;
+
+        return await _context.WalletTransactions
+            .Where(t => t.TransactionType == topUpTransactionType
+                        && t.Status == pendingStatus
+                        && t.CreatedAt != null
+                        && t.CreatedAt <= expiredBeforeUtc)
+            .OrderBy(t => t.CreatedAt)
+            .Take(limit)
+            .ToListAsync();
+    }
+
     public async Task<WalletTransactions> CreateTransactionAsync(WalletTransactions transaction)
     {
         await _context.WalletTransactions.AddAsync(transaction);
