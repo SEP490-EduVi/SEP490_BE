@@ -204,6 +204,26 @@ public class GameService : IGameService
         };
     }
 
+    public async Task<GameResultJsonDto> GetGameResultJsonByCodeAsync(int userId, string productGameCode)
+    {
+        var normalizedProductGameCode = (productGameCode ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedProductGameCode))
+            throw new InvalidOperationException("ProductGameCode không được để trống");
+
+        var teacherId = await GetTeacherEntityIdAsync(userId);
+        var productGame = await _unitOfWork.GameRepository.GetProductGameByCodeAndTeacherAsync(normalizedProductGameCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy game với mã {normalizedProductGameCode}");
+
+        if (productGame.Status == GameStatusConstants.Deleted)
+            throw new KeyNotFoundException($"Không tìm thấy game với mã {normalizedProductGameCode}");
+
+        return new GameResultJsonDto
+        {
+            ProductGameCode = productGame.ProductGameCode,
+            ResultJson = ParseJson(productGame.ResultJson)
+        };
+    }
+
     public async Task SoftDeleteGameAsync(int userId, string gameCode)
     {
         var teacherId = await GetTeacherEntityIdAsync(userId);

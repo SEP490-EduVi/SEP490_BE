@@ -133,6 +133,38 @@ public class GamesController : ControllerBase
     }
 
     /// <summary>
+    /// Lấy ResultJson của game theo ProductGameCode.
+    /// </summary>
+    [HttpGet("{productGameCode}/result-json")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<GameResultJsonDto>>> GetGameResultJsonByCode(string productGameCode)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _gameService.GetGameResultJsonByCodeAsync(userId, productGameCode);
+            return Ok(ApiResponse<GameResultJsonDto>.Success(result));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<GameResultJsonDto>.Fail(ex.Message, 400));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<GameResultJsonDto>.Fail(ex.Message, 404));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ApiResponse<GameResultJsonDto>.Fail(ex.Message, 401));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting game result json for game code {ProductGameCode}", productGameCode);
+            return StatusCode(500, ApiResponse<GameResultJsonDto>.Fail("Lỗi khi lấy ResultJson của game", 500));
+        }
+    }
+
+    /// <summary>
     /// Xóa mềm game theo mã game.
     /// </summary>
     [HttpDelete("{gameCode}")]
