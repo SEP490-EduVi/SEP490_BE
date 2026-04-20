@@ -315,6 +315,133 @@ public class AdminRepository : IAdminRepository
         return true;
     }
 
+    // ============ Materials (Admin CRUD) ============
+
+    public async Task<(List<Materials> Items, int TotalCount)> GetMaterialsForAdminAsync(
+        int? approvalStatus,
+        string? type,
+        string? subjectCode,
+        string? gradeCode,
+        string? expertCode,
+        string? search,
+        int page,
+        int pageSize)
+    {
+        var query = _context.Materials
+            .Include(material => material.Subject)
+            .Include(material => material.Grade)
+            .Include(material => material.Expert)
+                .ThenInclude(expert => expert.Expert)
+            .AsQueryable();
+
+        if (approvalStatus.HasValue)
+            query = query.Where(material => material.ApprovalStatus == approvalStatus.Value);
+
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            var normalizedType = type.Trim();
+            query = query.Where(material => material.Type == normalizedType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(subjectCode))
+        {
+            var normalizedSubjectCode = subjectCode.Trim();
+            query = query.Where(material => material.Subject != null && material.Subject.SubjectCode == normalizedSubjectCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(gradeCode))
+        {
+            var normalizedGradeCode = gradeCode.Trim();
+            query = query.Where(material => material.Grade != null && material.Grade.GradeCode == normalizedGradeCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(expertCode))
+        {
+            var normalizedExpertCode = expertCode.Trim();
+            query = query.Where(material => material.Expert != null && material.Expert.ExpertCode == normalizedExpertCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var normalizedSearchTerm = search.Trim().ToLower();
+            query = query.Where(material =>
+                material.MaterialCode.ToLower().Contains(normalizedSearchTerm)
+                || material.Title.ToLower().Contains(normalizedSearchTerm));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(material => material.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
+    public async Task<Materials?> GetMaterialByCodeWithDetailsAsync(string materialCode)
+    {
+        return await _context.Materials
+            .Include(material => material.Subject)
+            .Include(material => material.Grade)
+            .Include(material => material.Expert)
+                .ThenInclude(expert => expert.Expert)
+            .FirstOrDefaultAsync(material => material.MaterialCode == materialCode);
+    }
+
+    public async Task<bool> MaterialCodeExistsAsync(string materialCode)
+    {
+        return await _context.Materials.AnyAsync(material => material.MaterialCode == materialCode);
+    }
+
+    public async Task<Experts?> GetExpertByCodeAsync(string expertCode)
+    {
+        return await _context.Experts
+            .Include(expert => expert.Expert)
+            .FirstOrDefaultAsync(expert => expert.ExpertCode == expertCode);
+    }
+
+    public async Task<Subjects?> GetSubjectByCodeAsync(string subjectCode)
+    {
+        return await _context.Subjects.FirstOrDefaultAsync(subject => subject.SubjectCode == subjectCode);
+    }
+
+    public async Task<Grades?> GetGradeByCodeAsync(string gradeCode)
+    {
+        return await _context.Grades.FirstOrDefaultAsync(grade => grade.GradeCode == gradeCode);
+    }
+
+    public async Task<Materials> CreateMaterialAsync(Materials material)
+    {
+        var entry = await _context.Materials.AddAsync(material);
+        return entry.Entity;
+    }
+
+    public void UpdateMaterial(Materials material)
+    {
+        _context.Materials.Update(material);
+    }
+
+    public void DeleteMaterial(Materials material)
+    {
+        _context.Materials.Remove(material);
+    }
+
+    public async Task<bool> HasMaterialDependenciesAsync(int materialId)
+    {
+        var hasTeacherMaterialDependency = await _context.TeacherMaterials.AnyAsync(teacherMaterial => teacherMaterial.MaterialId == materialId);
+        if (hasTeacherMaterialDependency)
+            return true;
+
+        var hasWalletTransactionDependency = await _context.WalletTransactions.AnyAsync(walletTransaction => walletTransaction.MaterialId == materialId);
+        if (hasWalletTransactionDependency)
+            return true;
+
+        var hasProductMaterialDependency = await _context.ProductMaterials.AnyAsync(productMaterial => productMaterial.MaterialId == materialId);
+        return hasProductMaterialDependency;
+    }
+
     // ── Platform Wallet ─────────────────────────────────────────────────────────
 
     public async Task<Wallets?> GetAdminWalletAsync()

@@ -1,15 +1,18 @@
 using EduVi.Contracts.DTOs.Admin.Request;
 using EduVi.Contracts.DTOs.Admin.Response;
+using EduVi.Contracts.DTOs.Material;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using EduVi.Services.Authentication;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace EduVi.Services.Admin;
 
 public class AdminService : IAdminService
 {
     private const string ExpertMarketplaceHiddenByBanReason = "Tạm ẩn khỏi marketplace do tài khoản Expert bị khóa bởi Admin.";
+    private const string AdminSoftDeletedMaterialReason = "Soft deleted by admin: hidden from marketplace.";
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthenticationService _authService;
@@ -417,7 +420,281 @@ public class AdminService : IAdminService
 
     #endregion
 
+    #region Materials (Admin CRUD)
+
+    public async Task<PagedResponse<MaterialResponseDto>> GetMaterialsForAdminAsync(AdminMaterialFilterRequest filter)
+    {
+        var normalizedType = NormalizeOptionalText(filter.Type);
+        var normalizedSubjectCode = NormalizeOptionalText(filter.SubjectCode);
+        var normalizedGradeCode = NormalizeOptionalText(filter.GradeCode);
+        var normalizedExpertCode = NormalizeOptionalText(filter.ExpertCode);
+        var normalizedSearchTerm = NormalizeOptionalText(filter.Search);
+
+        var (items, totalCount) = await _unitOfWork.AdminRepository.GetMaterialsForAdminAsync(
+            filter.ApprovalStatus,
+            normalizedType,
+            normalizedSubjectCode,
+            normalizedGradeCode,
+            normalizedExpertCode,
+            normalizedSearchTerm,
+            filter.Page,
+            filter.PageSize);
+
+        return new PagedResponse<MaterialResponseDto>
+        {
+            Items = items.Select(MapToMaterialResponse).ToList(),
+            TotalCount = totalCount,
+            Page = filter.Page,
+            PageSize = filter.PageSize
+        };
+    }
+
+    public async Task<MaterialResponseDto> GetMaterialDetailForAdminAsync(string materialCode)
+    {
+        var normalizedMaterialCode = NormalizeRequiredText(materialCode, "MaterialCode");
+
+        var material = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy học liệu với mã {normalizedMaterialCode}.");
+
+        return MapToMaterialResponse(material);
+    }
+
+    public async Task<MaterialResponseDto> CreateMaterialForAdminAsync(CreateAdminMaterialRequest request)
+    {
+        var normalizedTitle = NormalizeRequiredText(request.Title, "Title");
+        var normalizedType = NormalizeRequiredText(request.Type, "Type").ToLowerInvariant();
+        var normalizedResourceUrl = NormalizeRequiredText(request.ResourceUrl, "ResourceUrl");
+        var normalizedPreviewUrl = NormalizeOptionalText(request.PreviewUrl);
+        var normalizedDescription = NormalizeOptionalText(request.Description);
+        var expertId = await ResolveExpertIdFromCodeAsync(request.ExpertCode);
+
+        var subjectId = await ResolveSubjectIdFromCodeAsync(request.SubjectCode);
+        var gradeId = await ResolveGradeIdFromCodeAsync(request.GradeCode);
+
+        if (request.ApprovalStatus.HasValue)
+            ValidateMaterialApprovalState(request.ApprovalStatus.Value, request.RejectionReason);
+
+        var normalizedRejectionReason = request.ApprovalStatus == 2
+            ? NormalizeOptionalText(request.RejectionReason)
+            : null;
+
+        var materialCode = await GenerateAdminMaterialCodeAsync(normalizedType);
+
+        var createdMaterial = new Materials
+        {
+            MaterialCode = materialCode,
+            ExpertId = expertId,
+            SubjectId = subjectId,
+            GradeId = gradeId,
+            Title = normalizedTitle,
+            Description = normalizedDescription,
+            Type = normalizedType,
+            Price = request.Price ?? 0,
+            ResourceUrl = normalizedResourceUrl,
+            PreviewUrl = normalizedPreviewUrl,
+            ApprovalStatus = request.ApprovalStatus,
+            RejectionReason = normalizedRejectionReason,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _unitOfWork.AdminRepository.CreateMaterialAsync(createdMaterial);
+        await _unitOfWork.SaveChangesAsync();
+
+        var material = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(materialCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy học liệu với mã {materialCode}.");
+
+        return MapToMaterialResponse(material);
+    }
+
+    public async Task<MaterialResponseDto> UpdateMaterialForAdminAsync(string materialCode, UpdateAdminMaterialRequest request)
+    {
+        var normalizedMaterialCode = NormalizeRequiredText(materialCode, "MaterialCode");
+
+        var material = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy học liệu với mã {normalizedMaterialCode}.");
+
+        if (request.ExpertCode != null)
+        {
+            var normalizedExpertCode = NormalizeOptionalText(request.ExpertCode);
+            if (normalizedExpertCode is null)
+            {
+                throw new InvalidOperationException("ExpertCode không hợp lệ");
+            }
+
+            var expert = await _unitOfWork.AdminRepository.GetExpertByCodeAsync(normalizedExpertCode)
+                ?? throw new KeyNotFoundException($"Không tìm thấy chuyên gia với mã {normalizedExpertCode}.");
+
+            material.ExpertId = expert.ExpertId;
+        }
+
+        if (request.Title != null)
+            material.Title = NormalizeRequiredText(request.Title, "Title");
+
+        if (request.Description != null)
+            material.Description = NormalizeOptionalText(request.Description);
+
+        if (request.Type != null)
+            material.Type = NormalizeRequiredText(request.Type, "Type").ToLowerInvariant();
+
+        if (request.Price.HasValue)
+            material.Price = request.Price.Value;
+
+        if (request.ResourceUrl != null)
+            material.ResourceUrl = NormalizeRequiredText(request.ResourceUrl, "ResourceUrl");
+
+        if (request.PreviewUrl != null)
+            material.PreviewUrl = NormalizeOptionalText(request.PreviewUrl);
+
+        if (request.SubjectCode != null)
+            material.SubjectId = await ResolveSubjectIdFromCodeAsync(request.SubjectCode);
+
+        if (request.GradeCode != null)
+            material.GradeId = await ResolveGradeIdFromCodeAsync(request.GradeCode);
+
+        if (request.ApprovalStatus.HasValue)
+        {
+            ValidateMaterialApprovalState(request.ApprovalStatus.Value, request.RejectionReason);
+            material.ApprovalStatus = request.ApprovalStatus.Value;
+            material.RejectionReason = request.ApprovalStatus.Value == 2
+                ? NormalizeOptionalText(request.RejectionReason)
+                : null;
+        }
+        else if (request.RejectionReason != null)
+        {
+            if (material.ApprovalStatus != 2)
+                throw new InvalidOperationException("Chỉ được cập nhật RejectionReason khi học liệu đang ở trạng thái Rejected");
+
+            material.RejectionReason = NormalizeOptionalText(request.RejectionReason);
+        }
+
+        _unitOfWork.AdminRepository.UpdateMaterial(material);
+        await _unitOfWork.SaveChangesAsync();
+
+        var updatedMaterial = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy học liệu với mã {normalizedMaterialCode}.");
+
+        return MapToMaterialResponse(updatedMaterial);
+    }
+
+    public async Task<bool> DeleteMaterialForAdminAsync(string materialCode)
+    {
+        var normalizedMaterialCode = NormalizeRequiredText(materialCode, "MaterialCode");
+
+        var material = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy học liệu với mã {normalizedMaterialCode}.");
+
+        // Soft delete: ẩn khỏi marketplace bằng trạng thái Rejected, không xóa bản ghi vật lý.
+        material.ApprovalStatus = 2;
+        material.RejectionReason = AdminSoftDeletedMaterialReason;
+
+        _unitOfWork.AdminRepository.UpdateMaterial(material);
+        await _unitOfWork.SaveChangesAsync();
+
+        return true;
+    }
+
+    #endregion
+
     #region Mapping Helpers
+
+        private async Task<int?> ResolveExpertIdFromCodeAsync(string? expertCode)
+        {
+            var normalizedExpertCode = NormalizeOptionalText(expertCode);
+            if (normalizedExpertCode is null)
+                return null;
+
+            var expert = await _unitOfWork.AdminRepository.GetExpertByCodeAsync(normalizedExpertCode)
+                ?? throw new KeyNotFoundException($"Không tìm thấy chuyên gia với mã {normalizedExpertCode}.");
+
+            return expert.ExpertId;
+        }
+
+    private async Task<int?> ResolveSubjectIdFromCodeAsync(string? subjectCode)
+    {
+        var normalizedSubjectCode = NormalizeOptionalText(subjectCode);
+        if (normalizedSubjectCode is null)
+            return null;
+
+        var subject = await _unitOfWork.AdminRepository.GetSubjectByCodeAsync(normalizedSubjectCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy môn học với mã {normalizedSubjectCode}.");
+
+        return subject.SubjectId;
+    }
+
+    private async Task<int?> ResolveGradeIdFromCodeAsync(string? gradeCode)
+    {
+        var normalizedGradeCode = NormalizeOptionalText(gradeCode);
+        if (normalizedGradeCode is null)
+            return null;
+
+        var grade = await _unitOfWork.AdminRepository.GetGradeByCodeAsync(normalizedGradeCode)
+            ?? throw new KeyNotFoundException($"Không tìm thấy khối lớp với mã {normalizedGradeCode}.");
+
+        return grade.GradeId;
+    }
+
+    private async Task<string> GenerateAdminMaterialCodeAsync(string type)
+    {
+        var normalizedType = new string(type.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedType))
+            normalizedType = "material";
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var timestampSegment = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
+            var randomSegment = Random.Shared.Next(1000, 9999);
+            var generatedMaterialCode = $"mat_admin_{normalizedType}_{timestampSegment}_{randomSegment}";
+
+            var exists = await _unitOfWork.AdminRepository.MaterialCodeExistsAsync(generatedMaterialCode);
+            if (!exists)
+                return generatedMaterialCode;
+        }
+
+        throw new InvalidOperationException("Không thể tạo mã học liệu duy nhất. Vui lòng thử lại.");
+    }
+
+    private static void ValidateMaterialApprovalState(int approvalStatus, string? rejectionReason)
+    {
+        if (approvalStatus is < 0 or > 2)
+            throw new InvalidOperationException("ApprovalStatus không hợp lệ");
+    }
+
+    private static string NormalizeRequiredText(string? value, string fieldName)
+    {
+        var normalizedValue = (value ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedValue))
+            throw new InvalidOperationException($"{fieldName} không được để trống");
+        return normalizedValue;
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        if (value is null)
+            return null;
+
+        var normalizedValue = value.Trim();
+        return string.IsNullOrWhiteSpace(normalizedValue) ? null : normalizedValue;
+    }
+
+    private static MaterialResponseDto MapToMaterialResponse(Materials material) => new()
+    {
+        MaterialCode = material.MaterialCode ?? string.Empty,
+        Title = material.Title ?? string.Empty,
+        Description = material.Description,
+        Type = material.Type ?? string.Empty,
+        Price = material.Price,
+        PreviewUrl = material.PreviewUrl,
+        ResourceUrl = material.ResourceUrl,
+        SubjectCode = material.Subject?.SubjectCode,
+        SubjectName = material.Subject?.SubjectName,
+        GradeCode = material.Grade?.GradeCode,
+        GradeName = material.Grade?.GradeName,
+        ApprovalStatus = material.ApprovalStatus ?? 0,
+        RejectionReason = material.RejectionReason,
+        ExpertCode = material.Expert?.ExpertCode,
+        ExpertName = material.Expert?.Expert?.FullName,
+        CreatedAt = material.CreatedAt
+    };
 
     private static AdminUserResponse MapToUserResponse(Users u) => new()
     {

@@ -1,5 +1,6 @@
 using EduVi.Contracts.DTOs.Admin.Request;
 using EduVi.Contracts.DTOs.Admin.Response;
+using EduVi.Contracts.DTOs.Material;
 
 namespace EduVi.Services.Admin;
 
@@ -95,6 +96,33 @@ public interface IAdminService
     /// Soft delete gói (IsActive = false)
     /// </summary>
     Task<bool> DeletePlanAsync(int planId);
+
+    // ============ Materials (Admin CRUD) ============
+
+    /// <summary>
+    /// Danh sách học liệu với bộ lọc, phân trang.
+    /// </summary>
+    Task<PagedResponse<MaterialResponseDto>> GetMaterialsForAdminAsync(AdminMaterialFilterRequest filter);
+
+    /// <summary>
+    /// Chi tiết học liệu theo MaterialCode.
+    /// </summary>
+    Task<MaterialResponseDto> GetMaterialDetailForAdminAsync(string materialCode);
+
+    /// <summary>
+    /// Tạo học liệu mới bởi Admin.
+    /// </summary>
+    Task<MaterialResponseDto> CreateMaterialForAdminAsync(CreateAdminMaterialRequest request);
+
+    /// <summary>
+    /// Cập nhật học liệu bởi Admin.
+    /// </summary>
+    Task<MaterialResponseDto> UpdateMaterialForAdminAsync(string materialCode, UpdateAdminMaterialRequest request);
+
+    /// <summary>
+    /// Xóa học liệu bởi Admin.
+    /// </summary>
+    Task<bool> DeleteMaterialForAdminAsync(string materialCode);
 }
 
 // ============ Sub-DTOs cho Service ============

@@ -119,6 +119,60 @@ public interface IAdminRepository
     Task UpdatePlanAsync(QuotaPlans plan);
     Task<bool> DeletePlanAsync(int planId);
 
+    // ============ Materials (Admin CRUD) ============
+
+    /// <summary>
+    /// Danh sách học liệu cho Admin với bộ lọc, phân trang.
+    /// </summary>
+    Task<(List<Materials> Items, int TotalCount)> GetMaterialsForAdminAsync(
+        int? approvalStatus, string? type, string? subjectCode, string? gradeCode,
+        string? expertCode, string? search, int page, int pageSize);
+
+    /// <summary>
+    /// Lấy chi tiết học liệu theo MaterialCode (kèm Expert, Subject, Grade).
+    /// </summary>
+    Task<Materials?> GetMaterialByCodeWithDetailsAsync(string materialCode);
+
+    /// <summary>
+    /// Kiểm tra MaterialCode đã tồn tại hay chưa.
+    /// </summary>
+    Task<bool> MaterialCodeExistsAsync(string materialCode);
+
+    /// <summary>
+    /// Lấy Expert theo ExpertCode.
+    /// </summary>
+    Task<Experts?> GetExpertByCodeAsync(string expertCode);
+
+    /// <summary>
+    /// Lấy Subject theo SubjectCode.
+    /// </summary>
+    Task<Subjects?> GetSubjectByCodeAsync(string subjectCode);
+
+    /// <summary>
+    /// Lấy Grade theo GradeCode.
+    /// </summary>
+    Task<Grades?> GetGradeByCodeAsync(string gradeCode);
+
+    /// <summary>
+    /// Tạo học liệu mới.
+    /// </summary>
+    Task<Materials> CreateMaterialAsync(Materials material);
+
+    /// <summary>
+    /// Cập nhật học liệu.
+    /// </summary>
+    void UpdateMaterial(Materials material);
+
+    /// <summary>
+    /// Xóa học liệu.
+    /// </summary>
+    void DeleteMaterial(Materials material);
+
+    /// <summary>
+    /// Kiểm tra học liệu đã phát sinh phụ thuộc (mua hàng/giao dịch/gắn product) hay chưa.
+    /// </summary>
+    Task<bool> HasMaterialDependenciesAsync(int materialId);
+
     // ============ Platform Wallet ============
 
     /// <summary>

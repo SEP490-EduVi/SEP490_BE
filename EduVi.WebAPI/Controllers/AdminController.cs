@@ -1,6 +1,7 @@
 using EduVi.Contracts.Common;
 using EduVi.Contracts.DTOs.Admin.Request;
 using EduVi.Contracts.DTOs.Admin.Response;
+using EduVi.Contracts.DTOs.Material;
 using EduVi.Services.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -383,6 +384,136 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting plan {PlanId}", planId);
+            return StatusCode(500, ApiResponse<string>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
+    // ============================================================
+    // 4. QUẢN LÝ HỌC LIỆU (Material CRUD)
+    // ============================================================
+
+    /// <summary>
+    /// Danh sách học liệu với bộ lọc, phân trang cho Admin.
+    /// </summary>
+    [HttpGet("materials")]
+    public async Task<ActionResult<ApiResponse<PagedResponse<MaterialResponseDto>>>> GetMaterials(
+        [FromQuery] AdminMaterialFilterRequest filter)
+    {
+        try
+        {
+            var result = await _adminService.GetMaterialsForAdminAsync(filter);
+            return Ok(ApiResponse<PagedResponse<MaterialResponseDto>>.Success(result));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting materials for admin dashboard");
+            return StatusCode(500, ApiResponse<PagedResponse<MaterialResponseDto>>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
+    /// <summary>
+    /// Chi tiết học liệu theo MaterialCode.
+    /// </summary>
+    [HttpGet("materials/{materialCode}")]
+    public async Task<ActionResult<ApiResponse<MaterialResponseDto>>> GetMaterialByCode(string materialCode)
+    {
+        try
+        {
+            var result = await _adminService.GetMaterialDetailForAdminAsync(materialCode);
+            return Ok(ApiResponse<MaterialResponseDto>.Success(result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<MaterialResponseDto>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<MaterialResponseDto>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting material detail for code {MaterialCode}", materialCode);
+            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
+    /// <summary>
+    /// Tạo học liệu mới bởi Admin.
+    /// </summary>
+    [HttpPost("materials")]
+    public async Task<ActionResult<ApiResponse<MaterialResponseDto>>> CreateMaterial([FromBody] CreateAdminMaterialRequest request)
+    {
+        try
+        {
+            var result = await _adminService.CreateMaterialForAdminAsync(request);
+            return CreatedAtAction(nameof(GetMaterialByCode), new { materialCode = result.MaterialCode },
+                ApiResponse<MaterialResponseDto>.Success(result, "Tạo học liệu thành công"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<MaterialResponseDto>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<MaterialResponseDto>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating material for admin");
+            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
+    /// <summary>
+    /// Cập nhật học liệu theo MaterialCode bởi Admin.
+    /// </summary>
+    [HttpPut("materials/{materialCode}")]
+    public async Task<ActionResult<ApiResponse<MaterialResponseDto>>> UpdateMaterial(
+        string materialCode,
+        [FromBody] UpdateAdminMaterialRequest request)
+    {
+        try
+        {
+            var result = await _adminService.UpdateMaterialForAdminAsync(materialCode, request);
+            return Ok(ApiResponse<MaterialResponseDto>.Success(result, "Cập nhật học liệu thành công"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<MaterialResponseDto>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<MaterialResponseDto>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating material {MaterialCode}", materialCode);
+            return StatusCode(500, ApiResponse<MaterialResponseDto>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
+    /// <summary>
+    /// Soft delete học liệu theo MaterialCode bởi Admin (ẩn khỏi marketplace).
+    /// </summary>
+    [HttpDelete("materials/{materialCode}")]
+    public async Task<ActionResult<ApiResponse<string>>> DeleteMaterial(string materialCode)
+    {
+        try
+        {
+            await _adminService.DeleteMaterialForAdminAsync(materialCode);
+            return Ok(ApiResponse<string>.Success(string.Empty, "Đã ẩn học liệu khỏi marketplace"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<string>.Fail(ex.Message, 404));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<string>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting material {MaterialCode}", materialCode);
             return StatusCode(500, ApiResponse<string>.Fail("Lỗi hệ thống", 500));
         }
     }
