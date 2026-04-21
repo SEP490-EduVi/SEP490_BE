@@ -319,6 +319,32 @@ public class MaterialController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// [Teacher] Xem chi tiết 1 material đã mua.
+    /// Vẫn truy cập được kể cả khi material không còn hiển thị trên marketplace.
+    /// </summary>
+    [HttpGet("purchased/{materialCode}")]
+    [Authorize(Roles = "Teacher")]
+    public async Task<ActionResult<ApiResponse<PurchasedMaterialResponseDto>>> GetPurchasedMaterialDetail(string materialCode)
+    {
+        try
+        {
+            var teacherId = GetCurrentUserId();
+            var result = await _materialService.GetPurchasedMaterialDetailAsync(teacherId, materialCode);
+            return Ok(ApiResponse<PurchasedMaterialResponseDto>.Success(result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<PurchasedMaterialResponseDto>.Fail(ex.Message, 404));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting purchased material detail {MaterialCode} for teacher {TeacherId}",
+                materialCode, User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(500, ApiResponse<PurchasedMaterialResponseDto>.Fail("Đã xảy ra lỗi khi lấy chi tiết học liệu đã mua", 500));
+        }
+    }
+
     private int GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

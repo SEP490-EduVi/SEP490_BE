@@ -341,6 +341,15 @@ public class MaterialService : IMaterialService
         return teacherMaterials.Select(tm => MapToPurchasedDto(tm.Material, tm)).ToList();
     }
 
+    public async Task<PurchasedMaterialResponseDto> GetPurchasedMaterialDetailAsync(int teacherId, string materialCode)
+    {
+        var purchasedMaterial = await _unitOfWork.TeacherRepository
+            .GetPurchasedMaterialByCodeAsync(teacherId, materialCode)
+            ?? throw new KeyNotFoundException($"Học liệu '{materialCode}' không tồn tại trong danh sách đã mua");
+
+        return MapToPurchasedDto(purchasedMaterial.Material, purchasedMaterial);
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // PRIVATE HELPERS
     // ══════════════════════════════════════════════════════════════════════════

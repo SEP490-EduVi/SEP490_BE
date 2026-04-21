@@ -82,6 +82,19 @@ public class TeacherRepository : ITeacherRepository
             .ToListAsync();
     }
 
+    public async Task<TeacherMaterials?> GetPurchasedMaterialByCodeAsync(int teacherId, string materialCode)
+    {
+        return await _context.TeacherMaterials
+            .Include(tm => tm.Material)
+                .ThenInclude(m => m.Expert)
+                    .ThenInclude(e => e.Expert) // Users navigation
+            .Include(tm => tm.Material)
+                .ThenInclude(m => m.Subject)
+            .Include(tm => tm.Material)
+                .ThenInclude(m => m.Grade)
+            .FirstOrDefaultAsync(tm => tm.TeacherId == teacherId && tm.Material.MaterialCode == materialCode);
+    }
+
     // ── Wallet ─────────────────────────────────────────────────────────────────
 
     public async Task<Wallets?> GetWalletByUserIdAsync(int userId)

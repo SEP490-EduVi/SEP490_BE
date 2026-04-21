@@ -67,4 +67,9 @@ public interface IMaterialService
     /// Teacher xem danh sách materials đã mua.
     /// </summary>
     Task<List<PurchasedMaterialResponseDto>> GetPurchasedMaterialsAsync(int teacherId);
+
+    /// <summary>
+    /// Teacher xem chi tiết 1 material đã mua, kể cả khi material không còn hiển thị ở marketplace.
+    /// </summary>
+    Task<PurchasedMaterialResponseDto> GetPurchasedMaterialDetailAsync(int teacherId, string materialCode);
 }

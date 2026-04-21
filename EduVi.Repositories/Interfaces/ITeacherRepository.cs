@@ -37,6 +37,12 @@ public interface ITeacherRepository
     /// </summary>
     Task<List<TeacherMaterials>> GetPurchasedMaterialsAsync(int teacherId);
 
+    /// <summary>
+    /// Lấy chi tiết 1 material đã mua theo MaterialCode của Teacher.
+    /// Không phụ thuộc ApprovalStatus marketplace.
+    /// </summary>
+    Task<TeacherMaterials?> GetPurchasedMaterialByCodeAsync(int teacherId, string materialCode);
+
     // ── Wallet ─────────────────────────────────────────────────────────────────
 
     /// <summary>
