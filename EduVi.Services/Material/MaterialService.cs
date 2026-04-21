@@ -227,6 +227,7 @@ public class MaterialService : IMaterialService
             throw new InvalidOperationException("Bạn đã mua học liệu này rồi");
 
         var price = material.Price ?? 0;
+        var baseOrderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 100 + Random.Shared.Next(10, 99);
 
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -247,7 +248,6 @@ public class MaterialService : IMaterialService
 
                 // Tạo transaction record
                 // +0/+1/+2 để 3 rows cùng batch đều unique, vẫn traceable theo cùng base
-                var baseOrderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 100 + Random.Shared.Next(10, 99);
                 var transaction = new WalletTransactions
                 {
                     WalletId = wallet.WalletId,
@@ -263,39 +263,50 @@ public class MaterialService : IMaterialService
                 };
                 await _unitOfWork.TeacherRepository.CreateWalletTransactionAsync(transaction);
 
-                // ── Phân chia doanh thu 70/30 ─────────────────────────────────
-                var expertRevenue = Math.Round(price * 0.7m, 0);
-                var platformFee = price - expertRevenue; // = 30%, dùng hiệu để tránh rounding mismatch
-
-                // ExpertId == UserId trong model (FK đã map 1-1)
-                var expertWallet = await _unitOfWork.ExpertRepository.GetWalletByUserIdAsync(material.ExpertId!.Value)
-                    ?? throw new InvalidOperationException("Chuyên gia chưa có ví. Vui lòng liên hệ hỗ trợ.");
-
-                var expertBalanceBefore = expertWallet.Balance ?? 0;
-                expertWallet.Balance = expertBalanceBefore + expertRevenue;
-                expertWallet.LastUpdated = DateTime.UtcNow;
-                _unitOfWork.ExpertRepository.UpdateWallet(expertWallet);
-
-                var expertTransaction = new WalletTransactions
-                {
-                    WalletId = expertWallet.WalletId,
-                    OrderCode = baseOrderCode + 1,
-                    TransactionType = "MATERIAL_REVENUE",
-                    Amount = expertRevenue,
-                    BalanceBefore = expertBalanceBefore,
-                    BalanceAfter = expertWallet.Balance,
-                    Status = 1,
-                    Description = $"Doanh thu học liệu (70%): {material.Title}",
-                    MaterialId = material.MaterialId,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _unitOfWork.ExpertRepository.CreateWalletTransactionAsync(expertTransaction);
-
                 var adminWallet = await _unitOfWork.AdminRepository.GetAdminWalletAsync()
                     ?? throw new InvalidOperationException("Không tìm thấy ví nền tảng của quản trị viên. Vui lòng liên hệ hỗ trợ.");
 
+                var adminRevenue = price;
+                var adminTransactionType = "MATERIAL_ADMIN_REVENUE";
+                var adminTransactionDescription = $"Doanh thu học liệu quản trị (100%): {material.Title}";
+
+                if (material.ExpertId.HasValue)
+                {
+                    // Material thuộc expert: chia doanh thu 70/30 (expert/platform).
+                    var expertRevenue = Math.Round(price * 0.7m, 0);
+                    var platformFee = price - expertRevenue;
+
+                    // ExpertId == UserId trong model (FK đã map 1-1)
+                    var expertWallet = await _unitOfWork.ExpertRepository.GetWalletByUserIdAsync(material.ExpertId.Value)
+                        ?? throw new InvalidOperationException("Chuyên gia chưa có ví. Vui lòng liên hệ hỗ trợ.");
+
+                    var expertBalanceBefore = expertWallet.Balance ?? 0;
+                    expertWallet.Balance = expertBalanceBefore + expertRevenue;
+                    expertWallet.LastUpdated = DateTime.UtcNow;
+                    _unitOfWork.ExpertRepository.UpdateWallet(expertWallet);
+
+                    var expertTransaction = new WalletTransactions
+                    {
+                        WalletId = expertWallet.WalletId,
+                        OrderCode = baseOrderCode + 1,
+                        TransactionType = "MATERIAL_REVENUE",
+                        Amount = expertRevenue,
+                        BalanceBefore = expertBalanceBefore,
+                        BalanceAfter = expertWallet.Balance,
+                        Status = 1,
+                        Description = $"Doanh thu học liệu (70%): {material.Title}",
+                        MaterialId = material.MaterialId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.ExpertRepository.CreateWalletTransactionAsync(expertTransaction);
+
+                    adminRevenue = platformFee;
+                    adminTransactionType = "MATERIAL_PLATFORM_FEE";
+                    adminTransactionDescription = $"Phí nền tảng học liệu (30%): {material.Title}";
+                }
+
                 var adminBalanceBefore = adminWallet.Balance ?? 0;
-                adminWallet.Balance = adminBalanceBefore + platformFee;
+                adminWallet.Balance = adminBalanceBefore + adminRevenue;
                 adminWallet.LastUpdated = DateTime.UtcNow;
                 _unitOfWork.AdminRepository.UpdateWallet(adminWallet);
 
@@ -303,16 +314,37 @@ public class MaterialService : IMaterialService
                 {
                     WalletId = adminWallet.WalletId,
                     OrderCode = baseOrderCode + 2,
-                    TransactionType = "MATERIAL_PLATFORM_FEE",
-                    Amount = platformFee,
+                    TransactionType = adminTransactionType,
+                    Amount = adminRevenue,
                     BalanceBefore = adminBalanceBefore,
                     BalanceAfter = adminWallet.Balance,
                     Status = 1,
-                    Description = $"Phí nền tảng học liệu (30%): {material.Title}",
+                    Description = adminTransactionDescription,
                     MaterialId = material.MaterialId,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.AdminRepository.CreateWalletTransactionAsync(adminTransaction);
+            }
+            else
+            {
+                // Material miễn phí vẫn ghi nhận transaction amount = 0 để audit lịch sử nhận học liệu.
+                var teacherWallet = await _unitOfWork.TeacherRepository.GetWalletByUserIdAsync(teacherId);
+                var walletBalance = teacherWallet?.Balance ?? 0;
+
+                var freeMaterialTransaction = new WalletTransactions
+                {
+                    WalletId = teacherWallet?.WalletId,
+                    OrderCode = baseOrderCode,
+                    TransactionType = "CLAIM_FREE_MATERIAL",
+                    Amount = 0,
+                    BalanceBefore = walletBalance,
+                    BalanceAfter = walletBalance,
+                    Status = 1,
+                    Description = $"Nhận học liệu miễn phí: {material.Title}",
+                    MaterialId = material.MaterialId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.TeacherRepository.CreateWalletTransactionAsync(freeMaterialTransaction);
             }
 
             // Tạo bản ghi TeacherMaterials
