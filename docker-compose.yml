@@ -228,6 +228,37 @@ services:
     restart: unless-stopped
     networks:
       - eduvi
+
+  # ── AI Review Worker ────────────────────────────────────────────────
+  # NO GOOGLE_APPLICATION_CREDENTIALS — VM service account handles GCP auth via ADC
+  ai-review:
+    build:
+      context: ./ai_review
+      dockerfile: Dockerfile
+    container_name: ai-review
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      FILE_REVIEW_REQUEST_QUEUE: ${FILE_REVIEW_REQUEST_QUEUE:-file.review.requests}
+      FILE_REVIEW_RESULT_QUEUE: ${FILE_REVIEW_RESULT_QUEUE:-file.review.results}
+      FILE_REVIEW_PREFETCH_COUNT: ${FILE_REVIEW_PREFETCH_COUNT:-3}
+      FILE_REVIEW_GEMINI_MODEL: ${FILE_REVIEW_GEMINI_MODEL:-gemini-2.5-flash}
+      FILE_REVIEW_AI_TIMEOUT_SEC: ${FILE_REVIEW_AI_TIMEOUT_SEC:-45}
+      FILE_REVIEW_AI_RETRY_COUNT: ${FILE_REVIEW_AI_RETRY_COUNT:-2}
+      FILE_REVIEW_AI_RETRY_BACKOFF_SEC: ${FILE_REVIEW_AI_RETRY_BACKOFF_SEC:-2}
+      VERTEX_AI_LOCATION: ${VERTEX_AI_LOCATION:-us-central1}
+      HELICONE_API_KEY: ${HELICONE_API_KEY:-}
+      # Google Cloud
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+    restart: unless-stopped
+    networks:
+      - eduvi
  
   # ── Game Quiz Worker ────────────────────────────────────────────────
   # Generates gesture-interactive quiz JSON from edited slide content + template.

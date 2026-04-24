@@ -18,6 +18,22 @@ public class PipelineHub : Hub
         _logger = logger;
     }
 
+    public override async Task OnConnectedAsync()
+    {
+        var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
+
+            if (Context.User?.IsInRole("Staff") == true)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, "staff");
+            }
+        }
+
+        await base.OnConnectedAsync();
+    }
+
     /// <summary>
     /// Client join group theo userId từ JWT claims để nhận progress riêng.
     /// UserId được lấy từ token đã xác thực — client không thể tự khai báo.
@@ -33,6 +49,18 @@ public class PipelineHub : Hub
     }
 
     /// <summary>
+    /// Staff join group để nhận thông báo review file mới.
+    /// </summary>
+    public async Task JoinStaffGroup()
+    {
+        if (Context.User?.IsInRole("Staff") != true)
+            throw new HubException("Unauthorized: staff role required.");
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, "staff");
+        _logger.LogInformation("Staff connection {ConnectionId} joined staff SignalR group", Context.ConnectionId);
+    }
+
+    /// <summary>
     /// Client rời group
     /// </summary>
     public async Task LeaveUserGroup()
@@ -43,6 +71,18 @@ public class PipelineHub : Hub
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user_{userId}");
         _logger.LogInformation("User {UserId} left SignalR group", userId);
+    }
+
+    /// <summary>
+    /// Staff rời group thông báo review file.
+    /// </summary>
+    public async Task LeaveStaffGroup()
+    {
+        if (Context.User?.IsInRole("Staff") != true)
+            throw new HubException("Unauthorized: staff role required.");
+
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, "staff");
+        _logger.LogInformation("Staff connection {ConnectionId} left staff SignalR group", Context.ConnectionId);
     }
 
     /// <summary>

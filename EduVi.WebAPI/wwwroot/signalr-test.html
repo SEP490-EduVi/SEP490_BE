@@ -61,6 +61,10 @@
                 log(`GameProgress:\n${JSON.stringify(progress, null, 2)}`, 'message');
             });
 
+            connection.on("FileReviewNotification", (notification) => {
+                log(`FileReviewNotification:\n${JSON.stringify(notification, null, 2)}`, 'message');
+            });
+
             connection.onclose(() => log("Connection closed", 'error'));
             connection.onreconnecting(() => log("Reconnecting...", 'error'));
             connection.onreconnected(() => log("Reconnected", 'success'));
@@ -72,7 +76,7 @@
                 await connection.invoke("JoinUserGroup");
                 log(`Joined personal group from JWT claims`, 'success');
 
-                log("Waiting for PipelineProgress/GameProgress messages...", 'success');
+                log("Waiting for PipelineProgress/GameProgress/FileReviewNotification messages...", 'success');
             } catch (err) {
                 log(`Connection failed: ${err}`, 'error');
             }

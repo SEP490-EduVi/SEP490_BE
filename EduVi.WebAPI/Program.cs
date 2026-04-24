@@ -8,6 +8,7 @@ using EduVi.Services.CurriculumIngestion;
 using EduVi.Services.TextbookIngestion;
 using EduVi.Services.Template;
 using EduVi.Services.Email;
+using EduVi.Services.Common;
 using EduVi.Services.Expert;
 using EduVi.Services.Games;
 using EduVi.Services.StudentLists;
@@ -133,6 +134,8 @@ builder.Services.AddScoped<ICurriculumIngestionService, CurriculumIngestionServi
 builder.Services.AddScoped<ITextbookIngestionService, TextbookIngestionService>();
 builder.Services.AddScoped<IWithdrawalService, WithdrawalService>();
 
+builder.Services.AddSingleton<IUploadFileReviewService, UploadFileReviewService>();
+
 // RabbitMQ Publisher
 builder.Services.AddSingleton<IRabbitMqPublisherService, RabbitMqPublisherService>();
 
@@ -143,6 +146,7 @@ builder.Services.AddHostedService<PipelineResultConsumerService>();
 builder.Services.AddHostedService<CurriculumResultConsumerService>();
 builder.Services.AddHostedService<TextbookResultConsumerService>();
 builder.Services.AddHostedService<GameResultConsumerService>();
+builder.Services.AddHostedService<UploadFileReviewResultConsumerService>();
 builder.Services.AddHostedService<PaymentPendingTopUpAutoCancelBackgroundService>();
 
 // SignalR with Redis backplane

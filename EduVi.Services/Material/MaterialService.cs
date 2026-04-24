@@ -1,4 +1,5 @@
 using EduVi.Contracts.DTOs.Material;
+using EduVi.Services.Common;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using Google.Cloud.Storage.V1;
@@ -11,6 +12,7 @@ public class MaterialService : IMaterialService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
+    private readonly IUploadFileReviewService _uploadFileReviewService;
     private readonly ILogger<MaterialService> _logger;
 
     private const ulong MaxImageFileSizeBytes = 10UL * 1024 * 1024; // 10MB
@@ -27,10 +29,12 @@ public class MaterialService : IMaterialService
     public MaterialService(
         IUnitOfWork unitOfWork,
         IConfiguration configuration,
+        IUploadFileReviewService uploadFileReviewService,
         ILogger<MaterialService> logger)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
+        _uploadFileReviewService = uploadFileReviewService;
         _logger = logger;
     }
 
@@ -81,6 +85,22 @@ public class MaterialService : IMaterialService
         var material = BuildMaterial(materialCode, expertId, subjectId, gradeId, request.Title, request.Description, type, request.Price, resourceUrl, previewUrl);
         await _unitOfWork.ExpertRepository.CreateMaterialAsync(material);
         await _unitOfWork.SaveChangesAsync();
+
+        var reviewTaskId = Guid.NewGuid();
+        await _uploadFileReviewService.PublishMaterialReviewTaskAsync(
+            reviewTaskId,
+            expertId,
+            materialCode,
+            resourceUrl,
+            Path.GetFileName(resourceObjectName),
+            resourceObject.ContentType ?? string.Empty,
+            type,
+            request.Title,
+            request.Description,
+            previewUrl,
+            request.SubjectCode,
+            request.GradeCode);
+
         return MapToResponseDto(material, includeResourceUrl: true);
     }
 

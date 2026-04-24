@@ -1,5 +1,6 @@
 using EduVi.Contracts.DTOs.Expert;
 using EduVi.Contracts.DTOs.Profile;
+using EduVi.Services.Common;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using Google.Cloud.Storage.V1;
@@ -15,6 +16,7 @@ public class ExpertService : IExpertService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
     private readonly IConnectionMultiplexer _redis;
+    private readonly IUploadFileReviewService _uploadFileReviewService;
     private readonly ILogger<ExpertService> _logger;
 
     private static readonly string[] AllowedContentTypes =
@@ -27,11 +29,13 @@ public class ExpertService : IExpertService
         IUnitOfWork unitOfWork,
         IConfiguration configuration,
         IConnectionMultiplexer redis,
+        IUploadFileReviewService uploadFileReviewService,
         ILogger<ExpertService> logger)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
         _redis = redis;
+        _uploadFileReviewService = uploadFileReviewService;
         _logger = logger;
     }
 
@@ -83,6 +87,17 @@ public class ExpertService : IExpertService
 
         await _unitOfWork.ExpertRepository.CreateVerificationAsync(verification);
         await _unitOfWork.SaveChangesAsync();
+
+        var reviewTaskId = Guid.NewGuid();
+        await _uploadFileReviewService.PublishVerificationReviewTaskAsync(
+            reviewTaskId,
+            expertId,
+            verificationCode,
+            gcsPath,
+            Path.GetFileName(objectName),
+            request.File.ContentType,
+            request.FileType.ToLowerInvariant(),
+            request.Description);
 
         return MapToExpertDto(verification, $"/api/expert/verifications/{verificationCode}/file");
     }

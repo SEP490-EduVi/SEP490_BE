@@ -46,6 +46,13 @@ public class StaffRepository : IStaffRepository
 
     public void UpdateExpert(Experts expert)
     {
+        var trackedExpert = _context.Experts.Local.FirstOrDefault(entity => entity.ExpertId == expert.ExpertId);
+        if (trackedExpert is not null)
+        {
+            _context.Entry(trackedExpert).CurrentValues.SetValues(expert);
+            return;
+        }
+
         _context.Experts.Update(expert);
     }
 
