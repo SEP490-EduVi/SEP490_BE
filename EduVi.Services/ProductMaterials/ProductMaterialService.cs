@@ -123,12 +123,22 @@ public class ProductMaterialService : IProductMaterialService
         if (string.IsNullOrWhiteSpace(request.MaterialCode))
             throw new InvalidOperationException("Vui lòng cung cấp MaterialCode khi thêm học liệu từ marketplace");
 
-        var material = await _unitOfWork.TeacherRepository.GetApprovedMaterialByCodeAsync(request.MaterialCode)
-            ?? throw new KeyNotFoundException($"Học liệu marketplace '{request.MaterialCode}' không tồn tại hoặc chưa được duyệt");
-
-        var hasPurchasedMaterial = await _unitOfWork.TeacherRepository.HasTeacherPurchasedAsync(teacherId, material.MaterialId);
-        if (!hasPurchasedMaterial)
-            throw new InvalidOperationException("Bạn cần mua học liệu trước khi thêm vào sản phẩm");
+        var material = await _unitOfWork.TeacherRepository.GetApprovedMaterialByCodeAsync(request.MaterialCode);
+        if (material is null)
+        {
+            // Material có thể đã bị ẩn khỏi marketplace sau khi giáo viên đã mua.
+            // Trường hợp đó vẫn cho phép thêm vào product nếu teacher sở hữu bản đã mua.
+            var purchasedMaterial = await _unitOfWork.TeacherRepository
+                .GetPurchasedMaterialByCodeAsync(teacherId, request.MaterialCode);
+            material = purchasedMaterial?.Material
+                ?? throw new KeyNotFoundException($"Học liệu marketplace '{request.MaterialCode}' không tồn tại hoặc chưa được duyệt");
+        }
+        else
+        {
+            var hasPurchasedMaterial = await _unitOfWork.TeacherRepository.HasTeacherPurchasedAsync(teacherId, material.MaterialId);
+            if (!hasPurchasedMaterial)
+                throw new InvalidOperationException("Bạn cần mua học liệu trước khi thêm vào sản phẩm");
+        }
 
         var alreadyExists = await _unitOfWork.ProductMaterialRepository
             .ExistsMarketplaceMaterialInProductAsync(product.ProductId, material.MaterialId);
