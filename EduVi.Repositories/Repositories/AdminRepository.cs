@@ -379,6 +379,8 @@ public class AdminRepository : IAdminRepository
         string? expertCode,
         string? materialCode)
     {
+        var adminMaterialIncomeTransactionTypes = new[] { "MATERIAL_PLATFORM_FEE", "MATERIAL_ADMIN_REVENUE" };
+
         var query = _context.WalletTransactions
             .Include(transaction => transaction.Wallet)
             .Include(transaction => transaction.Material)
@@ -388,7 +390,8 @@ public class AdminRepository : IAdminRepository
             .Include(transaction => transaction.Material)
                 .ThenInclude(material => material.Expert)
                     .ThenInclude(expert => expert.Expert)
-            .Where(transaction => transaction.TransactionType == "BUY_MATERIAL" && transaction.Status == 1)
+            .Where(transaction => adminMaterialIncomeTransactionTypes.Contains(transaction.TransactionType)
+                && transaction.Status == 1)
             .AsQueryable();
 
         if (fromDate.HasValue)
