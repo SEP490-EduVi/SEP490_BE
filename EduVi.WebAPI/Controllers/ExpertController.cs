@@ -206,4 +206,50 @@ public class ExpertController : ControllerBase
             return StatusCode(500, ApiResponse<object>.Fail("Đã xảy ra lỗi khi cập nhật thông tin", 500));
         }
     }
+
+    /// <summary>
+    /// Dashboard doanh số của Expert theo từng học liệu (có lọc theo thời gian, môn, khối, material code).
+    /// </summary>
+    [HttpGet("sales/materials")]
+    public async Task<ActionResult<ApiResponse<List<ExpertMaterialSalesResponse>>>> GetMyMaterialSales([FromQuery] ExpertSalesFilterRequest filter)
+    {
+        try
+        {
+            var expertId = GetCurrentUserId();
+            var result = await _expertService.GetMaterialSalesAsync(expertId, filter);
+            return Ok(ApiResponse<List<ExpertMaterialSalesResponse>>.Success(result));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<List<ExpertMaterialSalesResponse>>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting sales by material for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(500, ApiResponse<List<ExpertMaterialSalesResponse>>.Fail("Đã xảy ra lỗi khi lấy dashboard doanh số", 500));
+        }
+    }
+
+    /// <summary>
+    /// Dashboard tổng quan doanh số và dự báo doanh thu của Expert.
+    /// </summary>
+    [HttpGet("sales/overview")]
+    public async Task<ActionResult<ApiResponse<ExpertSalesOverviewResponse>>> GetMySalesOverview([FromQuery] ExpertSalesFilterRequest filter)
+    {
+        try
+        {
+            var expertId = GetCurrentUserId();
+            var result = await _expertService.GetSalesOverviewAsync(expertId, filter);
+            return Ok(ApiResponse<ExpertSalesOverviewResponse>.Success(result));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<ExpertSalesOverviewResponse>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting sales overview for expert {ExpertId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return StatusCode(500, ApiResponse<ExpertSalesOverviewResponse>.Fail("Đã xảy ra lỗi khi lấy tổng quan doanh số", 500));
+        }
+    }
 }

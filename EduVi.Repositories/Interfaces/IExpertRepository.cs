@@ -95,4 +95,28 @@ public interface IExpertRepository
     /// Tạo giao dịch ví cho Expert (MATERIAL_REVENUE).
     /// </summary>
     Task CreateWalletTransactionAsync(WalletTransactions transaction);
+
+    /// <summary>
+    /// Doanh số theo material của Expert hiện tại.
+    /// </summary>
+    Task<List<MaterialSalesAnalyticsRow>> GetMaterialSalesAnalyticsByExpertAsync(
+        int expertId,
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? subjectCode,
+        string? gradeCode,
+        string? materialCode);
+
+    /// <summary>
+    /// Dữ liệu tổng hợp để Expert tự xem forecast theo kỳ hiện tại và kỳ trước.
+    /// </summary>
+    Task<RevenueForecastAnalyticsRow> GetRevenueForecastAnalyticsByExpertAsync(
+        int expertId,
+        DateTime currentFromDate,
+        DateTime currentToDate,
+        DateTime previousFromDate,
+        DateTime previousToDate,
+        string? subjectCode,
+        string? gradeCode,
+        string? materialCode);
 }

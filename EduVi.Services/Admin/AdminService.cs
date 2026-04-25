@@ -345,6 +345,130 @@ public class AdminService : IAdminService
         };
     }
 
+    public async Task<PagedResponse<AdminMaterialSalesResponse>> GetMaterialSalesAnalyticsAsync(AdminMaterialSalesFilterRequest filter)
+    {
+        var normalizedSubjectCode = NormalizeOptionalText(filter.SubjectCode);
+        var normalizedGradeCode = NormalizeOptionalText(filter.GradeCode);
+        var normalizedExpertCode = NormalizeOptionalText(filter.ExpertCode);
+        var normalizedMaterialCode = NormalizeOptionalText(filter.MaterialCode);
+
+        var (items, totalCount) = await _unitOfWork.AdminRepository.GetMaterialSalesAnalyticsAsync(
+            filter.FromDate,
+            filter.ToDate,
+            normalizedSubjectCode,
+            normalizedGradeCode,
+            normalizedExpertCode,
+            normalizedMaterialCode,
+            filter.Page,
+            filter.PageSize);
+
+        return new PagedResponse<AdminMaterialSalesResponse>
+        {
+            Items = items.Select(item => new AdminMaterialSalesResponse
+            {
+                MaterialCode = item.MaterialCode,
+                Title = item.Title,
+                SubjectCode = item.SubjectCode,
+                GradeCode = item.GradeCode,
+                ExpertCode = item.ExpertCode,
+                ExpertName = item.ExpertName,
+                SoldCount = item.SoldCount,
+                UniqueBuyerCount = item.UniqueBuyerCount,
+                GrossRevenue = item.GrossRevenue,
+                LastPurchasedDate = item.LastPurchasedDate
+            }).ToList(),
+            TotalCount = totalCount,
+            Page = filter.Page,
+            PageSize = filter.PageSize
+        };
+    }
+
+    public async Task<PagedResponse<AdminExpertSalesResponse>> GetExpertSalesAnalyticsAsync(AdminExpertSalesFilterRequest filter)
+    {
+        var normalizedSubjectCode = NormalizeOptionalText(filter.SubjectCode);
+        var normalizedGradeCode = NormalizeOptionalText(filter.GradeCode);
+        var normalizedExpertCode = NormalizeOptionalText(filter.ExpertCode);
+        var normalizedMaterialCode = NormalizeOptionalText(filter.MaterialCode);
+
+        var (items, totalCount) = await _unitOfWork.AdminRepository.GetExpertSalesAnalyticsAsync(
+            filter.FromDate,
+            filter.ToDate,
+            normalizedSubjectCode,
+            normalizedGradeCode,
+            normalizedExpertCode,
+            normalizedMaterialCode,
+            filter.Page,
+            filter.PageSize);
+
+        return new PagedResponse<AdminExpertSalesResponse>
+        {
+            Items = items.Select(item => new AdminExpertSalesResponse
+            {
+                ExpertCode = item.ExpertCode,
+                ExpertName = item.ExpertName,
+                SoldMaterialCount = item.SoldMaterialCount,
+                SoldCount = item.SoldCount,
+                UniqueBuyerCount = item.UniqueBuyerCount,
+                GrossRevenue = item.GrossRevenue,
+                LastPurchasedDate = item.LastPurchasedDate
+            }).ToList(),
+            TotalCount = totalCount,
+            Page = filter.Page,
+            PageSize = filter.PageSize
+        };
+    }
+
+    public async Task<AdminRevenueForecastResponse> GetRevenueForecastAsync(AdminRevenueForecastFilterRequest filter)
+    {
+        var normalizedSubjectCode = NormalizeOptionalText(filter.SubjectCode);
+        var normalizedGradeCode = NormalizeOptionalText(filter.GradeCode);
+        var normalizedExpertCode = NormalizeOptionalText(filter.ExpertCode);
+        var normalizedMaterialCode = NormalizeOptionalText(filter.MaterialCode);
+
+        var toDateUtc = filter.ToDate?.ToUniversalTime() ?? DateTime.UtcNow;
+        var fromDateUtc = filter.FromDate?.ToUniversalTime() ?? toDateUtc.AddDays(-30);
+        if (fromDateUtc > toDateUtc)
+            throw new InvalidOperationException("FromDate không được lớn hơn ToDate");
+
+        var periodDays = Math.Max(1, (int)Math.Ceiling((toDateUtc - fromDateUtc).TotalDays));
+        var previousToDateUtc = fromDateUtc.AddSeconds(-1);
+        var previousFromDateUtc = previousToDateUtc.AddDays(-periodDays);
+
+        var analytics = await _unitOfWork.AdminRepository.GetRevenueForecastAnalyticsAsync(
+            fromDateUtc,
+            toDateUtc,
+            previousFromDateUtc,
+            previousToDateUtc,
+            normalizedSubjectCode,
+            normalizedGradeCode,
+            normalizedExpertCode,
+            normalizedMaterialCode);
+
+        var averageDailyRevenue = analytics.CurrentRevenue / periodDays;
+        var forecastRevenue = averageDailyRevenue * filter.ForecastDays;
+
+        var revenueGrowthRatePercent = analytics.PreviousRevenue == 0
+            ? (analytics.CurrentRevenue > 0 ? 100 : 0)
+            : ((analytics.CurrentRevenue - analytics.PreviousRevenue) / analytics.PreviousRevenue) * 100;
+
+        return new AdminRevenueForecastResponse
+        {
+            FromDate = fromDateUtc,
+            ToDate = toDateUtc,
+            PeriodDays = periodDays,
+            ForecastDays = filter.ForecastDays,
+            CurrentRevenue = analytics.CurrentRevenue,
+            PreviousRevenue = analytics.PreviousRevenue,
+            RevenueGrowthRatePercent = decimal.Round(revenueGrowthRatePercent, 2),
+            AverageDailyRevenue = decimal.Round(averageDailyRevenue, 2),
+            ForecastRevenue = decimal.Round(forecastRevenue, 2),
+            CurrentSoldCount = analytics.CurrentSoldCount,
+            PreviousSoldCount = analytics.PreviousSoldCount,
+            CurrentUniqueBuyerCount = analytics.CurrentUniqueBuyerCount,
+            PreviousUniqueBuyerCount = analytics.PreviousUniqueBuyerCount
+        };
+    }
+
     #endregion
 
     #region Subscription Plans

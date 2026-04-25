@@ -70,6 +70,21 @@ public interface IAdminService
     /// </summary>
     Task<PagedResponse<AdminOrderResponse>> GetAllOrdersAsync(OrderFilterRequest filter);
 
+    /// <summary>
+    /// Doanh thu theo học liệu đã bán.
+    /// </summary>
+    Task<PagedResponse<AdminMaterialSalesResponse>> GetMaterialSalesAnalyticsAsync(AdminMaterialSalesFilterRequest filter);
+
+    /// <summary>
+    /// Doanh thu theo chuyên gia.
+    /// </summary>
+    Task<PagedResponse<AdminExpertSalesResponse>> GetExpertSalesAnalyticsAsync(AdminExpertSalesFilterRequest filter);
+
+    /// <summary>
+    /// Dự báo doanh thu theo kỳ hiện tại.
+    /// </summary>
+    Task<AdminRevenueForecastResponse> GetRevenueForecastAsync(AdminRevenueForecastFilterRequest filter);
+
     // ============ Subscription Plans ============
 
     /// <summary>

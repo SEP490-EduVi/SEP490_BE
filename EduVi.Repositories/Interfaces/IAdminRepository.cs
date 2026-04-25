@@ -96,6 +96,45 @@ public interface IAdminRepository
     /// </summary>
     Task<(decimal TotalAmount, int Count)> GetSubscriptionStatsAsync();
 
+    /// <summary>
+    /// Doanh thu theo từng học liệu đã bán, có lọc theo thời gian và metadata.
+    /// </summary>
+    Task<(List<MaterialSalesAnalyticsRow> Items, int TotalCount)> GetMaterialSalesAnalyticsAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? subjectCode,
+        string? gradeCode,
+        string? expertCode,
+        string? materialCode,
+        int page,
+        int pageSize);
+
+    /// <summary>
+    /// Doanh thu theo từng Expert, có lọc theo thời gian và metadata.
+    /// </summary>
+    Task<(List<ExpertSalesAnalyticsRow> Items, int TotalCount)> GetExpertSalesAnalyticsAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? subjectCode,
+        string? gradeCode,
+        string? expertCode,
+        string? materialCode,
+        int page,
+        int pageSize);
+
+    /// <summary>
+    /// Dữ liệu tổng hợp để dự báo doanh thu theo kỳ hiện tại và kỳ trước liền kề.
+    /// </summary>
+    Task<RevenueForecastAnalyticsRow> GetRevenueForecastAnalyticsAsync(
+        DateTime currentFromDate,
+        DateTime currentToDate,
+        DateTime previousFromDate,
+        DateTime previousToDate,
+        string? subjectCode,
+        string? gradeCode,
+        string? expertCode,
+        string? materialCode);
+
     // ============ Orders ============
 
     /// <summary>

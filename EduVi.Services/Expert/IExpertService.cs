@@ -60,4 +60,14 @@ public interface IExpertService
     /// Cập nhật thông tin profile (FullName, PhoneNumber, Bio).
     /// </summary>
     Task UpdateProfileAsync(int userId, UpdateExpertProfileRequest request);
+
+    /// <summary>
+    /// Expert xem doanh số theo từng material của chính mình.
+    /// </summary>
+    Task<List<ExpertMaterialSalesResponse>> GetMaterialSalesAsync(int expertId, ExpertSalesFilterRequest filter);
+
+    /// <summary>
+    /// Expert xem tổng quan doanh số và dự báo doanh thu.
+    /// </summary>
+    Task<ExpertSalesOverviewResponse> GetSalesOverviewAsync(int expertId, ExpertSalesFilterRequest filter);
 }
