@@ -215,7 +215,7 @@ public class ExpertRepository : IExpertRepository
                 .ThenInclude(material => material.Subject)
             .Include(transaction => transaction.Material)
                 .ThenInclude(material => material.Grade)
-            .Where(transaction => transaction.TransactionType == "BUY_MATERIAL"
+            .Where(transaction => transaction.TransactionType == "MATERIAL_REVENUE"
                 && transaction.Status == 1
                 && transaction.Material != null
                 && transaction.Material.ExpertId == expertId)
