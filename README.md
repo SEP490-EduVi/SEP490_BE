@@ -9,6 +9,11 @@
 
 ---
 
+> **⚠️ Deployment Guide Available!**
+> Trying to push this to the cloud or set up the full VM infrastructure? Please read our comprehensive **[Deployment Guide](DEPLOYMENT_GUIDE.md)** for instructions on architecture, GCP Configuration, CI/CD Actions, and securely accessing internal queues.
+
+---
+
 ## 📑 Table of Contents
 
 - [Overview](#overview)
