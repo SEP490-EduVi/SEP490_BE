@@ -103,10 +103,10 @@ public class AdminService : IAdminService
                 // Đồng bộ chính sách cấp quota khởi tạo giống flow đăng ký.
                 await _unitOfWork.PaymentRepository.CreateOrUpdateQuotaAsync(
                     user.UserId,
-                    analysisQuotaToAdd: 2,
-                    slideQuotaToAdd: 1,
-                    videoQuotaToAdd: 1,
-                    gameQuotaToAdd: 2);
+                    analysisQuotaToAdd: 3,
+                    slideQuotaToAdd: 3,
+                    videoQuotaToAdd: 3,
+                    gameQuotaToAdd: 3   );
             }
             else
             {

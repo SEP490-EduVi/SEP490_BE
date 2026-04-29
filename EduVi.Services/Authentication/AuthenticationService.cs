@@ -226,10 +226,10 @@ public class AuthenticationService : IAuthenticationService
                     // Cấp quota miễn phí ban đầu cho giáo viên mới
                     await _unitOfWork.PaymentRepository.CreateOrUpdateQuotaAsync(
                         teacher.TeacherId,
-                        analysisQuotaToAdd: 2,
-                        slideQuotaToAdd: 1,
-                        videoQuotaToAdd: 1,
-                        gameQuotaToAdd: 2);
+                        analysisQuotaToAdd: 3,
+                        slideQuotaToAdd: 3,
+                        videoQuotaToAdd: 3,
+                        gameQuotaToAdd: 3   );
                     break;
             }
 

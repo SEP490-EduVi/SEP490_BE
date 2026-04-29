@@ -162,15 +162,15 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// Xóa user (hard delete)
+    /// Xóa user (soft delete = ban) để tránh lỗi ràng buộc dữ liệu
     /// </summary>
     [HttpDelete("users/{userCode}")]
     public async Task<ActionResult<ApiResponse<string>>> DeleteUser(string userCode)
     {
         try
         {
-            await _adminService.DeleteUserAsync(userCode);
-            return Ok(ApiResponse<string>.Success("", "Đã xóa người dùng"));
+            await _adminService.BanUserAsync(userCode);
+            return Ok(ApiResponse<string>.Success("", "Đã khóa tài khoản (soft delete)"));
         }
         catch (KeyNotFoundException ex)
         {
@@ -178,7 +178,7 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting user {UserCode}", userCode);
+            _logger.LogError(ex, "Error soft-deleting user {UserCode}", userCode);
             return StatusCode(500, ApiResponse<string>.Fail("Lỗi hệ thống", 500));
         }
     }
