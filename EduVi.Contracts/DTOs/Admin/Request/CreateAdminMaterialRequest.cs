@@ -37,9 +37,9 @@ public class CreateAdminMaterialRequest : IValidatableObject
     public string? GradeCode { get; set; }
 
     /// <summary>
-    /// 0 = Pending, 1 = Approved, 2 = Rejected.
+    /// 0 = Pending, 1 = Approved, 2 = Rejected, 3 = Banned.
     /// </summary>
-    [Range(0, 2)]
+    [Range(0, 3)]
     public int? ApprovalStatus { get; set; }
 
     [MaxLength(500)]
@@ -47,10 +47,10 @@ public class CreateAdminMaterialRequest : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (ApprovalStatus == 2 && string.IsNullOrWhiteSpace(RejectionReason))
+        if (ApprovalStatus is 2 or 3 && string.IsNullOrWhiteSpace(RejectionReason))
         {
             yield return new ValidationResult(
-                "Phải cung cấp lý do khi tạo học liệu ở trạng thái Rejected",
+                "Phải cung cấp lý do khi tạo học liệu ở trạng thái Rejected hoặc Banned",
                 new[] { nameof(RejectionReason) });
         }
     }

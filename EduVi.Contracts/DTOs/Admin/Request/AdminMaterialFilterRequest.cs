@@ -8,9 +8,9 @@ namespace EduVi.Contracts.DTOs.Admin.Request;
 public class AdminMaterialFilterRequest
 {
     /// <summary>
-    /// Lọc theo trạng thái duyệt: 0 = Pending, 1 = Approved, 2 = Rejected.
+    /// Lọc theo trạng thái duyệt: 0 = Pending, 1 = Approved, 2 = Rejected, 3 = Banned.
     /// </summary>
-    [Range(0, 2)]
+    [Range(0, 3)]
     public int? ApprovalStatus { get; set; }
 
     /// <summary>

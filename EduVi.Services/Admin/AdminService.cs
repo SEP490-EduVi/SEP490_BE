@@ -598,7 +598,7 @@ public class AdminService : IAdminService
         if (request.ApprovalStatus.HasValue)
             ValidateMaterialApprovalState(request.ApprovalStatus.Value, request.RejectionReason);
 
-        var normalizedRejectionReason = request.ApprovalStatus == 2
+        var normalizedRejectionReason = request.ApprovalStatus is 2 or 3
             ? NormalizeOptionalText(request.RejectionReason)
             : null;
 
@@ -679,14 +679,14 @@ public class AdminService : IAdminService
         {
             ValidateMaterialApprovalState(request.ApprovalStatus.Value, request.RejectionReason);
             material.ApprovalStatus = request.ApprovalStatus.Value;
-            material.RejectionReason = request.ApprovalStatus.Value == 2
+            material.RejectionReason = request.ApprovalStatus.Value is 2 or 3
                 ? NormalizeOptionalText(request.RejectionReason)
                 : null;
         }
         else if (request.RejectionReason != null)
         {
-            if (material.ApprovalStatus != 2)
-                throw new InvalidOperationException("Chỉ được cập nhật RejectionReason khi học liệu đang ở trạng thái Rejected");
+            if (material.ApprovalStatus is not (2 or 3))
+                throw new InvalidOperationException("Chỉ được cập nhật RejectionReason khi học liệu đang ở trạng thái Rejected hoặc Banned");
 
             material.RejectionReason = NormalizeOptionalText(request.RejectionReason);
         }
@@ -779,8 +779,11 @@ public class AdminService : IAdminService
 
     private static void ValidateMaterialApprovalState(int approvalStatus, string? rejectionReason)
     {
-        if (approvalStatus is < 0 or > 2)
+        if (approvalStatus is < 0 or > 3)
             throw new InvalidOperationException("ApprovalStatus không hợp lệ");
+
+        if (approvalStatus is 2 or 3 && string.IsNullOrWhiteSpace(rejectionReason))
+            throw new InvalidOperationException("Phải cung cấp RejectionReason khi học liệu ở trạng thái Rejected hoặc Banned");
     }
 
     private static string NormalizeRequiredText(string? value, string fieldName)

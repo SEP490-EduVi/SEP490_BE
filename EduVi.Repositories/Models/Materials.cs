@@ -29,7 +29,7 @@ public partial class Materials
 
     public string PreviewUrl { get; set; }
 
-    /// <summary>0 = Pending, 1 = Approved, 2 = Rejected</summary>
+    /// <summary>0 = Pending, 1 = Approved, 2 = Rejected, 3 = Banned</summary>
     public int? ApprovalStatus { get; set; }
 
     public string RejectionReason { get; set; }

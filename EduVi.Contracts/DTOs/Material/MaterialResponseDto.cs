@@ -28,7 +28,7 @@ public class MaterialResponseDto
     public string? GradeName { get; set; }
 
     /// <summary>
-    /// 0 = Pending, 1 = Approved, 2 = Rejected
+    /// 0 = Pending, 1 = Approved, 2 = Rejected, 3 = Banned
     /// </summary>
     public int ApprovalStatus { get; set; }
 

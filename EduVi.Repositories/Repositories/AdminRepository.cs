@@ -113,14 +113,14 @@ public class AdminRepository : IAdminRepository
         return await _context.Materials
             .Where(m => m.ExpertId == expertId && m.ApprovalStatus == 1)
             .ExecuteUpdateAsync(setters => setters
-                .SetProperty(m => m.ApprovalStatus, 2)
+                .SetProperty(m => m.ApprovalStatus, 3)
                 .SetProperty(m => m.RejectionReason, reason));
     }
 
     public async Task<int> RestoreMaterialsHiddenByExpertBanAsync(int expertId, string reason)
     {
         return await _context.Materials
-            .Where(m => m.ExpertId == expertId && m.ApprovalStatus == 2 && m.RejectionReason == reason)
+            .Where(m => m.ExpertId == expertId && m.ApprovalStatus == 3 && m.RejectionReason == reason)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(m => m.ApprovalStatus, 1)
                 .SetProperty(m => m.RejectionReason, (string?)null));
