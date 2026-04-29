@@ -123,4 +123,124 @@ public class ExpertRepository : IExpertRepository
     {
         await _context.WalletTransactions.AddAsync(transaction);
     }
+
+    public async Task<List<MaterialSalesAnalyticsRow>> GetMaterialSalesAnalyticsByExpertAsync(
+        int expertId,
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? subjectCode,
+        string? gradeCode,
+        string? materialCode)
+    {
+        var query = BuildMaterialSalesTransactionQueryByExpert(expertId, fromDate, toDate, subjectCode, gradeCode, materialCode);
+
+        return await query
+            .GroupBy(transaction => new
+            {
+                MaterialCode = transaction.Material != null ? transaction.Material.MaterialCode : string.Empty,
+                Title = transaction.Material != null ? transaction.Material.Title : string.Empty,
+                SubjectCode = transaction.Material != null && transaction.Material.Subject != null ? transaction.Material.Subject.SubjectCode : null,
+                GradeCode = transaction.Material != null && transaction.Material.Grade != null ? transaction.Material.Grade.GradeCode : null
+            })
+            .Select(group => new MaterialSalesAnalyticsRow
+            {
+                MaterialCode = group.Key.MaterialCode,
+                Title = group.Key.Title,
+                SubjectCode = group.Key.SubjectCode,
+                GradeCode = group.Key.GradeCode,
+                ExpertCode = null,
+                ExpertName = null,
+                SoldCount = group.Count(),
+                UniqueBuyerCount = group.Select(transaction => transaction.Wallet != null ? transaction.Wallet.UserId : null)
+                    .Distinct()
+                    .Count(userId => userId != null),
+                GrossRevenue = group.Sum(transaction => Math.Abs(transaction.Amount ?? 0)),
+                LastPurchasedDate = group.Max(transaction => transaction.CreatedAt)
+            })
+            .OrderByDescending(item => item.GrossRevenue)
+            .ThenByDescending(item => item.SoldCount)
+            .ToListAsync();
+    }
+
+    public async Task<RevenueForecastAnalyticsRow> GetRevenueForecastAnalyticsByExpertAsync(
+        int expertId,
+        DateTime currentFromDate,
+        DateTime currentToDate,
+        DateTime previousFromDate,
+        DateTime previousToDate,
+        string? subjectCode,
+        string? gradeCode,
+        string? materialCode)
+    {
+        var currentQuery = BuildMaterialSalesTransactionQueryByExpert(expertId, currentFromDate, currentToDate, subjectCode, gradeCode, materialCode);
+        var previousQuery = BuildMaterialSalesTransactionQueryByExpert(expertId, previousFromDate, previousToDate, subjectCode, gradeCode, materialCode);
+
+        var currentRevenue = await currentQuery.SumAsync(transaction => Math.Abs(transaction.Amount ?? 0));
+        var previousRevenue = await previousQuery.SumAsync(transaction => Math.Abs(transaction.Amount ?? 0));
+        var currentSoldCount = await currentQuery.CountAsync();
+        var previousSoldCount = await previousQuery.CountAsync();
+
+        var currentUniqueBuyerCount = await currentQuery
+            .Select(transaction => transaction.Wallet != null ? transaction.Wallet.UserId : null)
+            .Distinct()
+            .CountAsync(userId => userId != null);
+
+        var previousUniqueBuyerCount = await previousQuery
+            .Select(transaction => transaction.Wallet != null ? transaction.Wallet.UserId : null)
+            .Distinct()
+            .CountAsync(userId => userId != null);
+
+        return new RevenueForecastAnalyticsRow
+        {
+            CurrentRevenue = currentRevenue,
+            PreviousRevenue = previousRevenue,
+            CurrentSoldCount = currentSoldCount,
+            PreviousSoldCount = previousSoldCount,
+            CurrentUniqueBuyerCount = currentUniqueBuyerCount,
+            PreviousUniqueBuyerCount = previousUniqueBuyerCount
+        };
+    }
+
+    private IQueryable<WalletTransactions> BuildMaterialSalesTransactionQueryByExpert(
+        int expertId,
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? subjectCode,
+        string? gradeCode,
+        string? materialCode)
+    {
+        var query = _context.WalletTransactions
+            .Include(transaction => transaction.Wallet)
+            .Include(transaction => transaction.Material)
+                .ThenInclude(material => material.Subject)
+            .Include(transaction => transaction.Material)
+                .ThenInclude(material => material.Grade)
+            .Where(transaction => transaction.TransactionType == "MATERIAL_REVENUE"
+                && transaction.Status == 1
+                && transaction.Material != null
+                && transaction.Material.ExpertId == expertId)
+            .AsQueryable();
+
+        if (fromDate.HasValue)
+            query = query.Where(transaction => transaction.CreatedAt >= fromDate.Value);
+
+        if (toDate.HasValue)
+            query = query.Where(transaction => transaction.CreatedAt <= toDate.Value);
+
+        if (!string.IsNullOrWhiteSpace(subjectCode))
+            query = query.Where(transaction => transaction.Material != null
+                && transaction.Material.Subject != null
+                && transaction.Material.Subject.SubjectCode == subjectCode);
+
+        if (!string.IsNullOrWhiteSpace(gradeCode))
+            query = query.Where(transaction => transaction.Material != null
+                && transaction.Material.Grade != null
+                && transaction.Material.Grade.GradeCode == gradeCode);
+
+        if (!string.IsNullOrWhiteSpace(materialCode))
+            query = query.Where(transaction => transaction.Material != null
+                && transaction.Material.MaterialCode == materialCode);
+
+        return query;
+    }
 }

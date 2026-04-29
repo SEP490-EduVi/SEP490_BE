@@ -232,9 +232,7 @@ services:
   # ── AI Review Worker ────────────────────────────────────────────────
   # NO GOOGLE_APPLICATION_CREDENTIALS — VM service account handles GCP auth via ADC
   ai-review:
-    build:
-      context: ./ai_review
-      dockerfile: Dockerfile
+    image: ghcr.io/${GITHUB_ORG}/ai-review:latest
     container_name: ai-review
     depends_on:
       rabbitmq:

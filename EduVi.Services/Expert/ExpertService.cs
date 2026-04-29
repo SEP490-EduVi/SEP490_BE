@@ -335,6 +335,92 @@ public class ExpertService : IExpertService
 
         await _unitOfWork.SaveChangesAsync();
     }
+
+    public async Task<List<ExpertMaterialSalesResponse>> GetMaterialSalesAsync(int expertId, ExpertSalesFilterRequest filter)
+    {
+        var normalizedSubjectCode = NormalizeOptionalText(filter.SubjectCode);
+        var normalizedGradeCode = NormalizeOptionalText(filter.GradeCode);
+        var normalizedMaterialCode = NormalizeOptionalText(filter.MaterialCode);
+
+        var analyticsRows = await _unitOfWork.ExpertRepository.GetMaterialSalesAnalyticsByExpertAsync(
+            expertId,
+            filter.FromDate,
+            filter.ToDate,
+            normalizedSubjectCode,
+            normalizedGradeCode,
+            normalizedMaterialCode);
+
+        return analyticsRows.Select(row => new ExpertMaterialSalesResponse
+        {
+            MaterialCode = row.MaterialCode,
+            Title = row.Title,
+            SubjectCode = row.SubjectCode,
+            GradeCode = row.GradeCode,
+            SoldCount = row.SoldCount,
+            UniqueBuyerCount = row.UniqueBuyerCount,
+            GrossRevenue = row.GrossRevenue,
+            LastPurchasedDate = row.LastPurchasedDate
+        }).ToList();
+    }
+
+    public async Task<ExpertSalesOverviewResponse> GetSalesOverviewAsync(int expertId, ExpertSalesFilterRequest filter)
+    {
+        var normalizedSubjectCode = NormalizeOptionalText(filter.SubjectCode);
+        var normalizedGradeCode = NormalizeOptionalText(filter.GradeCode);
+        var normalizedMaterialCode = NormalizeOptionalText(filter.MaterialCode);
+
+        var toDateUtc = filter.ToDate?.ToUniversalTime() ?? DateTime.UtcNow;
+        var fromDateUtc = filter.FromDate?.ToUniversalTime() ?? toDateUtc.AddDays(-30);
+        if (fromDateUtc > toDateUtc)
+            throw new InvalidOperationException("FromDate không được lớn hơn ToDate");
+
+        var periodDays = Math.Max(1, (int)Math.Ceiling((toDateUtc - fromDateUtc).TotalDays));
+        var previousToDateUtc = fromDateUtc.AddSeconds(-1);
+        var previousFromDateUtc = previousToDateUtc.AddDays(-periodDays);
+
+        var analytics = await _unitOfWork.ExpertRepository.GetRevenueForecastAnalyticsByExpertAsync(
+            expertId,
+            fromDateUtc,
+            toDateUtc,
+            previousFromDateUtc,
+            previousToDateUtc,
+            normalizedSubjectCode,
+            normalizedGradeCode,
+            normalizedMaterialCode);
+
+        var averageDailyRevenue = analytics.CurrentRevenue / periodDays;
+        var forecastRevenue = averageDailyRevenue * filter.ForecastDays;
+
+        var revenueGrowthRatePercent = analytics.PreviousRevenue == 0
+            ? (analytics.CurrentRevenue > 0 ? 100 : 0)
+            : ((analytics.CurrentRevenue - analytics.PreviousRevenue) / analytics.PreviousRevenue) * 100;
+
+        return new ExpertSalesOverviewResponse
+        {
+            FromDate = fromDateUtc,
+            ToDate = toDateUtc,
+            PeriodDays = periodDays,
+            ForecastDays = filter.ForecastDays,
+            CurrentSoldCount = analytics.CurrentSoldCount,
+            PreviousSoldCount = analytics.PreviousSoldCount,
+            CurrentUniqueBuyerCount = analytics.CurrentUniqueBuyerCount,
+            PreviousUniqueBuyerCount = analytics.PreviousUniqueBuyerCount,
+            CurrentRevenue = analytics.CurrentRevenue,
+            PreviousRevenue = analytics.PreviousRevenue,
+            RevenueGrowthRatePercent = decimal.Round(revenueGrowthRatePercent, 2),
+            AverageDailyRevenue = decimal.Round(averageDailyRevenue, 2),
+            ForecastRevenue = decimal.Round(forecastRevenue, 2)
+        };
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        if (value is null)
+            return null;
+
+        var normalizedValue = value.Trim();
+        return string.IsNullOrWhiteSpace(normalizedValue) ? null : normalizedValue;
+    }
 }
 
 /// <summary>Hằng số trạng thái ExpertVerification</summary>

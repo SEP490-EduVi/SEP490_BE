@@ -280,6 +280,75 @@ public class AdminController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Dashboard doanh thu theo từng học liệu đã bán.
+    /// </summary>
+    [HttpGet("financial/revenue-by-material")]
+    public async Task<ActionResult<ApiResponse<PagedResponse<AdminMaterialSalesResponse>>>> GetRevenueByMaterial(
+        [FromQuery] AdminMaterialSalesFilterRequest filter)
+    {
+        try
+        {
+            var result = await _adminService.GetMaterialSalesAnalyticsAsync(filter);
+            return Ok(ApiResponse<PagedResponse<AdminMaterialSalesResponse>>.Success(result));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<PagedResponse<AdminMaterialSalesResponse>>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting revenue by material");
+            return StatusCode(500, ApiResponse<PagedResponse<AdminMaterialSalesResponse>>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
+    /// <summary>
+    /// Dashboard doanh thu theo từng chuyên gia.
+    /// </summary>
+    [HttpGet("financial/revenue-by-expert")]
+    public async Task<ActionResult<ApiResponse<PagedResponse<AdminExpertSalesResponse>>>> GetRevenueByExpert(
+        [FromQuery] AdminExpertSalesFilterRequest filter)
+    {
+        try
+        {
+            var result = await _adminService.GetExpertSalesAnalyticsAsync(filter);
+            return Ok(ApiResponse<PagedResponse<AdminExpertSalesResponse>>.Success(result));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<PagedResponse<AdminExpertSalesResponse>>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting revenue by expert");
+            return StatusCode(500, ApiResponse<PagedResponse<AdminExpertSalesResponse>>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
+    /// <summary>
+    /// Dashboard dự báo doanh thu dựa trên kỳ hiện tại và kỳ trước liền kề.
+    /// </summary>
+    [HttpGet("financial/forecast")]
+    public async Task<ActionResult<ApiResponse<AdminRevenueForecastResponse>>> GetFinancialForecast(
+        [FromQuery] AdminRevenueForecastFilterRequest filter)
+    {
+        try
+        {
+            var result = await _adminService.GetRevenueForecastAsync(filter);
+            return Ok(ApiResponse<AdminRevenueForecastResponse>.Success(result));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<AdminRevenueForecastResponse>.Fail(ex.Message, 400));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting financial forecast");
+            return StatusCode(500, ApiResponse<AdminRevenueForecastResponse>.Fail("Lỗi hệ thống", 500));
+        }
+    }
+
     // ============================================================
     // 3. QUẢN LÝ GÓI CƯỚC (Subscription Plans)
     // ============================================================
