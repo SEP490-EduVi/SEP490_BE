@@ -610,7 +610,7 @@ public class PipelineService : IPipelineService
     public async Task DeleteProductAsync(int teacherId, string productCode)
     {
         var product = await _unitOfWork.PipelineRepository
-            .GetProductByCodeAndTeacherAsync(productCode, teacherId)
+            .GetProductWithVideosAndGamesByCodeAndTeacherAsync(productCode, teacherId)
             ?? throw new KeyNotFoundException($"Không tìm thấy nội dung số với mã {productCode}");
 
         if (product.Status == ProductStatusConstants.Deleted)
@@ -619,6 +619,20 @@ public class PipelineService : IPipelineService
         if (product.Status == ProductStatusConstants.Processing ||
             product.Status == ProductStatusConstants.GeneratingSlides)
             throw new InvalidOperationException("Không thể xóa nội dung số đang được xử lý. Vui lòng chờ hoàn tất");
+
+        foreach (var video in product.ProductVideos.Where(video => video.Status != VideoStatusConstants.Deleted))
+        {
+            video.Status = VideoStatusConstants.Deleted;
+            video.UpdatedAt = DateTime.UtcNow;
+            _unitOfWork.PipelineRepository.UpdateProductVideo(video);
+        }
+
+        foreach (var game in product.ProductGames.Where(game => game.Status != GameStatusConstants.Deleted))
+        {
+            game.Status = GameStatusConstants.Deleted;
+            game.UpdatedAt = DateTime.UtcNow;
+            _unitOfWork.GameRepository.UpdateProductGame(game);
+        }
 
         product.Status = ProductStatusConstants.Deleted;
         _unitOfWork.PipelineRepository.UpdateProduct(product);

@@ -155,6 +155,13 @@ public class InputDocumentService : IInputDocumentService
 
         foreach (var product in products)
         {
+            foreach (var game in product.ProductGames.Where(game => game.Status != GameStatusConstants.Deleted))
+            {
+                game.Status = GameStatusConstants.Deleted;
+                game.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.GameRepository.UpdateProductGame(game);
+            }
+
             foreach (var video in product.ProductVideos.Where(v => v.Status != VideoStatusConstants.Deleted))
             {
                 video.Status = VideoStatusConstants.Deleted;

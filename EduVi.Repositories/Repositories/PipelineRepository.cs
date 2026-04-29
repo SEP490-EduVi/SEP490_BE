@@ -265,6 +265,7 @@ public class PipelineRepository : IPipelineRepository
     {
         return await _context.Products
             .Include(product => product.ProductVideos)
+            .Include(product => product.ProductGames)
             .Where(product => product.SourceInputId == documentId
                            && product.Status != 7) // 7 = Deleted
             .ToListAsync();
@@ -292,6 +293,14 @@ public class PipelineRepository : IPipelineRepository
     public async Task<Products?> GetProductByCodeAndTeacherAsync(string productCode, int teacherId)
     {
         return await _context.Products
+            .FirstOrDefaultAsync(product => product.ProductCode == productCode && product.TeacherId == teacherId);
+    }
+
+    public async Task<Products?> GetProductWithVideosAndGamesByCodeAndTeacherAsync(string productCode, int teacherId)
+    {
+        return await _context.Products
+            .Include(product => product.ProductVideos)
+            .Include(product => product.ProductGames)
             .FirstOrDefaultAsync(product => product.ProductCode == productCode && product.TeacherId == teacherId);
     }
 

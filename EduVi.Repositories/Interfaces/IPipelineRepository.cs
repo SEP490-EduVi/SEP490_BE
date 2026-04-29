@@ -101,6 +101,11 @@ public interface IPipelineRepository
     Task<Products?> GetProductByCodeAndTeacherAsync(string productCode, int teacherId);
 
     /// <summary>
+    /// Lấy Product theo ProductCode + TeacherId, kèm Video và Game để cascade soft-delete.
+    /// </summary>
+    Task<Products?> GetProductWithVideosAndGamesByCodeAndTeacherAsync(string productCode, int teacherId);
+
+    /// <summary>
     /// Cập nhật Product (status, evaluation result)
     /// </summary>
     void UpdateProduct(Products product);
@@ -164,7 +169,8 @@ public interface IPipelineRepository
     void UpdateProductVideo(ProductVideos productVideo);
 
     /// <summary>
-    /// Lấy tất cả Products (chưa bị xóa) có SourceInputId = documentId, kèm ProductVideos để cascade soft-delete.
+    /// Lấy tất cả Products (chưa bị xóa) có SourceInputId = documentId,
+    /// kèm ProductVideos và ProductGames để cascade soft-delete.
     /// </summary>
     Task<List<Products>> GetActiveProductsWithVideosBySourceInputIdAsync(int documentId);
 

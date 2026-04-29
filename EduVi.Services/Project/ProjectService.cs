@@ -1,3 +1,4 @@
+using EduVi.Contracts.Common;
 using EduVi.Contracts.DTOs.Project;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
@@ -146,8 +147,18 @@ public class ProjectService : IProjectService
         if (project.TeacherId != teacherId)
             throw new InvalidOperationException("Dự án không thuộc về bạn");
 
-        if (project.Products.Count > 0)
-            throw new InvalidOperationException($"Không thể xóa dự án đang có {project.Products.Count} nội dung số");
+        var activeInputDocuments = await _unitOfWork.InputDocumentRepository
+            .GetInputDocumentsByTeacherAndProjectAsync(teacherId, project.ProjectId);
+
+        if (activeInputDocuments.Count > 0)
+            throw new InvalidOperationException(
+                $"Không thể xóa dự án đang có {activeInputDocuments.Count} tài liệu đầu vào chưa xóa. Vui lòng xóa tài liệu trước");
+
+        var activeProductCount = project.Products.Count(product => product.Status != ProductStatusConstants.Deleted);
+
+        if (activeProductCount > 0)
+            throw new InvalidOperationException(
+                $"Không thể xóa dự án đang có {activeProductCount} nội dung số chưa xóa. Vui lòng xóa nội dung số trước");
 
         if (project.Status == ProjectStatusConstants.Deleted)
             throw new KeyNotFoundException($"Dự án '{projectCode}' không tồn tại");
