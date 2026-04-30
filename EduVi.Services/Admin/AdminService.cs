@@ -12,7 +12,7 @@ namespace EduVi.Services.Admin;
 public class AdminService : IAdminService
 {
     private const string ExpertMarketplaceHiddenByBanReason = "Tạm ẩn khỏi marketplace do tài khoản Expert bị khóa bởi Admin.";
-    private const string AdminSoftDeletedMaterialReason = "Banned by admin: hidden from marketplace.";
+    private const string AdminSoftDeletedMaterialReason = "Bị quản trị viên khóa: ẩn khỏi marketplace.";
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthenticationService _authService;
@@ -686,7 +686,7 @@ public class AdminService : IAdminService
         else if (request.RejectionReason != null)
         {
             if (material.ApprovalStatus is not (2 or 3))
-                throw new InvalidOperationException("Chỉ được cập nhật RejectionReason khi học liệu đang ở trạng thái Rejected hoặc Banned");
+                throw new InvalidOperationException("Chỉ được cập nhật lý do khi học liệu đang ở trạng thái Từ chối hoặc Bị khóa");
 
             material.RejectionReason = NormalizeOptionalText(request.RejectionReason);
         }
@@ -707,7 +707,7 @@ public class AdminService : IAdminService
         var material = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode)
             ?? throw new KeyNotFoundException($"Không tìm thấy học liệu với mã {normalizedMaterialCode}.");
 
-        // Admin ban: ẩn khỏi marketplace bằng trạng thái Banned, không xóa bản ghi vật lý.
+        // Admin ban: ẩn khỏi marketplace bằng trạng thái Bị khóa, không xóa bản ghi vật lý.
         material.ApprovalStatus = 3;
         material.RejectionReason = AdminSoftDeletedMaterialReason;
 
@@ -780,10 +780,10 @@ public class AdminService : IAdminService
     private static void ValidateMaterialApprovalState(int approvalStatus, string? rejectionReason)
     {
         if (approvalStatus is < 0 or > 3)
-            throw new InvalidOperationException("ApprovalStatus không hợp lệ");
+            throw new InvalidOperationException("Trạng thái duyệt không hợp lệ");
 
         if (approvalStatus is 2 or 3 && string.IsNullOrWhiteSpace(rejectionReason))
-            throw new InvalidOperationException("Phải cung cấp RejectionReason khi học liệu ở trạng thái Rejected hoặc Banned");
+            throw new InvalidOperationException("Phải cung cấp lý do khi học liệu ở trạng thái Từ chối hoặc Bị khóa");
     }
 
     private static string NormalizeRequiredText(string? value, string fieldName)
@@ -833,7 +833,7 @@ public class AdminService : IAdminService
         PhoneNumber = u.PhoneNumber,
         AvatarUrl = u.AvatarUrl,
         Status = u.Status ?? 1,
-        StatusName = u.Status == 0 ? "Banned" : "Active",
+        StatusName = u.Status == 0 ? "Bị khóa" : "Hoạt động",
         IsEmailVerified = u.IsEmailVerified,
         CreatedAt = u.CreatedAt,
         RoleId = u.RoleId,
@@ -859,11 +859,11 @@ public class AdminService : IAdminService
         Status = t.Status,
         StatusName = t.Status switch
         {
-            0 => "Pending",
-            1 => "Completed",
-            2 => "Failed",
-            3 => "Cancelled",
-            _ => "Unknown"
+            0 => "Đang chờ",
+            1 => "Thành công",
+            2 => "Thất bại",
+            3 => "Đã hủy",
+            _ => "Không xác định"
         },
         Description = t.Description,
         PlanId = t.PlanId,
@@ -882,11 +882,11 @@ public class AdminService : IAdminService
         Status = o.Status,
         StatusName = o.Status switch
         {
-            0 => "Pending",
-            1 => "Completed",
-            2 => "Failed",
-            3 => "Cancelled",
-            _ => "Unknown"
+            0 => "Đang chờ",
+            1 => "Thành công",
+            2 => "Thất bại",
+            3 => "Đã hủy",
+            _ => "Không xác định"
         },
         PaymentMethod = o.PaymentMethod
     };

@@ -67,7 +67,7 @@ public class TemplateController : ControllerBase
         {
             var result = await _templateService.CreateTemplateAsync(request);
             return CreatedAtAction(nameof(GetTemplateByCode), new { templateCode = result.TemplateCode },
-                ApiResponse<TemplateResponseDto>.Success(result, "Template created successfully", 201));
+                ApiResponse<TemplateResponseDto>.Success(result, "Tạo template thành công", 201));
         }
         catch (InvalidOperationException exception)
         {
@@ -89,7 +89,7 @@ public class TemplateController : ControllerBase
         try
         {
             var result = await _templateService.UpdateTemplateAsync(templateCode, request);
-            return Ok(ApiResponse<TemplateResponseDto>.Success(result, "Template updated successfully"));
+            return Ok(ApiResponse<TemplateResponseDto>.Success(result, "Cập nhật template thành công"));
         }
         catch (KeyNotFoundException exception)
         {
@@ -113,7 +113,7 @@ public class TemplateController : ControllerBase
         try
         {
             await _templateService.DeleteTemplateAsync(templateCode);
-            return Ok(ApiResponse<object>.Success(null, "Template deleted successfully"));
+            return Ok(ApiResponse<object>.Success(null, "Xóa template thành công"));
         }
         catch (KeyNotFoundException exception)
         {

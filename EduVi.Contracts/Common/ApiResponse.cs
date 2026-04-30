@@ -6,7 +6,7 @@ public class ApiResponse<T>
     public string Message { get; set; } = string.Empty;
     public T? Result { get; set; } = default!;
 
-    public static ApiResponse<T> Success(T? result, string message = "Success", int code = 200)
+    public static ApiResponse<T> Success(T? result, string message = "Thành công", int code = 200)
     {
         T? normalizedResult = result;
         if (typeof(T) == typeof(string) && result is null)

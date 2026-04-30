@@ -37,12 +37,12 @@ public static class CurriculumDocumentStatusConstants
 
     public static string GetStatusName(int? status) => status switch
     {
-        Pending    => "PENDING",
-        Processing => "PROCESSING",
-        Completed  => "COMPLETED",
-        Failed     => "FAILED",
-        Deleting   => "DELETING",
-        Deleted    => "DELETED",
-        _          => "UNKNOWN"
+        Pending    => "Đang chờ",
+        Processing => "Đang xử lý",
+        Completed  => "Hoàn tất",
+        Failed     => "Thất bại",
+        Deleting   => "Đang xóa",
+        Deleted    => "Đã xóa",
+        _          => "Không xác định"
     };
 }

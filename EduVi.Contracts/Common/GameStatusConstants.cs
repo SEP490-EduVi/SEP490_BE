@@ -14,11 +14,11 @@ public static class GameStatusConstants
     {
         return status switch
         {
-            Queued => "queued",
-            Completed => "completed",
-            Failed => "failed",
-            Deleted => "deleted",
-            _ => "unknown"
+            Queued => "Đang chờ",
+            Completed => "Hoàn tất",
+            Failed => "Thất bại",
+            Deleted => "Đã xóa",
+            _ => "Không xác định"
         };
     }
 }

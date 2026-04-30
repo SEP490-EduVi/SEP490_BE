@@ -47,7 +47,7 @@ public class UpdateAdminMaterialRequest : IValidatableObject
         if (ApprovalStatus is 2 or 3 && string.IsNullOrWhiteSpace(RejectionReason))
         {
             yield return new ValidationResult(
-                "Phải cung cấp lý do khi chuyển trạng thái Rejected hoặc Banned",
+                "Phải cung cấp lý do khi chuyển trạng thái Từ chối hoặc Bị khóa",
                 new[] { nameof(RejectionReason) });
         }
     }
