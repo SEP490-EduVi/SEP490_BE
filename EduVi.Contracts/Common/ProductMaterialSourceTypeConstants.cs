@@ -16,8 +16,8 @@ public static class ProductMaterialSourceTypeConstants
         return sourceType.Trim().ToLowerInvariant() switch
         {
             "marketplace" => "Marketplace",
-            "upload" => "Tải lên trực tiếp",
-            _ => "Không xác định"
+            "upload" => "Direct upload",
+            _ => "Unknown"
         };
     }
 }

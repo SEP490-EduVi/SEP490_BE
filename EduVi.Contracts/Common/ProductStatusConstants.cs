@@ -47,14 +47,14 @@ public static class ProductStatusConstants
 
     public static string GetStatusName(int? status) => status switch
     {
-        New => "Mới",
-        Processing => "Đang xử lý",
-        Evaluated => "Đã đánh giá",
-        Failed => "Thất bại",
-        GeneratingSlides => "Đang tạo slide",
-        SlidesGenerated => "Đã tạo slide",
-        SlidesFailed => "Tạo slide thất bại",
-        Deleted => "Đã xóa",
-        _ => "Không xác định"
+        New => "New",
+        Processing => "Processing",
+        Evaluated => "Evaluated",
+        Failed => "Failed",
+        GeneratingSlides => "Generating slides",
+        SlidesGenerated => "Slides generated",
+        SlidesFailed => "Slides generation failed",
+        Deleted => "Deleted",
+        _ => "Unknown"
     };
 }

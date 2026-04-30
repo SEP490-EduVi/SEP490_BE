@@ -19,14 +19,14 @@ public static class MaterialTypeConstants
         var normalizedType = type?.Trim().ToLowerInvariant();
         return normalizedType switch
         {
-            Image => "Hình ảnh",
+            Image => "Image",
             Video => "Video",
-            Audio => "Âm thanh",
-            Document => "Tài liệu",
-            Quiz => "Câu đố",
-            Flashcard => "Thẻ ghi nhớ",
-            LessonPlan => "Giáo án",
-            _ => "Không xác định"
+            Audio => "Audio",
+            Document => "Document",
+            Quiz => "Quiz",
+            Flashcard => "Flashcard",
+            LessonPlan => "Lesson plan",
+            _ => "Unknown"
         };
     }
 }

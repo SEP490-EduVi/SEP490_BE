@@ -12,10 +12,10 @@ public static class MaterialApprovalStatusConstants
 
     public static string GetStatusName(int? approvalStatus) => approvalStatus switch
     {
-        Pending => "Đang chờ duyệt",
-        Approved => "Đã duyệt",
-        Rejected => "Bị từ chối",
-        Banned => "Bị khóa",
-        _ => "Không xác định"
+        Pending => "Pending",
+        Approved => "Approved",
+        Rejected => "Rejected",
+        Banned => "Banned",
+        _ => "Unknown"
     };
 }
