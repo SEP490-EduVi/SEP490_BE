@@ -41,13 +41,13 @@ public interface IAdminRepository
 
     /// <summary>
     /// Ẩn học liệu đã duyệt của Expert khỏi marketplace khi bị ban.
-    /// Chỉ cập nhật các học liệu đang Approved (1) sang Rejected (2).
+    /// Chỉ cập nhật các học liệu đang Approved (1) sang Banned (3).
     /// </summary>
     Task<int> HideApprovedMaterialsByExpertAsync(int expertId, string reason);
 
     /// <summary>
     /// Mở lại học liệu từng bị ẩn do ban Expert khi unban.
-    /// Chỉ khôi phục các học liệu Rejected (2) có đúng lý do bị ẩn do ban.
+    /// Chỉ khôi phục các học liệu Banned (3) có đúng lý do bị ẩn do ban.
     /// </summary>
     Task<int> RestoreMaterialsHiddenByExpertBanAsync(int expertId, string reason);
 

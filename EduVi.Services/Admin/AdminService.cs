@@ -12,7 +12,7 @@ namespace EduVi.Services.Admin;
 public class AdminService : IAdminService
 {
     private const string ExpertMarketplaceHiddenByBanReason = "Tạm ẩn khỏi marketplace do tài khoản Expert bị khóa bởi Admin.";
-    private const string AdminSoftDeletedMaterialReason = "Soft deleted by admin: hidden from marketplace.";
+    private const string AdminSoftDeletedMaterialReason = "Banned by admin: hidden from marketplace.";
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthenticationService _authService;
@@ -707,8 +707,8 @@ public class AdminService : IAdminService
         var material = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode)
             ?? throw new KeyNotFoundException($"Không tìm thấy học liệu với mã {normalizedMaterialCode}.");
 
-        // Soft delete: ẩn khỏi marketplace bằng trạng thái Rejected, không xóa bản ghi vật lý.
-        material.ApprovalStatus = 2;
+        // Admin ban: ẩn khỏi marketplace bằng trạng thái Banned, không xóa bản ghi vật lý.
+        material.ApprovalStatus = 3;
         material.RejectionReason = AdminSoftDeletedMaterialReason;
 
         _unitOfWork.AdminRepository.UpdateMaterial(material);

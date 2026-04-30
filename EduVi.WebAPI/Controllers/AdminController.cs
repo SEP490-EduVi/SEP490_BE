@@ -562,7 +562,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// Soft delete học liệu theo MaterialCode bởi Admin (ẩn khỏi marketplace).
+    /// Ban học liệu theo MaterialCode bởi Admin (ẩn khỏi marketplace).
     /// </summary>
     [HttpDelete("materials/{materialCode}")]
     public async Task<ActionResult<ApiResponse<string>>> DeleteMaterial(string materialCode)
@@ -570,7 +570,7 @@ public class AdminController : ControllerBase
         try
         {
             await _adminService.DeleteMaterialForAdminAsync(materialCode);
-            return Ok(ApiResponse<string>.Success(string.Empty, "Đã ẩn học liệu khỏi marketplace"));
+            return Ok(ApiResponse<string>.Success(string.Empty, "Đã ban học liệu khỏi marketplace"));
         }
         catch (KeyNotFoundException ex)
         {
