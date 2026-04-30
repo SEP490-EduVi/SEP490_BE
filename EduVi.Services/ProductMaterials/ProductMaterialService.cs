@@ -8,8 +8,8 @@ namespace EduVi.Services.ProductMaterials;
 
 public class ProductMaterialService : IProductMaterialService
 {
-    private const string MarketplaceSourceType = "Marketplace";
-    private const string UploadSourceType = "Upload";
+    private const string MarketplaceSourceType = ProductMaterialSourceTypeConstants.Marketplace;
+    private const string UploadSourceType = ProductMaterialSourceTypeConstants.Upload;
 
     private readonly IUnitOfWork _unitOfWork;
 
@@ -211,9 +211,11 @@ public class ProductMaterialService : IProductMaterialService
             ProductMaterialCode = productMaterial.ProductMaterialCode,
             ProductCode = productCode,
             SourceType = productMaterial.SourceType,
+            SourceTypeName = ProductMaterialSourceTypeConstants.GetDisplayName(productMaterial.SourceType),
             MaterialCode = productMaterial.Material?.MaterialCode,
             Title = productMaterial.Title,
             Type = productMaterial.Type,
+            TypeName = MaterialTypeConstants.GetDisplayName(productMaterial.Type),
             ResourceUrl = productMaterial.ResourceUrl,
             PreviewUrl = productMaterial.PreviewUrl,
             CreatedAt = productMaterial.CreatedAt,

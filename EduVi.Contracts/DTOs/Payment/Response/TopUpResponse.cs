@@ -23,5 +23,5 @@ public class TopUpResponse
     /// <summary>
     /// Trạng thái giao dịch
     /// </summary>
-    public string Status { get; set; } = "PENDING";
+    public string Status { get; set; } = "Đang chờ";
 }

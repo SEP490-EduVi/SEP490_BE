@@ -643,13 +643,16 @@ public class AdminService : IAdminService
             var normalizedExpertCode = NormalizeOptionalText(request.ExpertCode);
             if (normalizedExpertCode is null)
             {
-                throw new InvalidOperationException("ExpertCode không hợp lệ");
+                // Cho phép Admin bỏ gán Expert khi để trống ExpertCode.
+                material.ExpertId = null;
             }
+            else
+            {
+                var expert = await _unitOfWork.AdminRepository.GetExpertByCodeAsync(normalizedExpertCode)
+                    ?? throw new KeyNotFoundException($"Không tìm thấy chuyên gia với mã {normalizedExpertCode}.");
 
-            var expert = await _unitOfWork.AdminRepository.GetExpertByCodeAsync(normalizedExpertCode)
-                ?? throw new KeyNotFoundException($"Không tìm thấy chuyên gia với mã {normalizedExpertCode}.");
-
-            material.ExpertId = expert.ExpertId;
+                material.ExpertId = expert.ExpertId;
+            }
         }
 
         if (request.Title != null)
@@ -810,6 +813,7 @@ public class AdminService : IAdminService
         Title = material.Title ?? string.Empty,
         Description = material.Description,
         Type = material.Type ?? string.Empty,
+        TypeName = MaterialTypeConstants.GetDisplayName(material.Type),
         Price = material.Price,
         PreviewUrl = material.PreviewUrl,
         ResourceUrl = material.ResourceUrl,
@@ -818,6 +822,7 @@ public class AdminService : IAdminService
         GradeCode = material.Grade?.GradeCode,
         GradeName = material.Grade?.GradeName,
         ApprovalStatus = material.ApprovalStatus ?? 0,
+        ApprovalStatusName = MaterialApprovalStatusConstants.GetStatusName(material.ApprovalStatus),
         RejectionReason = material.RejectionReason,
         ExpertCode = material.Expert?.ExpertCode,
         ExpertName = material.Expert?.Expert?.FullName,

@@ -14,6 +14,8 @@ public class MaterialResponseDto
     /// </summary>
     public string Type { get; set; } = null!;
 
+    public string TypeName { get; set; } = string.Empty;
+
     public decimal? Price { get; set; }
     public string? PreviewUrl { get; set; }
 
@@ -31,6 +33,8 @@ public class MaterialResponseDto
     /// 0 = Pending, 1 = Approved, 2 = Rejected, 3 = Banned
     /// </summary>
     public int ApprovalStatus { get; set; }
+
+    public string ApprovalStatusName { get; set; } = string.Empty;
 
     public string? RejectionReason { get; set; }
 

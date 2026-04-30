@@ -8,11 +8,15 @@ public class ProductMaterialResponseDto
 
     public string SourceType { get; set; } = string.Empty;
 
+    public string SourceTypeName { get; set; } = string.Empty;
+
     public string? MaterialCode { get; set; }
 
     public string Title { get; set; } = string.Empty;
 
     public string Type { get; set; } = string.Empty;
+
+    public string TypeName { get; set; } = string.Empty;
 
     public string ResourceUrl { get; set; } = string.Empty;
 

@@ -33,7 +33,7 @@ public static class WalletTransactionTypeConstants
             MaterialAdminRevenue => "Doanh thu học liệu quản trị",
             ClaimFreeMaterial => "Nhận học liệu miễn phí",
             Withdrawal => "Rút tiền",
-            _ => string.IsNullOrWhiteSpace(transactionType) ? "Không xác định" : transactionType
+            _ => "Không xác định"
         };
     }
 }

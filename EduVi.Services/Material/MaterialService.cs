@@ -575,6 +575,7 @@ public class MaterialService : IMaterialService
             Title = material.Title,
             Description = material.Description,
             Type = material.Type,
+            TypeName = MaterialTypeConstants.GetDisplayName(material.Type),
             Price = material.Price,
             PreviewUrl = material.PreviewUrl,
             ResourceUrl = includeResourceUrl ? material.ResourceUrl : null,
@@ -583,6 +584,7 @@ public class MaterialService : IMaterialService
             GradeCode = material.Grade?.GradeCode,
             GradeName = material.Grade?.GradeName,
             ApprovalStatus = material.ApprovalStatus ?? 0,
+            ApprovalStatusName = MaterialApprovalStatusConstants.GetStatusName(material.ApprovalStatus),
             RejectionReason = material.RejectionReason,
             ExpertCode = material.Expert?.ExpertCode,
             ExpertName = material.Expert?.Expert?.FullName, // Expert → Users.FullName
@@ -598,6 +600,7 @@ public class MaterialService : IMaterialService
             Title = material.Title,
             Description = material.Description,
             Type = material.Type,
+            TypeName = MaterialTypeConstants.GetDisplayName(material.Type),
             Price = material.Price,
             ResourceUrl = material.ResourceUrl,
             PreviewUrl = material.PreviewUrl,

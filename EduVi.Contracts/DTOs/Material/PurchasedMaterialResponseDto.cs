@@ -9,6 +9,7 @@ public class PurchasedMaterialResponseDto
     public string Title { get; set; } = null!;
     public string? Description { get; set; }
     public string Type { get; set; } = null!;
+    public string TypeName { get; set; } = string.Empty;
     public decimal? Price { get; set; }
     public string? ResourceUrl { get; set; }
     public string? PreviewUrl { get; set; }
