@@ -13,7 +13,8 @@ public class TransactionFilterRequest
     public int? UserId { get; set; }
 
     /// <summary>
-    /// Lọc theo loại: TOP_UP, BUY_SUBSCRIPTION
+    /// Lọc theo mã loại giao dịch: TOP_UP, BUY_SUBSCRIPTION, BUY_MATERIAL, MATERIAL_REVENUE,
+    /// MATERIAL_PLATFORM_FEE, MATERIAL_ADMIN_REVENUE, CLAIM_FREE_MATERIAL, WITHDRAWAL
     /// </summary>
     public string? TransactionType { get; set; }
 

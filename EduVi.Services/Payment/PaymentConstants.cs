@@ -1,3 +1,5 @@
+using EduVi.Contracts.Common;
+
 namespace EduVi.Services.Payment;
 
 /// <summary>
@@ -21,9 +23,9 @@ public static class PaymentConstants
     /// </summary>
     public static class TransactionType
     {
-        public const string TopUp = "TOP_UP";
-        public const string BuySubscription = "BUY_SUBSCRIPTION";
-        public const string BuyMaterial = "BUY_MATERIAL";
+        public const string TopUp = WalletTransactionTypeConstants.TopUp;
+        public const string BuySubscription = WalletTransactionTypeConstants.BuySubscription;
+        public const string BuyMaterial = WalletTransactionTypeConstants.BuyMaterial;
     }
 
     /// <summary>

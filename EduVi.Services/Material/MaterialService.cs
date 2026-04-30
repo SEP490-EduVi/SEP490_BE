@@ -1,4 +1,5 @@
 using EduVi.Contracts.DTOs.Material;
+using EduVi.Contracts.Common;
 using EduVi.Services.Common;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
@@ -272,7 +273,7 @@ public class MaterialService : IMaterialService
                 {
                     WalletId = wallet.WalletId,
                     OrderCode = baseOrderCode,
-                    TransactionType = "BUY_MATERIAL",
+                    TransactionType = WalletTransactionTypeConstants.BuyMaterial,
                     Amount = -price,
                     BalanceBefore = balanceBefore,
                     BalanceAfter = wallet.Balance,
@@ -287,7 +288,7 @@ public class MaterialService : IMaterialService
                     ?? throw new InvalidOperationException("Không tìm thấy ví nền tảng của quản trị viên. Vui lòng liên hệ hỗ trợ.");
 
                 var adminRevenue = price;
-                var adminTransactionType = "MATERIAL_ADMIN_REVENUE";
+                var adminTransactionType = WalletTransactionTypeConstants.MaterialAdminRevenue;
                 var adminTransactionDescription = $"Doanh thu học liệu quản trị (100%): {material.Title}";
 
                 if (material.ExpertId.HasValue)
@@ -309,7 +310,7 @@ public class MaterialService : IMaterialService
                     {
                         WalletId = expertWallet.WalletId,
                         OrderCode = baseOrderCode + 1,
-                        TransactionType = "MATERIAL_REVENUE",
+                        TransactionType = WalletTransactionTypeConstants.MaterialRevenue,
                         Amount = expertRevenue,
                         BalanceBefore = expertBalanceBefore,
                         BalanceAfter = expertWallet.Balance,
@@ -321,7 +322,7 @@ public class MaterialService : IMaterialService
                     await _unitOfWork.ExpertRepository.CreateWalletTransactionAsync(expertTransaction);
 
                     adminRevenue = platformFee;
-                    adminTransactionType = "MATERIAL_PLATFORM_FEE";
+                    adminTransactionType = WalletTransactionTypeConstants.MaterialPlatformFee;
                     adminTransactionDescription = $"Phí nền tảng học liệu (30%): {material.Title}";
                 }
 
@@ -355,7 +356,7 @@ public class MaterialService : IMaterialService
                 {
                     WalletId = teacherWallet?.WalletId,
                     OrderCode = baseOrderCode,
-                    TransactionType = "CLAIM_FREE_MATERIAL",
+                    TransactionType = WalletTransactionTypeConstants.ClaimFreeMaterial,
                     Amount = 0,
                     BalanceBefore = walletBalance,
                     BalanceAfter = walletBalance,

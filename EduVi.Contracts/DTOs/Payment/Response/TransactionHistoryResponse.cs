@@ -13,9 +13,14 @@ public class TransactionHistoryResponse
     public long OrderCode { get; set; }
 
     /// <summary>
-    /// TOP_UP | BUY_SUBSCRIPTION | BUY_MATERIAL
+    /// Tên loại giao dịch tiếng Việt để hiển thị.
     /// </summary>
     public string TransactionType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Mã loại giao dịch trong database (TOP_UP, BUY_SUBSCRIPTION, ...).
+    /// </summary>
+    public string TransactionTypeCode { get; set; } = string.Empty;
 
     public decimal Amount { get; set; }
 

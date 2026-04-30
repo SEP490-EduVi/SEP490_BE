@@ -1,6 +1,7 @@
 using EduVi.Contracts.DTOs.Admin.Request;
 using EduVi.Contracts.DTOs.Admin.Response;
 using EduVi.Contracts.DTOs.Material;
+using EduVi.Contracts.Common;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using EduVi.Services.Authentication;
@@ -852,7 +853,8 @@ public class AdminService : IAdminService
         UserId = t.Wallet?.UserId,
         Username = t.Wallet?.User?.Username,
         FullName = t.Wallet?.User?.FullName,
-        TransactionType = t.TransactionType,
+        TransactionType = WalletTransactionTypeConstants.GetDisplayName(t.TransactionType),
+        TransactionTypeCode = t.TransactionType,
         Amount = t.Amount,
         BalanceBefore = t.BalanceBefore,
         BalanceAfter = t.BalanceAfter,

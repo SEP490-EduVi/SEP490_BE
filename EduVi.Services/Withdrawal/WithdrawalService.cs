@@ -1,5 +1,6 @@
 using EduVi.Contracts.DTOs.Withdrawal.Request;
 using EduVi.Contracts.DTOs.Withdrawal.Response;
+using EduVi.Contracts.Common;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using EduVi.Services.Email;
@@ -182,7 +183,7 @@ public class WithdrawalService : IWithdrawalService
                 {
                     WalletId = wallet.WalletId,
                     OrderCode = orderCode,
-                    TransactionType = "WITHDRAWAL",
+                    TransactionType = WalletTransactionTypeConstants.Withdrawal,
                     Amount = -withdrawal.LockedAmount,
                     BalanceBefore = balanceAfter + withdrawal.LockedAmount,
                     BalanceAfter = balanceAfter,

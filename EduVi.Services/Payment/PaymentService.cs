@@ -1,5 +1,6 @@
 using EduVi.Contracts.DTOs.Payment.Request;
 using EduVi.Contracts.DTOs.Payment.Response;
+using EduVi.Contracts.Common;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using Microsoft.Extensions.Logging;
@@ -598,7 +599,8 @@ public class PaymentService : IPaymentService
         {
             TransactionId = transaction.TransactionId,
             OrderCode = transaction.OrderCode,
-            TransactionType = transactionType,
+            TransactionType = WalletTransactionTypeConstants.GetDisplayName(transactionType),
+            TransactionTypeCode = transactionType,
             Amount = displayAmount,
             BalanceBefore = balanceBefore,
             BalanceAfter = balanceAfter,

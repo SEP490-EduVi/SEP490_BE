@@ -1,6 +1,7 @@
 using EduVi.Repositories.DBContext;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
+using EduVi.Contracts.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduVi.Repositories.Repositories;
@@ -215,7 +216,7 @@ public class ExpertRepository : IExpertRepository
                 .ThenInclude(material => material.Subject)
             .Include(transaction => transaction.Material)
                 .ThenInclude(material => material.Grade)
-            .Where(transaction => transaction.TransactionType == "MATERIAL_REVENUE"
+            .Where(transaction => transaction.TransactionType == WalletTransactionTypeConstants.MaterialRevenue
                 && transaction.Status == 1
                 && transaction.Material != null
                 && transaction.Material.ExpertId == expertId)

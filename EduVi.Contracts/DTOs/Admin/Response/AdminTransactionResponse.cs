@@ -14,7 +14,16 @@ public class AdminTransactionResponse
     public string? Username { get; set; }
     public string? FullName { get; set; }
 
+    /// <summary>
+    /// Tên loại giao dịch tiếng Việt để hiển thị.
+    /// </summary>
     public string? TransactionType { get; set; }
+
+    /// <summary>
+    /// Mã loại giao dịch trong database (TOP_UP, BUY_SUBSCRIPTION, ...).
+    /// </summary>
+    public string? TransactionTypeCode { get; set; }
+
     public decimal? Amount { get; set; }
     public decimal? BalanceBefore { get; set; }
     public decimal? BalanceAfter { get; set; }

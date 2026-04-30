@@ -1,6 +1,7 @@
 using EduVi.Repositories.DBContext;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
+using EduVi.Contracts.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduVi.Repositories.Repositories;
@@ -67,11 +68,10 @@ public class PaymentRepository : IPaymentRepository
 
     public async Task<List<WalletTransactions>> GetExpiredPendingTopUpTransactionsAsync(DateTime expiredBeforeUtc, int limit)
     {
-        const string topUpTransactionType = "TOP_UP";
         const int pendingStatus = 0;
 
         return await _context.WalletTransactions
-            .Where(t => t.TransactionType == topUpTransactionType
+            .Where(t => t.TransactionType == WalletTransactionTypeConstants.TopUp
                         && t.Status == pendingStatus
                         && t.CreatedAt != null
                         && t.CreatedAt <= expiredBeforeUtc)

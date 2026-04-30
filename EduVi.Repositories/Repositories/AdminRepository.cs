@@ -1,6 +1,7 @@
 using EduVi.Repositories.DBContext;
 using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
+using EduVi.Contracts.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduVi.Repositories.Repositories;
@@ -213,7 +214,7 @@ public class AdminRepository : IAdminRepository
     public async Task<(decimal TotalAmount, int Count)> GetTopUpStatsAsync()
     {
         var completed = _context.WalletTransactions
-            .Where(t => t.TransactionType == "TOP_UP" && t.Status == 1);
+            .Where(t => t.TransactionType == WalletTransactionTypeConstants.TopUp && t.Status == 1);
 
         var count = await completed.CountAsync();
         var total = count > 0 ? await completed.SumAsync(t => t.Amount ?? 0) : 0;
@@ -224,7 +225,7 @@ public class AdminRepository : IAdminRepository
     public async Task<(decimal TotalAmount, int Count)> GetSubscriptionStatsAsync()
     {
         var completed = _context.WalletTransactions
-            .Where(t => t.TransactionType == "BUY_SUBSCRIPTION" && t.Status == 1);
+            .Where(t => t.TransactionType == WalletTransactionTypeConstants.BuySubscription && t.Status == 1);
 
         var count = await completed.CountAsync();
         // BuySubscription Amount là số âm → lấy Math.Abs
@@ -379,7 +380,7 @@ public class AdminRepository : IAdminRepository
         string? expertCode,
         string? materialCode)
     {
-        var adminMaterialIncomeTransactionTypes = new[] { "MATERIAL_PLATFORM_FEE", "MATERIAL_ADMIN_REVENUE" };
+        var adminMaterialIncomeTransactionTypes = WalletTransactionTypeConstants.AdminMaterialIncomeTransactionTypes;
 
         var query = _context.WalletTransactions
             .Include(transaction => transaction.Wallet)
