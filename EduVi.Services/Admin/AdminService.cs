@@ -698,7 +698,7 @@ public class AdminService : IAdminService
         _unitOfWork.AdminRepository.UpdateMaterial(material);
         await _unitOfWork.SaveChangesAsync();
 
-        var updatedMaterial = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode)
+        var updatedMaterial = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode, asNoTracking: true)
             ?? throw new KeyNotFoundException($"Không tìm thấy học liệu với mã {normalizedMaterialCode}.");
 
         return MapToMaterialResponse(updatedMaterial);

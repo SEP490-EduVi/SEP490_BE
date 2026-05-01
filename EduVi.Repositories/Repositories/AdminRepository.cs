@@ -570,14 +570,19 @@ public class AdminRepository : IAdminRepository
         return (items, totalCount);
     }
 
-    public async Task<Materials?> GetMaterialByCodeWithDetailsAsync(string materialCode)
+    public async Task<Materials?> GetMaterialByCodeWithDetailsAsync(string materialCode, bool asNoTracking = false)
     {
-        return await _context.Materials
+        var query = _context.Materials
             .Include(material => material.Subject)
             .Include(material => material.Grade)
             .Include(material => material.Expert)
                 .ThenInclude(expert => expert.Expert)
-            .FirstOrDefaultAsync(material => material.MaterialCode == materialCode);
+            .AsQueryable();
+
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(material => material.MaterialCode == materialCode);
     }
 
     public async Task<bool> MaterialCodeExistsAsync(string materialCode)

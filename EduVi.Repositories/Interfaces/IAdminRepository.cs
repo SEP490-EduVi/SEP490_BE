@@ -169,8 +169,9 @@ public interface IAdminRepository
 
     /// <summary>
     /// Lấy chi tiết học liệu theo MaterialCode (kèm Expert, Subject, Grade).
+    /// Cho phép bật no-tracking để luôn đọc dữ liệu mới nhất sau khi cập nhật.
     /// </summary>
-    Task<Materials?> GetMaterialByCodeWithDetailsAsync(string materialCode);
+    Task<Materials?> GetMaterialByCodeWithDetailsAsync(string materialCode, bool asNoTracking = false);
 
     /// <summary>
     /// Kiểm tra MaterialCode đã tồn tại hay chưa.
