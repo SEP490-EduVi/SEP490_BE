@@ -141,7 +141,6 @@ public class AdminService : IAdminService
         if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
 
         await _unitOfWork.AdminRepository.UpdateUserAsync(user);
-        _unitOfWork.AdminRepository.UpdateMaterial(material);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Admin updated user {UserCode} (UserId: {UserId})", userCode, user.UserId);
@@ -680,7 +679,6 @@ public class AdminService : IAdminService
             if (normalizedSubjectCode is null)
             {
                 material.SubjectId = null;
-                material.Subject = null;
             }
             else
             {
@@ -688,7 +686,6 @@ public class AdminService : IAdminService
                     ?? throw new KeyNotFoundException($"Không tìm thấy môn học với mã {normalizedSubjectCode}.");
 
                 material.SubjectId = subject.SubjectId;
-                material.Subject = subject;
             }
         }
 
@@ -698,7 +695,6 @@ public class AdminService : IAdminService
             if (normalizedGradeCode is null)
             {
                 material.GradeId = null;
-                material.Grade = null;
             }
             else
             {
@@ -706,7 +702,6 @@ public class AdminService : IAdminService
                     ?? throw new KeyNotFoundException($"Không tìm thấy khối lớp với mã {normalizedGradeCode}.");
 
                 material.GradeId = grade.GradeId;
-                material.Grade = grade;
             }
         }
 
@@ -726,6 +721,7 @@ public class AdminService : IAdminService
             material.RejectionReason = NormalizeOptionalText(request.RejectionReason);
         }
 
+        _unitOfWork.AdminRepository.UpdateMaterial(material);
         await _unitOfWork.SaveChangesAsync();
 
         var updatedMaterial = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode, asNoTracking: true)
