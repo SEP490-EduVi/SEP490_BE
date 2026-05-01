@@ -141,6 +141,7 @@ public class AdminService : IAdminService
         if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
 
         await _unitOfWork.AdminRepository.UpdateUserAsync(user);
+        _unitOfWork.AdminRepository.UpdateMaterial(material);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Admin updated user {UserCode} (UserId: {UserId})", userCode, user.UserId);

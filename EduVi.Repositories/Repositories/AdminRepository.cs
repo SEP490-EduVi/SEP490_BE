@@ -615,7 +615,8 @@ public class AdminRepository : IAdminRepository
 
     public void UpdateMaterial(Materials material)
     {
-        _context.Materials.Update(material);
+        _context.Materials.Attach(material);
+        _context.Entry(material).State = EntityState.Modified;
     }
 
     public void DeleteMaterial(Materials material)
