@@ -221,11 +221,11 @@ public class MaterialController : ControllerBase
     // =====================================================================
 
     /// <summary>
-    /// [Teacher] Browse danh sách materials đã duyệt (có thể lọc theo subject, grade, type, keyword).
+    /// [Teacher, Staff] Browse danh sách materials đã duyệt (có thể lọc theo subject, grade, type, keyword).
     /// ResourceUrl được trả về để Teacher xem đầy đủ nội dung trước khi quyết định mua.
     /// </summary>
     [HttpGet("browse")]
-    [Authorize(Roles = "Teacher")]
+    [Authorize(Roles = "Teacher,Staff")]
     public async Task<ActionResult<ApiResponse<List<MaterialResponseDto>>>> BrowseMaterials(
         [FromQuery] string? subjectCode,
         [FromQuery] string? gradeCode,
