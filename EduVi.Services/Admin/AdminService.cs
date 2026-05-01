@@ -333,7 +333,7 @@ public class AdminService : IAdminService
     public async Task<PagedResponse<AdminOrderResponse>> GetAllOrdersAsync(OrderFilterRequest filter)
     {
         var (items, totalCount) = await _unitOfWork.AdminRepository.GetAllOrdersAsync(
-            filter.TeacherId, filter.Status, filter.PaymentMethod,
+            filter.TeacherId, filter.OrderType, filter.Status, filter.PaymentMethod,
             filter.FromDate, filter.ToDate,
             filter.Page, filter.PageSize);
 
@@ -912,6 +912,8 @@ public class AdminService : IAdminService
         TeacherName = o.Teacher?.Teacher?.FullName,
         TotalAmount = o.TotalAmount,
         OrderDate = o.OrderDate,
+        OrderType = o.OrderType,
+        OrderTypeName = OrderTypeConstants.GetDisplayName(o.OrderType),
         Status = o.Status,
         StatusName = o.Status switch
         {

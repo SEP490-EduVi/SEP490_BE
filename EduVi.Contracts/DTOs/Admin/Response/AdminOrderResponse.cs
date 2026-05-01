@@ -10,6 +10,8 @@ public class AdminOrderResponse
     public string? TeacherName { get; set; }
     public decimal? TotalAmount { get; set; }
     public DateTime? OrderDate { get; set; }
+    public string? OrderType { get; set; }
+    public string OrderTypeName { get; set; } = string.Empty;
     public int? Status { get; set; }
     public string StatusName { get; set; } = string.Empty;
     public string? PaymentMethod { get; set; }

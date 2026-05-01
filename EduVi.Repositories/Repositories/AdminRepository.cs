@@ -426,7 +426,7 @@ public class AdminRepository : IAdminRepository
     // ============ Orders ============
 
     public async Task<(List<Orders> Items, int TotalCount)> GetAllOrdersAsync(
-        int? teacherId, int? status, string? paymentMethod,
+        int? teacherId, string? orderType, int? status, string? paymentMethod,
         DateTime? fromDate, DateTime? toDate,
         int page, int pageSize)
     {
@@ -437,6 +437,9 @@ public class AdminRepository : IAdminRepository
 
         if (teacherId.HasValue)
             query = query.Where(o => o.TeacherId == teacherId.Value);
+
+        if (!string.IsNullOrWhiteSpace(orderType))
+            query = query.Where(o => o.OrderType == orderType);
 
         if (status.HasValue)
             query = query.Where(o => o.Status == status.Value);

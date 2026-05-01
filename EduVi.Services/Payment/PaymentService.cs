@@ -278,6 +278,7 @@ public class PaymentService : IPaymentService
                 TeacherId = teacherId,
                 TotalAmount = planPrice,
                 OrderDate = DateTime.UtcNow,
+                OrderType = OrderTypeConstants.Plan,
                 Status = Status.Completed,
                 PaymentMethod = Method.EduCoin
             });

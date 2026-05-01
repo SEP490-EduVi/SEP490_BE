@@ -385,6 +385,9 @@ public partial class EduViContext : DbContext
             entity.Property(e => e.OrderDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.OrderType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.PaymentMethod)
                 .HasMaxLength(50)
                 .IsUnicode(false);

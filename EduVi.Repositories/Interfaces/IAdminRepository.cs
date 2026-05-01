@@ -141,7 +141,7 @@ public interface IAdminRepository
     /// Danh sách đơn hàng với bộ lọc.
     /// </summary>
     Task<(List<Orders> Items, int TotalCount)> GetAllOrdersAsync(
-        int? teacherId, int? status, string? paymentMethod,
+        int? teacherId, string? orderType, int? status, string? paymentMethod,
         DateTime? fromDate, DateTime? toDate,
         int page, int pageSize);
 

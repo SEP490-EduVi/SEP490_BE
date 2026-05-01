@@ -13,6 +13,11 @@ public class OrderFilterRequest
     public int? TeacherId { get; set; }
 
     /// <summary>
+    /// Lọc theo loại đơn: PLAN, MATERIAL
+    /// </summary>
+    public string? OrderType { get; set; }
+
+    /// <summary>
     /// Lọc theo trạng thái: 0=Pending, 1=Completed, 2=Failed, 3=Cancelled
     /// </summary>
     public int? Status { get; set; }

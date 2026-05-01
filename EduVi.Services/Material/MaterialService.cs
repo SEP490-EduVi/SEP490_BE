@@ -284,6 +284,16 @@ public class MaterialService : IMaterialService
                 };
                 await _unitOfWork.TeacherRepository.CreateWalletTransactionAsync(transaction);
 
+                await _unitOfWork.PaymentRepository.CreateOrderAsync(new Orders
+                {
+                    TeacherId = teacherId,
+                    TotalAmount = price,
+                    OrderDate = DateTime.UtcNow,
+                    OrderType = OrderTypeConstants.Material,
+                    Status = PaymentConstants.Status.Completed,
+                    PaymentMethod = PaymentConstants.Method.EduCoin
+                });
+
                 var adminWallet = await _unitOfWork.AdminRepository.GetAdminWalletAsync()
                     ?? throw new InvalidOperationException("Không tìm thấy ví nền tảng của quản trị viên. Vui lòng liên hệ hỗ trợ.");
 
@@ -351,6 +361,16 @@ public class MaterialService : IMaterialService
                 // Material miễn phí vẫn ghi nhận transaction amount = 0 để audit lịch sử nhận học liệu.
                 var teacherWallet = await _unitOfWork.TeacherRepository.GetWalletByUserIdAsync(teacherId);
                 var walletBalance = teacherWallet?.Balance ?? 0;
+
+                await _unitOfWork.PaymentRepository.CreateOrderAsync(new Orders
+                {
+                    TeacherId = teacherId,
+                    TotalAmount = 0,
+                    OrderDate = DateTime.UtcNow,
+                    OrderType = OrderTypeConstants.Material,
+                    Status = PaymentConstants.Status.Completed,
+                    PaymentMethod = PaymentConstants.Method.EduCoin
+                });
 
                 var freeMaterialTransaction = new WalletTransactions
                 {
