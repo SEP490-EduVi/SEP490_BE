@@ -674,10 +674,40 @@ public class AdminService : IAdminService
             material.PreviewUrl = NormalizeOptionalText(request.PreviewUrl);
 
         if (request.SubjectCode != null)
-            material.SubjectId = await ResolveSubjectIdFromCodeAsync(request.SubjectCode);
+        {
+            var normalizedSubjectCode = NormalizeOptionalText(request.SubjectCode);
+            if (normalizedSubjectCode is null)
+            {
+                material.SubjectId = null;
+                material.Subject = null;
+            }
+            else
+            {
+                var subject = await _unitOfWork.AdminRepository.GetSubjectByCodeAsync(normalizedSubjectCode)
+                    ?? throw new KeyNotFoundException($"Không tìm thấy môn học với mã {normalizedSubjectCode}.");
+
+                material.SubjectId = subject.SubjectId;
+                material.Subject = subject;
+            }
+        }
 
         if (request.GradeCode != null)
-            material.GradeId = await ResolveGradeIdFromCodeAsync(request.GradeCode);
+        {
+            var normalizedGradeCode = NormalizeOptionalText(request.GradeCode);
+            if (normalizedGradeCode is null)
+            {
+                material.GradeId = null;
+                material.Grade = null;
+            }
+            else
+            {
+                var grade = await _unitOfWork.AdminRepository.GetGradeByCodeAsync(normalizedGradeCode)
+                    ?? throw new KeyNotFoundException($"Không tìm thấy khối lớp với mã {normalizedGradeCode}.");
+
+                material.GradeId = grade.GradeId;
+                material.Grade = grade;
+            }
+        }
 
         if (request.ApprovalStatus.HasValue)
         {
@@ -695,7 +725,6 @@ public class AdminService : IAdminService
             material.RejectionReason = NormalizeOptionalText(request.RejectionReason);
         }
 
-        _unitOfWork.AdminRepository.UpdateMaterial(material);
         await _unitOfWork.SaveChangesAsync();
 
         var updatedMaterial = await _unitOfWork.AdminRepository.GetMaterialByCodeWithDetailsAsync(normalizedMaterialCode, asNoTracking: true)
