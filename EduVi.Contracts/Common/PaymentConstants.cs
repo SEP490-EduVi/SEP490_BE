@@ -1,6 +1,6 @@
 using EduVi.Contracts.Common;
 
-namespace EduVi.Services.Payment;
+namespace EduVi.Contracts.Common;
 
 /// <summary>
 /// Tập trung tất cả hằng số liên quan đến Payment, tránh magic number/string rải rác.

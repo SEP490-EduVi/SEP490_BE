@@ -1,4 +1,5 @@
 using EduVi.Contracts.DTOs.CurriculumIngestion;
+using EduVi.Contracts.Common;
 using EduVi.Repositories.Interfaces;
 using EduVi.Services.CurriculumIngestion;
 using RabbitMQ.Client;

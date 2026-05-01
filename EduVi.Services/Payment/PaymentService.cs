@@ -5,7 +5,7 @@ using EduVi.Repositories.Interfaces;
 using EduVi.Repositories.Models;
 using Microsoft.Extensions.Logging;
 using Net.payOS.Types;
-using static EduVi.Services.Payment.PaymentConstants;
+using static EduVi.Contracts.Common.PaymentConstants;
 
 namespace EduVi.Services.Payment;
 

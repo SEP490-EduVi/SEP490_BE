@@ -1,4 +1,4 @@
-namespace EduVi.Services.Project;
+namespace EduVi.Contracts.Common;
 
 /// <summary>
 /// Hằng số trạng thái cho Project.
