@@ -432,9 +432,9 @@ public static class VerificationStatus
 
     public static string GetStatusName(int status) => status switch
     {
-        Pending => "Đang chờ",
-        Approved => "Đã duyệt",
-        Rejected => "Bị từ chối",
-        _ => "Không xác định"
+        Pending => "PENDING",
+        Approved => "APPROVED",
+        Rejected => "REJECTED",
+        _ => "UNKNOWN"
     };
 }

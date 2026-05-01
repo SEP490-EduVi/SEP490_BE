@@ -866,11 +866,11 @@ public class AdminService : IAdminService
         Status = t.Status,
         StatusName = t.Status switch
         {
-            0 => "Đang chờ",
-            1 => "Thành công",
-            2 => "Thất bại",
-            3 => "Đã hủy",
-            _ => "Không xác định"
+                0 => "Pending",
+                1 => "Completed",
+                2 => "Failed",
+                3 => "Cancelled",
+                _ => "Unknown"
         },
         Description = t.Description,
         PlanId = t.PlanId,
@@ -889,11 +889,11 @@ public class AdminService : IAdminService
         Status = o.Status,
         StatusName = o.Status switch
         {
-            0 => "Đang chờ",
-            1 => "Thành công",
-            2 => "Thất bại",
-            3 => "Đã hủy",
-            _ => "Không xác định"
+            0 => "Pending",
+            1 => "Completed",
+            2 => "Failed",
+            3 => "Cancelled",
+            _ => "Unknown"
         },
         PaymentMethod = o.PaymentMethod
     };

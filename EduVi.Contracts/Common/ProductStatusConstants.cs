@@ -47,14 +47,14 @@ public static class ProductStatusConstants
 
     public static string GetStatusName(int? status) => status switch
     {
-        New => "New",
-        Processing => "Processing",
-        Evaluated => "Evaluated",
-        Failed => "Failed",
-        GeneratingSlides => "Generating slides",
-        SlidesGenerated => "Slides generated",
-        SlidesFailed => "Slides generation failed",
-        Deleted => "Deleted",
-        _ => "Unknown"
+        New => "NEW",
+        Processing => "PROCESSING",
+        Evaluated => "EVALUATED",
+        Failed => "FAILED",
+        GeneratingSlides => "GENERATING_SLIDES",
+        SlidesGenerated => "SLIDES_GENERATED",
+        SlidesFailed => "SLIDES_FAILED",
+        Deleted => "DELETED",
+        _ => "UNKNOWN"
     };
 }

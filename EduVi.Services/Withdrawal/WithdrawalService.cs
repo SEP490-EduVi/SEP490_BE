@@ -271,10 +271,10 @@ public static class WithdrawalStatus
 
     public static string GetStatusName(int status) => status switch
     {
-        Pending => "Đang chờ",
-        Confirmed => "Đã xác nhận",
-        Success => "Thành công",
-        Rejected => "Bị từ chối",
-        _ => "Không xác định"
+         Pending => "PENDING",
+        Confirmed => "CONFIRMED",
+        Success => "SUCCESS",
+        Rejected => "REJECTED",
+        _ => "UNKNOWN"
     };
 }

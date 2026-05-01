@@ -59,10 +59,10 @@ public static class PaymentConstants
     /// </summary>
     public static string GetStatusName(int? status) => status switch
     {
-        Status.Pending => "Đang chờ",
-        Status.Completed => "Thành công",
-        Status.Failed => "Thất bại",
-        Status.Cancelled => "Đã hủy",
-        _ => "Không xác định"
+        Status.Pending => "PENDING",
+        Status.Completed => "COMPLETED",
+        Status.Failed => "FAILED",
+        Status.Cancelled => "CANCELLED",
+        _ => "UNKNOWN"
     };
 }

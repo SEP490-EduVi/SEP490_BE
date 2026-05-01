@@ -10,8 +10,8 @@ public static class ProjectStatusConstants
 
     public static string GetStatusName(int? status) => status switch
     {
-        Active => "Hoạt động",
-        Deleted => "Đã xóa",
-        _ => "Không xác định"
+        Active => "ACTIVE",
+        Deleted => "DELETED",
+        _ => "UNKNOWN"
     };
 }
