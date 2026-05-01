@@ -580,7 +580,13 @@ public class AdminRepository : IAdminRepository
             .AsQueryable();
 
         if (asNoTracking)
+        {
             query = query.AsNoTracking();
+        }
+        else
+        {
+            query = query.AsTracking();
+        }
 
         return await query.FirstOrDefaultAsync(material => material.MaterialCode == materialCode);
     }
