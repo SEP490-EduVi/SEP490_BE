@@ -122,6 +122,9 @@ public class MaterialService : IMaterialService
         if (material.ApprovalStatus == 1)
             throw new InvalidOperationException("Không thể sửa học liệu đã được duyệt");
 
+        if (material.ApprovalStatus == 3)
+            throw new InvalidOperationException("Học liệu đã bị khóa bởi quản trị viên, không thể chỉnh sửa");
+
         if (!string.IsNullOrWhiteSpace(request.Title))
             material.Title = request.Title;
 
