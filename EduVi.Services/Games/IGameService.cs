@@ -10,5 +10,6 @@ public interface IGameService
     Task<List<GameSummaryDto>> GetGamesByTeacherAsync(int userId);
     Task<GameDetailDto> GetGameByCodeAsync(int userId, string gameCode);
     Task<GameResultJsonDto> GetGameResultJsonByCodeAsync(int userId, string productGameCode);
+    Task<GameResultJsonDto> SaveGameResultJsonAsync(int userId, string productGameCode, SaveGameResultJsonRequest request);
     Task SoftDeleteGameAsync(int userId, string gameCode);
 }

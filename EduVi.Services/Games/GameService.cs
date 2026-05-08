@@ -224,6 +224,41 @@ public class GameService : IGameService
         };
     }
 
+    public async Task<GameResultJsonDto> SaveGameResultJsonAsync(int userId, string productGameCode, SaveGameResultJsonRequest request)
+    {
+        var normalizedProductGameCode = (productGameCode ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedProductGameCode))
+            throw new InvalidOperationException("ProductGameCode không được để trống");
+
+        if (request is null)
+            throw new InvalidOperationException("Dữ liệu cập nhật không hợp lệ");
+
+        var teacherId = await GetTeacherEntityIdAsync(userId);
+        var productGame = await _unitOfWork.GameRepository.GetProductGameByCodeAndTeacherAsync(normalizedProductGameCode, teacherId)
+            ?? throw new KeyNotFoundException($"Không tìm thấy game với mã {normalizedProductGameCode}");
+
+        if (productGame.Status == GameStatusConstants.Deleted)
+            throw new KeyNotFoundException($"Không tìm thấy game với mã {normalizedProductGameCode}");
+
+        if (productGame.Status != GameStatusConstants.Completed)
+            throw new InvalidOperationException("Chỉ có thể lưu chỉnh sửa khi game đã hoàn tất");
+
+        var normalizedResultJson = NormalizeResultJson(request.ResultJson);
+
+        productGame.ResultJson = normalizedResultJson;
+        productGame.ErrorMessage = null;
+        productGame.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.GameRepository.UpdateProductGame(productGame);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new GameResultJsonDto
+        {
+            ProductGameCode = productGame.ProductGameCode,
+            ResultJson = ParseJson(productGame.ResultJson)
+        };
+    }
+
     public async Task SoftDeleteGameAsync(int userId, string gameCode)
     {
         var teacherId = await GetTeacherEntityIdAsync(userId);
@@ -290,6 +325,21 @@ public class GameService : IGameService
 
         var taskSegment = taskId.ToString("N")[..8];
         return $"pgame_{cleanedProductCode}_{taskSegment}";
+    }
+
+    private static string NormalizeResultJson(JsonElement resultJson)
+    {
+        if (resultJson.ValueKind == JsonValueKind.Undefined || resultJson.ValueKind == JsonValueKind.Null)
+            throw new InvalidOperationException("ResultJson không được để trống");
+
+        if (resultJson.ValueKind == JsonValueKind.String && string.IsNullOrWhiteSpace(resultJson.GetString()))
+            throw new InvalidOperationException("ResultJson không được để trống");
+
+        var rawJson = resultJson.GetRawText();
+        if (string.IsNullOrWhiteSpace(rawJson))
+            throw new InvalidOperationException("ResultJson không được để trống");
+
+        return rawJson;
     }
 
     private static JsonElement? ParseJson(string? value)
